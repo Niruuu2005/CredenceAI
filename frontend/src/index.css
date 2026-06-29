@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=General+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "General Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Semantic Trust Colors */
+  --color-trust-high: #10b981; /* Emery Green */
+  --color-trust-medium: #f59e0b; /* Amber */
+  --color-trust-low: #ef4444; /* Red */
+
+  /* Custom Theme Mappings */
+  --color-bg-deep: var(--background-deep);
+  --color-bg-surface: var(--background-surface);
+  --color-bg-panel: var(--background-panel);
+  --color-text-title: var(--text-title);
+  --color-text-body: var(--text-body);
+  --color-text-subtle: var(--text-subtle);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-accent: var(--border-accent);
+  --color-highlight-color: var(--color-highlight-color);
+  --color-header-footer: var(--header-footer-bg);
+  --color-logo-text: var(--logo-text-color);
+  --color-btn-outline-bg: var(--btn-outline-bg);
+}
+
+@layer base {
+  :root {
+    /* ---------------------------------
+       LIGHT BLUE THEME (Default)
+       --------------------------------- */
+    --background: #f1f7fd; /* Soft, beautiful light blue-white background tint */
+    --foreground: #1c1917; /* Slate/stone dark text */
+    --card: #ffffff; /* pure white cards */
+    --card-foreground: #1e293b;
+    --popover: #ffffff;
+    --popover-foreground: #1e293b;
+    --primary: #0284c7; /* Sky/light blue primary controls */
+    --primary-foreground: #ffffff;
+    --secondary: #e0f2fe; /* Light blue panel tint */
+    --secondary-foreground: #0369a1;
+    --muted: #f0f7ff;
+    --muted-foreground: #64748b;
+    --accent: #caf0f8;
+    --accent-foreground: #030712;
+    --destructive: var(--color-trust-low);
+    --destructive-foreground: #ffffff;
+    --border: #bae6fd; /* light blue sky-200 border */
+    --input: #ffffff;
+    --ring: #38bdf8;
+    --radius: 0rem; /* Sharp, procedural editorial edges */
+
+    /* Custom Theme mapping properties */
+    --background-deep: #f1f7fd; /* Soft light-blue background tint */
+    --background-surface: #ffffff; /* White cards */
+    --background-panel: #e6f1fc; /* Light blue secondary sections */
+    --header-footer-bg: #e6f1fc; /* Beautiful panel background for headers and footers */
+    --text-title: #0f172a; /* Slate 900 */
+    --text-body: #334155; /* Slate 700 */
+    --text-subtle: #64748b; /* Slate 500 */
+    --border-subtle: #cbd5e1; /* Elegant slate 300 / sky-250 */
+    --border-accent: #38bdf8; /* Brilliant active sky blue */
+    --logo-text-color: #0284c7; /* Light blue brand logo */
+    --color-highlight-color: #0369a1; /* Light blue emphasis */
+    --btn-outline-bg: #f8fafc;
+  }
+
+  .dark {
+    /* ---------------------------------
+       DARK ORIGINAL STONE THEME (Current)
+       --------------------------------- */
+    --background: #0F0F0F;
+    --foreground: #d6d3d1;
+    --card: #161616;
+    --card-foreground: #d6d3d1;
+    --popover: #161616;
+    --popover-foreground: #d6d3d1;
+    --primary: #292524;
+    --primary-foreground: #ffffff;
+    --secondary: #1c1917;
+    --secondary-foreground: #d6d3d1;
+    --muted: #1c1917;
+    --muted-foreground: #78716c;
+    --accent: #292524;
+    --accent-foreground: #ffffff;
+    --destructive: #7f1d1d;
+    --destructive-foreground: #ffffff;
+    --border: #292524;
+    --input: #161616;
+    --ring: #57534e;
+
+    /* Custom Theme mapping properties */
+    --background-deep: #0F0F0F;
+    --background-surface: #161616;
+    --background-panel: #121212;
+    --header-footer-bg: #0F0F0F;
+    --text-title: #ffffff;
+    --text-body: #d6d3d1;
+    --text-subtle: #78716c;
+    --border-subtle: #292524;
+    --border-accent: #57534e;
+    --logo-text-color: #ffffff;
+    --color-highlight-color: #10b981; /* Emery green emphasis */
+    --btn-outline-bg: #161616;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    @apply antialiased selection:bg-stone-800 selection:text-stone-200;
+  }
+}

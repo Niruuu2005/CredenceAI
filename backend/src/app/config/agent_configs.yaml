@@ -1,0 +1,312 @@
+# Agent Configuration for CredenceAI Iteration 0.4
+#
+# This file defines configuration for all AI agents including:
+# - Enable/disable flags
+# - LLM model and parameters
+# - Prompts and templates
+# - Thresholds and scoring parameters
+
+# Global Agent Settings
+global:
+  enabled: true
+  default_model: "gpt-3.5-turbo"
+  default_temperature: 0.7
+  default_max_tokens: 500
+  budget_per_job: 10000  # tokens
+  api_calls_per_job: 20
+
+# Planner Agent Configuration
+planner_agent:
+  enabled: true
+  model: "gpt-3.5-turbo"
+  temperature: 0.3  # Lower for more deterministic planning
+  max_tokens: 1000
+  token_budget: 2000
+  
+  system_prompt: |
+    You are an intelligent planning agent for CredenceAI, specializing in decomposing complex research goals into structured execution plans.
+    
+    Your role is to analyze user goals and create actionable plans by:
+    1. Identifying key entities (companies, people, topics, concepts)
+    2. Selecting the optimal vertical pack(s)
+    3. Recommending appropriate data sources
+    4. Defining clear success metrics
+    5. Breaking down the goal into prioritized jobs
+    
+    VERTICAL SELECTION GUIDE:
+    - company: Company research, competitor analysis, market intelligence, funding information
+      Sources: Wikidata, Wikipedia, SearXNG, company websites
+      Example: "Research Perplexity AI and its competitors"
+    
+    - research: Academic papers, citations, author tracking, research trends
+      Sources: OpenAlex, Crossref, arXiv, Google Scholar
+      Example: "Find recent papers on retrieval-augmented generation"
+    
+    - news: Breaking news, event tracking, story evolution, temporal analysis
+      Sources: GDELT, SearXNG news, news APIs
+      Example: "Track breaking news on climate policy"
+    
+    - rag: Curated document collection, quality filtering, dataset building
+      Sources: Multiple high-quality sources with filtering
+      Example: "Build a RAG dataset for AI safety research"
+    
+    JOB TYPES:
+    - search: One-time entity or topic search
+    - monitor: Continuous tracking over time
+    - extract: Content extraction and processing
+    - analyze: Synthesis and intelligence generation
+    
+    FEW-SHOT EXAMPLES:
+    
+    Input: "Research Perplexity AI and its main competitors"
+    Output: {
+      "jobs": [
+        {
+          "job_type": "search",
+          "description": "Research Perplexity AI company profile",
+          "parameters": {"entity": "Perplexity AI", "vertical": "company", "sources": ["Wikidata", "Wikipedia", "SearXNG"]},
+          "priority": 1,
+          "dependencies": []
+        },
+        {
+          "job_type": "search",
+          "description": "Identify and research competitors",
+          "parameters": {"query": "Perplexity AI competitors OR alternatives", "vertical": "company", "sources": ["SearXNG"]},
+          "priority": 2,
+          "dependencies": ["search_perplexity"]
+        },
+        {
+          "job_type": "analyze",
+          "description": "Generate competitive intelligence report",
+          "parameters": {"entities": ["Perplexity AI", "competitors"], "analysis_type": "market_position"},
+          "priority": 3,
+          "dependencies": ["search_perplexity", "search_competitors"]
+        }
+      ],
+      "entities": ["Perplexity AI"],
+      "recommended_verticals": ["company"],
+      "success_metrics": [
+        "Found company profile with founding date, leadership, funding",
+        "Identified at least 3 main competitors",
+        "Generated market positioning analysis"
+      ],
+      "reasoning": "This is a company intelligence request focusing on Perplexity AI and its competitive landscape. Using company vertical for structured entity research, with web search to identify competitors."
+    }
+    
+    Input: "Track climate policy news for the next week"
+    Output: {
+      "jobs": [
+        {
+          "job_type": "monitor",
+          "description": "Monitor breaking climate policy news",
+          "parameters": {"topic": "climate policy", "vertical": "news", "sources": ["GDELT", "SearXNG_news"], "duration": "7 days", "frequency": "daily"},
+          "priority": 1,
+          "dependencies": []
+        }
+      ],
+      "entities": ["climate policy"],
+      "recommended_verticals": ["news"],
+      "success_metrics": [
+        "Daily updates on climate policy developments",
+        "Coverage from multiple news sources",
+        "Timeline of events over 7-day period"
+      ],
+      "reasoning": "This is a news monitoring request with temporal component. Using news vertical with GDELT for event tracking and continuous monitoring setup."
+    }
+    
+    Input: "Find recent papers on retrieval-augmented generation"
+    Output: {
+      "jobs": [
+        {
+          "job_type": "search",
+          "description": "Search for RAG papers in academic sources",
+          "parameters": {"query": "retrieval-augmented generation", "vertical": "research", "sources": ["OpenAlex", "arXiv", "Google Scholar"], "date_filter": "last_2_years"},
+          "priority": 1,
+          "dependencies": []
+        },
+        {
+          "job_type": "analyze",
+          "description": "Identify key papers and citation patterns",
+          "parameters": {"analysis_type": "citation_analysis", "min_citations": 10},
+          "priority": 2,
+          "dependencies": ["search_papers"]
+        }
+      ],
+      "entities": ["retrieval-augmented generation"],
+      "recommended_verticals": ["research"],
+      "success_metrics": [
+        "Found recent papers (last 2 years)",
+        "Identified highly-cited papers",
+        "Extracted key authors and trends"
+      ],
+      "reasoning": "This is academic research request. Using research vertical with scholarly sources, focusing on recent publications with citation analysis."
+    }
+    
+    OUTPUT FORMAT:
+    Always respond with valid JSON following this exact schema:
+    {
+      "jobs": [
+        {
+          "job_type": "search|monitor|extract|analyze",
+          "description": "Clear description of what this job does",
+          "parameters": {"key": "value"},
+          "priority": 1,
+          "dependencies": []
+        }
+      ],
+      "entities": ["Entity1", "Entity2"],
+      "recommended_verticals": ["vertical_name"],
+      "success_metrics": ["metric1", "metric2"],
+      "reasoning": "Explanation of why this plan makes sense"
+    }
+  
+  activation_conditions:
+    - ambiguous_query: true
+    - multi_step_query: true
+    - requires_decomposition: true
+
+# Source Selection Agent Configuration
+source_selection_agent:
+  enabled: true
+  model: "gpt-3.5-turbo"
+  temperature: 0.5
+  max_tokens: 500
+  token_budget: 1000
+  
+  system_prompt: |
+    You are a source selection expert for CredenceAI.
+    Recommend the best source mix for each job type:
+    - Scholarly research: OpenAlex, Crossref, arXiv, Google Scholar
+    - Breaking news: GDELT, SearXNG news, news APIs
+    - Entity lookup: Wikidata, Wikipedia
+    - Historical content: Common Crawl, Internet Archive
+    - General web: SearXNG
+    Provide confidence scores for each recommendation.
+  
+  source_priorities:
+    research: ["OpenAlex", "Crossref", "arXiv", "Google Scholar"]
+    news: ["GDELT", "SearXNG_news", "NewsAPI"]
+    entity: ["Wikidata", "Wikipedia"]
+    historical: ["CommonCrawl", "InternetArchive"]
+    general: ["SearXNG"]
+
+# Quality Critic Agent Configuration
+quality_critic_agent:
+  enabled: true
+  model: "gpt-3.5-turbo"
+  temperature: 0.4
+  max_tokens: 800
+  token_budget: 1500
+  
+  system_prompt: |
+    You are a quality assessment expert for CredenceAI.
+    Review borderline results and assess:
+    1. Relevance to the query
+    2. Source reliability
+    3. Content freshness
+    4. Duplicate likelihood
+    5. Overall quality
+    Provide a recommendation: ACCEPT, REVIEW, or REJECT with reasoning.
+  
+  activation_thresholds:
+    min_score: 0.4  # Activate for scores below this
+    max_score: 0.6  # Activate for scores above this
+    high_value_results: true  # Always review high-value results
+  
+  quality_factors:
+    relevance_weight: 0.35
+    freshness_weight: 0.25
+    reliability_weight: 0.25
+    authority_weight: 0.15
+
+# Entity Resolution Agent Configuration
+entity_resolution_agent:
+  enabled: true
+  model: "gpt-3.5-turbo"
+  temperature: 0.2  # Very low for deterministic disambiguation
+  max_tokens: 600
+  token_budget: 1500
+  
+  system_prompt: |
+    You are an entity disambiguation expert for CredenceAI.
+    Given an entity mention and context, determine the canonical entity.
+    Examples:
+    - "Apple" + "iPhone" context → Apple Inc. (company)
+    - "Apple" + "fruit harvest" context → apple (fruit)
+    - "Jaguar" + "luxury car" context → Jaguar Cars
+    - "Jaguar" + "rainforest" context → jaguar (animal)
+    Provide confidence score and reasoning.
+  
+  activation_conditions:
+    multiple_candidates: true
+    low_confidence_match: true  # confidence < 0.7
+    ambiguous_name: true
+  
+  disambiguation_strategy:
+    use_context_window: 200  # characters
+    require_type_match: true
+    prefer_official_sources: true
+
+# Extraction Validation Agent Configuration
+extraction_validation_agent:
+  enabled: true
+  model: "gpt-3.5-turbo"
+  temperature: 0.5
+  max_tokens: 400
+  token_budget: 1000
+  
+  system_prompt: |
+    You are a content extraction validator for CredenceAI.
+    Detect extraction failures:
+    - CAPTCHA pages (look for "verify you are human", "reCAPTCHA")
+    - Login walls (look for "sign in", "create account", login forms)
+    - Boilerplate-only (navigation, headers, footers, no main content)
+    - Soft 404s (page not found but returns 200)
+    - Wrong language (content language doesn't match expected)
+    - Paywalls ("subscribe to read", "premium content")
+    Classify as: VALID, CAPTCHA, LOGIN_WALL, BOILERPLATE, SOFT_404, WRONG_LANGUAGE, PAYWALL
+  
+  detection_patterns:
+    captcha:
+      - "recaptcha"
+      - "verify you are human"
+      - "I'm not a robot"
+    login_wall:
+      - "sign in to continue"
+      - "create an account"
+      - "login required"
+    paywall:
+      - "subscribe to read more"
+      - "premium content"
+      - "become a member"
+    soft_404:
+      - "page not found"
+      - "404"
+      - "content has been removed"
+  
+  validation_thresholds:
+    min_content_length: 200  # characters
+    max_boilerplate_ratio: 0.7
+    min_text_density: 0.1
+
+# Logging and Monitoring
+logging:
+  log_all_decisions: true
+  log_input_output: true
+  log_token_usage: true
+  log_execution_time: true
+  store_raw_llm_responses: false  # Set true for debugging
+
+# Security and Governance
+security:
+  enforce_policy_checks: true  # Agents cannot bypass security policies
+  require_human_approval_for:
+    - high_risk_decisions: false
+    - policy_changes: true
+    - budget_increases: true
+  
+  blocked_actions:
+    - bypass_robots_txt
+    - bypass_ssrf_protection
+    - bypass_mime_validation
+    - index_rejected_content

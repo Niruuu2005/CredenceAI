@@ -1,0 +1,35 @@
+export { CredenceAIClient } from "./client.js";
+export {
+  CredenceAIError,
+  ConfigurationError,
+  AuthenticationError,
+  ValidationError,
+  ApiError,
+  TimeoutError,
+  JobFailedError,
+  RateLimitError,
+  NetworkError,
+} from "./errors.js";
+
+export type {
+  CredenceAIConfig,
+  CreateJobRequest,
+  CreateJobResponse,
+  JobStatusResponse,
+  SearchQueryParams,
+  SearchResponse,
+  SearchResultItem,
+  HealthResponse,
+  RunOptions,
+  RunResult,
+  UserProfile,
+  AuthTokenResponse,
+  GoogleAuthUrlResponse,
+  UpgradePlanResponse,
+  ApiKeyRecord,
+  CreateApiKeyResponse,
+  MonitorRecord,
+  CreateMonitorRequest,
+  CollectionRecord,
+  CreateCollectionRequest,
+} from "./types/index.js";

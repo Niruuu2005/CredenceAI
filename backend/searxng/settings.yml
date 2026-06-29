@@ -1,0 +1,16 @@
+# SearXNG settings
+
+use_default_settings: true
+
+server:
+  port: 8080
+  bind_address: "0.0.0.0"
+  secret_key: "ultrasecretkeyforlocaldev"
+  limiter: false # Disable query rate limiter for local tests
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  formats:
+    - html
+    - json

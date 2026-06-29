@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CredenceAI - Search Intelligence Refinery</title>
+    <meta name="description" content="AI-assisted research intelligence administrative dashboard.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-base: #0b0f19;
+            --bg-sidebar: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-surface-hover: #334155;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-glow: rgba(59, 130, 246, 0.25);
+            --accent: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --border-light: rgba(255, 255, 255, 0.08);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        h1, h2, h3, h4, .font-display {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Layout Structure */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 60%);
+        }
+
+        /* Sidebar Branding */
+        .sidebar-brand {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-icon {
+            width: 2.25rem;
+            height: 2.25rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .brand-text {
+            font-size: 1.15rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar-menu {
+            list-style: none;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .menu-item button {
+            width: 100%;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.85rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-align: left;
+            transition: var(--transition);
+        }
+
+        .menu-item button:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .menu-item.active button {
+            color: white;
+            background: linear-gradient(to right, rgba(59, 130, 246, 0.15), transparent);
+            border-left: 3px solid var(--primary);
+            padding-left: calc(1rem - 3px);
+        }
+
+        /* Header Bar */
+        header {
+            background: rgba(11, 15, 25, 0.75);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-title {
+            font-size: 1.35rem;
+            font-weight: 600;
+        }
+
+        .header-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Tab Content Containment */
+        .tab-content {
+            display: none;
+            padding: 2rem;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard Grid Layouts */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 380px 1fr;
+            }
+        }
+
+        /* Panels and UI Cards */
+        .panel {
+            background-color: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            box-shadow: 0 4px 15px -3px rgba(0,0,0,0.3);
+        }
+
+        .panel-heading {
+            font-size: 1.15rem;
+            font-weight: 600;
+            border-left: 3px solid var(--primary);
+            padding-left: 0.75rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Forms styling */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input, select, textarea {
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 0.85rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.925rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.85rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-accent {
+            background-color: var(--accent);
+        }
+        .btn-accent:hover {
+            background-color: #7c3aed;
+        }
+
+        .btn:disabled {
+            background-color: var(--border);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Badges */
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            display: inline-block;
+        }
+
+        .status-completed { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .status-running { background: rgba(59, 130, 246, 0.15); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .status-failed { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .status-queued { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
+
+        /* Metrics grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .metric-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .metric-val {
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        /* Timeline and Lists */
+        .job-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 350px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .job-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 0.6rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .job-card:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .job-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .job-card-query {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Timeline */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.25rem;
+            top: 0.25rem;
+            bottom: 0.25rem;
+            width: 2px;
+            background-color: var(--border);
+        }
+
+        .timeline-item {
+            position: relative;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -1.625rem;
+            top: 0.25rem;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .timeline-marker.failed {
+            background-color: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        .timeline-content {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        /* Intelligence Card styles */
+        .intel-card {
+            background: linear-gradient(145deg, rgba(30,41,59,0.7), rgba(15,23,42,0.8));
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .intel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 1rem;
+        }
+
+        .intel-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .intel-type {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .intel-fact-item {
+            background: rgba(15, 23, 42, 0.3);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 0.5rem 0.5rem 0;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Empty states */
+        .empty-state {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            opacity: 0.5;
+        }
+
+        /* Graph display tags */
+        .graph-node {
+            background: rgba(15,23,42,0.4);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .graph-edge {
+            background: rgba(139, 92, 246, 0.05);
+            border: 1px dashed rgba(139, 92, 246, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        /* Code Viewer */
+        .code-block {
+            background: #090d16;
+            color: #38bdf8;
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+        }
+
+        /* Ranking Explainer Tooltip Card */
+        .score-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .score-badge-interactive {
+            cursor: help;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            position: relative;
+        }
+
+        .score-badge-interactive:hover {
+            background: rgba(59, 130, 246, 0.25) !important;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .ranking-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 125%;
+            right: 0;
+            width: 300px;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            color: var(--text-main);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.2) inset;
+            z-index: 999;
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(6px);
+            pointer-events: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        .score-container:hover .ranking-tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tooltip-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tooltip-metrics {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .tooltip-metrics .val {
+            text-align: right;
+            font-weight: 600;
+            color: white;
+            font-family: monospace;
+        }
+
+        .tooltip-formula {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 0.35rem;
+            padding: 0.4rem;
+            font-family: monospace;
+            font-size: 0.725rem;
+            color: #38bdf8;
+            text-align: center;
+            margin-top: 0.5rem;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">C</div>
+            <div class="brand-text">CredenceAI</div>
+            <span class="badge-dev">V0.5</span>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="menu-item active" id="menu-dashboard">
+                <button onclick="switchTab('dashboard')">📊 Dashboard</button>
+            </li>
+            <li class="menu-item" id="menu-search">
+                <button onclick="switchTab('search')">🔍 Search Index</button>
+            </li>
+            <li class="menu-item" id="menu-decisions">
+                <button onclick="switchTab('decisions')">🛡️ Agent Decisions</button>
+            </li>
+            <li class="menu-item" id="menu-evidence">
+                <button onclick="switchTab('evidence')">🕸️ Evidence Graph</button>
+            </li>
+            <li class="menu-item" id="menu-intelligence">
+                <button onclick="switchTab('intelligence')">🗂️ Intelligence Cards</button>
+            </li>
+            <li class="menu-item" id="menu-verticals">
+                <button onclick="switchTab('verticals')">📦 Vertical Packs</button>
+            </li>
+            <li class="menu-item" id="menu-settings">
+                <button onclick="switchTab('settings')">⚙️ Settings</button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- MAIN BODY -->
+    <div class="main-content">
+        <header>
+            <div class="header-title" id="page-title">Dashboard Overview</div>
+            <div class="header-status-bar">
+                <div id="system-health" class="status-badge status-queued">Checking Health...</div>
+            </div>
+        </header>
+
+        <!-- TAB: DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <h3 class="panel-heading">Submit Query Job</h3>
+                    <form id="job-form">
+                        <div class="form-group">
+                            <label for="job-input">Research Request / Query</label>
+                            <textarea id="job-input" placeholder="Enter query (e.g. Research Perplexity AI and its competitors)" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="job-vertical">Target Vertical</label>
+                            <select id="job-vertical">
+                                <option value="web">General Web Search</option>
+                                <option value="company">Company Intelligence</option>
+                                <option value="research">Academic Research</option>
+                                <option value="news">News Monitoring</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="job-latency">Execution Mode</label>
+                            <select id="job-latency">
+                                <option value="standard">Standard Routing</option>
+                                <option value="fast">Fast (Cache & Local Index)</option>
+                                <option value="deep">Deep (Iterative Agentic Crawl)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn" id="job-submit-btn">Submit Agentic Pipeline</button>
+                    </form>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div class="panel">
+                        <h3 class="panel-heading">System Overview Metrics</h3>
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <span class="metric-val" id="m-total-jobs">0</span>
+                                <span class="metric-label">Ingested Jobs</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-val" id="m-total-results" style="color: var(--success);">0</span>
+                                <span class="metric-label">Normalized Results</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-val" id="m-accepted-results" style="color: var(--success);">0</span>
+                                <span class="metric-label">Accepted</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-val" id="m-rejected-results" style="color: var(--danger);">0</span>
+                                <span class="metric-label">Rejected</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <h3 class="panel-heading">Source Adapters & Provider Health</h3>
+                        <div id="provider-health-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="empty-state" style="padding: 1.5rem 0;">Loading health indicators...</div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <h3 class="panel-heading">Recent Pipeline Jobs</h3>
+                        <div class="job-list" id="dashboard-jobs">
+                            <div class="empty-state">No jobs found. Submit a request above.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: SEARCH -->
+        <div id="tab-search" class="tab-content">
+            <div class="panel">
+                <h3 class="panel-heading">Query Internal Index</h3>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <input type="text" id="s-query" placeholder="Enter keyword or concept..." style="flex: 1; min-width: 250px;">
+                    <select id="s-mode" style="width: 200px;">
+                        <option value="standard">Lexical (BM25)</option>
+                        <option value="hybrid">Hybrid (BM25 + Jaccard)</option>
+                    </select>
+                    <button class="btn" onclick="triggerSearch()">Execute Search</button>
+                </div>
+                
+                <div id="search-results-display" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                    <div class="empty-state">
+                        <span class="empty-icon">🔍</span>
+                        <p>Search compiled index entries, filtered by trust decision or entity mapping.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: DECISIONS -->
+        <div id="tab-decisions" class="tab-content">
+            <div class="panel">
+                <h3 class="panel-heading">Agent Invocation Audit Decisions</h3>
+                <div class="timeline" id="decisions-timeline">
+                    <div class="empty-state">No decisions logged. Trigger jobs to observe agent decisions.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: EVIDENCE -->
+        <div id="tab-evidence" class="tab-content">
+            <div class="panel">
+                <h3 class="panel-heading">Factual Claims Evidence Graph</h3>
+                <div class="form-group" style="max-width: 400px;">
+                    <label for="ev-entity-select">Select Resolved Entity</label>
+                    <select id="ev-entity-select" onchange="loadEvidenceGraph(this.value)">
+                        <option value="">-- Choose Entity --</option>
+                    </select>
+                </div>
+
+                <div id="evidence-graph-content" style="margin-top: 1rem; display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+                    <div class="empty-state">
+                        <span class="empty-icon">🕸️</span>
+                        <p>Select a resolved entity to inspect extracted claims, source attributions, and support/contradict relationship edges.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: INTELLIGENCE -->
+        <div id="tab-intelligence" class="tab-content">
+            <div class="panel">
+                <h3 class="panel-heading">Intelligence Cards & Summaries</h3>
+                <div class="form-group" style="max-width: 400px;">
+                    <label for="intel-entity-select">Select Resolved Entity</label>
+                    <select id="intel-entity-select" onchange="loadIntelligenceCard(this.value)">
+                        <option value="">-- Choose Entity --</option>
+                    </select>
+                </div>
+
+                <div id="intelligence-card-content" style="margin-top: 1.5rem;">
+                    <div class="empty-state">
+                        <span class="empty-icon">🗂️</span>
+                        <p>Select a resolved entity to generate or load its structured profile card and markdown summaries with bracketed citations.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: VERTICALS -->
+        <div id="tab-verticals" class="tab-content">
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <h3 class="panel-heading">Execute Vertical Intelligence Pack</h3>
+                    <form id="vertical-form">
+                        <div class="form-group">
+                            <label for="v-pack">Select Intelligence Pack</label>
+                            <select id="v-pack">
+                                <option value="company">🏢 Company Intelligence Pack</option>
+                                <option value="research">📚 Research Intelligence Pack</option>
+                                <option value="news">📰 News Monitoring Pack</option>
+                                <option value="rag">🤖 RAG Dataset Builder Pack</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="v-query">Target Concept / Topic</label>
+                            <input type="text" id="v-query" placeholder="e.g. Nvidia, Retrieval-augmented generation" required>
+                        </div>
+                        <button type="submit" class="btn btn-accent" id="v-submit-btn">Run Vertical Workflow</button>
+                    </form>
+                </div>
+
+                <div class="panel">
+                    <h3 class="panel-heading">Synthesized Vertical Pack Report</h3>
+                    <div id="vertical-report-content">
+                        <div class="empty-state">
+                            <span class="empty-icon">📦</span>
+                            <p>Configure and launch a vertical pack run to generate competitor profiles, author bibliography analysis, breaking news timelines, or dataset exports.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: SETTINGS -->
+        <div id="tab-settings" class="tab-content">
+            <div class="panel" style="max-width: 700px;">
+                <h3 class="panel-heading">System Settings & Config Display</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <div style="border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+                        <h4 style="color: white; margin-bottom: 0.5rem;">Offline Mode State</h4>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span class="status-badge status-completed" id="s-mock-badge">MOCK_SERVICES ENABLED</span>
+                            <p style="font-size: 0.875rem; color: var(--text-muted);">Application will run fully offline using mocked endpoints and fallback databases.</p>
+                        </div>
+                    </div>
+
+                    <div style="border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+                        <h4 style="color: white; margin-bottom: 0.5rem;">Budget Configuration</h4>
+                        <ul style="list-style: none; font-size: 0.875rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.35rem;">
+                            <li>• Job Token Budget Cap: <strong>10,000 tokens</strong></li>
+                            <li>• Max API Calls per Job: <strong>20 calls</strong></li>
+                            <li>• Crawl Max File Size Limit: <strong>5MB</strong></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 style="color: white; margin-bottom: 0.5rem;">Active Agent Network</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; font-size: 0.85rem;">
+                            <div style="padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 0.25rem; display: flex; justify-content: space-between;">
+                                <span>1. PlannerAgent</span><span style="color: var(--success); font-weight:bold;">Active</span>
+                            </div>
+                            <div style="padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 0.25rem; display: flex; justify-content: space-between;">
+                                <span>2. SourceSelectionAgent</span><span style="color: var(--success); font-weight:bold;">Active</span>
+                            </div>
+                            <div style="padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 0.25rem; display: flex; justify-content: space-between;">
+                                <span>3. QualityCriticAgent</span><span style="color: var(--success); font-weight:bold;">Active</span>
+                            </div>
+                            <div style="padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 0.25rem; display: flex; justify-content: space-between;">
+                                <span>4. EntityResolutionAgent</span><span style="color: var(--success); font-weight:bold;">Active</span>
+                            </div>
+                            <div style="padding: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 0.25rem; display: flex; justify-content: space-between;">
+                                <span>5. ExtractionValidationAgent</span><span style="color: var(--success); font-weight:bold;">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // HTML escaping utility to prevent XSS
+        function escapeHTML(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        // ── Navigation ────────────────────────────────────────────────────
+        function switchTab(tabId) {
+            // Hide all tab panes
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Remove active class from menu items
+            document.querySelectorAll('.sidebar-menu .menu-item').forEach(el => el.classList.remove('active'));
+
+            // Show active pane
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            // Highlight menu button
+            document.getElementById(`menu-${tabId}`).classList.add('active');
+
+            // Update header title
+            const titles = {
+                'dashboard': 'Refinery Dashboard & Metrics',
+                'search': 'Lexical & Semantic Hybrid Index Search',
+                'decisions': 'Agentic Decision Logging Timeline',
+                'evidence': 'Factual Claims Evidence Graph',
+                'intelligence': 'Structured Intelligence Profiles',
+                'verticals': 'Vertical Pack Execution Console',
+                'settings': 'Refinery Settings & Limits'
+            };
+            document.getElementById('page-title').textContent = titles[tabId] || 'CredenceAI Control';
+
+            // Trigger updates if entering a specific tab
+            if (tabId === 'decisions') loadDecisions();
+            if (tabId === 'evidence') loadEntitiesDropdown('ev-entity-select');
+            if (tabId === 'intelligence') loadEntitiesDropdown('intel-entity-select');
+        }
+
+        // ── Global Health & Metrics Polling ──────────────────────────────
+        async function fetchSystemHealthAndMetrics() {
+            try {
+                // Get health
+                const hr = await fetch('/health');
+                const healthData = await hr.json();
+                
+                const healthEl = document.getElementById('system-health');
+                if (healthData.status === 'online') {
+                    healthEl.textContent = healthData.mock_mode ? 'ONLINE (MOCKED)' : 'ONLINE';
+                    healthEl.className = 'status-badge status-completed';
+                } else {
+                    healthEl.textContent = 'DATABASE OFFLINE';
+                    healthEl.className = 'status-badge status-failed';
+                }
+
+                // Render provider health
+                const provList = document.getElementById('provider-health-list');
+                if (provList && healthData.providers) {
+                    let html = '';
+                    for (const [name, info] of Object.entries(healthData.providers)) {
+                        const statusClass = info.status === 'healthy' ? 'status-completed' : 'status-failed';
+                        const fallbackText = info.fallback ? ` (fallback: ${info.fallback})` : '';
+                        html += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15,23,42,0.4); padding: 0.6rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
+                                <span style="font-weight: 600; text-transform: capitalize;">${name} Adapter</span>
+                                <span class="status-badge ${statusClass}">${info.status}${fallbackText}</span>
+                            </div>
+                        `;
+                    }
+                    provList.innerHTML = html;
+                }
+
+                // Get metrics
+                const mr = await fetch('/system/metrics');
+                const metricsData = await mr.json();
+                
+                document.getElementById('m-total-jobs').textContent = metricsData.jobs_count;
+                document.getElementById('m-total-results').textContent = metricsData.results_count;
+                document.getElementById('m-accepted-results').textContent = metricsData.accepted_count;
+                document.getElementById('m-rejected-results').textContent = metricsData.rejected_count;
+
+                // Sync settings page mock badge
+                document.getElementById('s-mock-badge').textContent = healthData.mock_mode ? 'MOCK_SERVICES ACTIVE' : 'MOCK_SERVICES INACTIVE';
+                document.getElementById('s-mock-badge').className = healthData.mock_mode ? 'status-badge status-completed' : 'status-badge status-failed';
+
+            } catch (err) {
+                console.error("Health/metrics fetch failed", err);
+            }
+        }
+
+        // Poll every 5 seconds
+        fetchSystemHealthAndMetrics();
+        setInterval(fetchSystemHealthAndMetrics, 5000);
+
+        // ── Load recent jobs on dashboard ───────────────────────────────
+        async function fetchRecentJobs() {
+            try {
+                const response = await fetch('/jobs?limit=10');
+                if (!response.ok) return;
+                const jobs = await response.json();
+                
+                const container = document.getElementById('dashboard-jobs');
+                if (jobs.length === 0) {
+                    container.innerHTML = `<div class="empty-state">No jobs found. Submit a request above.</div>`;
+                    return;
+                }
+                
+                container.innerHTML = jobs.map(j => `
+                    <div class="job-card" onclick="loadJobToSearch('${j.job_id}', '${j.status}')">
+                        <div class="job-card-header">
+                            <span style="font-family: monospace; font-size: 0.8rem; color: var(--primary);">${j.job_id}</span>
+                            <span class="status-badge status-${j.status}">${j.status}</span>
+                        </div>
+                        <div class="job-card-query">${j.created_at ? new Date(j.created_at).toLocaleString() : ''} - ${j.results_count} Results</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        fetchRecentJobs();
+        setInterval(fetchRecentJobs, 5000);
+
+        function loadJobToSearch(jobId, status) {
+            if (status === 'completed') {
+                switchTab('search');
+                // Fetch and load results directly for that job ID
+                document.getElementById('s-query').value = jobId;
+                triggerSearch(jobId);
+            } else {
+                alert(`Job ${jobId} is currently ${status}. Please wait.`);
+            }
+        }
+
+        // ── Job Submission Form ──────────────────────────────────────────
+        document.getElementById('job-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('job-submit-btn');
+            const queryVal = document.getElementById('job-input').value.trim();
+            const verticalVal = document.getElementById('job-vertical').value;
+            const latencyVal = document.getElementById('job-latency').value;
+
+            if (!queryVal) return;
+            btn.disabled = true;
+            btn.textContent = 'Submitting Job...';
+
+            try {
+                const res = await fetch('/jobs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        job_type: 'search_query',
+                        input: queryVal,
+                        vertical: verticalVal,
+                        execution_mode: latencyVal
+                    })
+                });
+
+                if (!res.ok) throw new Error('API server returned error');
+                const data = await res.json();
+                
+                alert(`Job submitted successfully! Job ID: ${data.job_id}`);
+                document.getElementById('job-input').value = '';
+                
+                // Refresh list
+                fetchRecentJobs();
+            } catch (err) {
+                alert(`Error submitting job: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Agentic Pipeline';
+            }
+        });
+
+        // ── Search tab queries ───────────────────────────────────────────
+        async function triggerSearch(overrideQuery) {
+            const query = overrideQuery || document.getElementById('s-query').value.trim();
+            if (!query) return;
+
+            const mode = document.getElementById('s-mode').value;
+            const display = document.getElementById('search-results-display');
+            display.innerHTML = `<div class="empty-state">Loading search results...</div>`;
+
+            try {
+                // If overrideQuery is a jobId, fetch direct job results
+                const isJobId = query.startsWith('job_');
+                const url = isJobId ? `/jobs/${query}/results` : `/search?q=${encodeURIComponent(query)}&mode=${mode}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Search request failed');
+                let results = [];
+                
+                if (isJobId) {
+                    results = await response.json();
+                } else {
+                    const data = await response.json();
+                    results = data.results || [];
+                }
+
+                if (results.length === 0) {
+                    display.innerHTML = `<div class="empty-state">No matching indexed results found.</div>`;
+                    return;
+                }
+
+                display.innerHTML = results.map(r => {
+                    let decisionColor = 'var(--success)';
+                    if (r.decision === 'review') decisionColor = 'var(--warning)';
+                    else if (r.decision === 'reject') decisionColor = 'var(--danger)';
+
+                    let qualityBadge = r.quality_score !== undefined ? r.quality_score : (r.quality_scores?.final_trust_score || 1.0);
+                    let trustDecision = r.decision || (r.quality_scores?.decision || 'accept');
+
+                    // Render entities
+                    let entitiesHtml = '';
+                    if (r.entities && r.entities.length > 0) {
+                        entitiesHtml = `
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;">
+                                ${r.entities.map(e => `
+                                    <span style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #cbd5e1; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 2rem;">
+                                        🏷️ ${escapeHTML(e.canonical_name)} (${escapeHTML(e.entity_type)})
+                                    </span>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+
+                    // Render duplicates
+                    let duplicatesHtml = '';
+                    if (r.duplicates && r.duplicates.length > 0) {
+                        duplicatesHtml = `
+                            <details style="margin-top: 0.5rem; padding: 0.4rem; background: rgba(15,23,42,0.3); border-radius: 0.25rem;">
+                                <summary style="font-size: 0.75rem; color: var(--primary); cursor:pointer;">Show Duplicates Grouped (${r.duplicates.length})</summary>
+                                <div style="display:flex; flex-direction:column; gap:0.25rem; padding-top:0.4rem;">
+                                    ${r.duplicates.map(d => `
+                                        <div style="font-size:0.75rem; color:var(--text-muted);">• ${escapeHTML(d.title)} (Source: ${escapeHTML(d.source)})</div>
+                                    `).join('')}
+                                </div>
+                            </details>
+                        `;
+                    }
+
+                    const rd = r.ranking_details || {
+                        base_score: qualityBadge,
+                        jaccard_similarity: 0.0,
+                        phrase_boost: 0.0,
+                        final_score: qualityBadge,
+                        formula: "base_score (lexical quality)"
+                    };
+                    
+                    const tooltipHtml = `
+                        <div class="ranking-tooltip">
+                            <div class="tooltip-title">🔍 Score Explanation</div>
+                            <div class="tooltip-metrics">
+                                <span>Base Lexical Score:</span>
+                                <span class="val">${parseFloat(rd.base_score).toFixed(4)}</span>
+                                <span>Jaccard Semantic:</span>
+                                <span class="val">${parseFloat(rd.jaccard_similarity).toFixed(4)}</span>
+                                <span>Phrase Boost:</span>
+                                <span class="val">+${parseFloat(rd.phrase_boost).toFixed(4)}</span>
+                                <span style="color: white; font-weight: 600; border-top: 1px solid var(--border); padding-top: 0.25rem; margin-top: 0.25rem;">Combined Score:</span>
+                                <span class="val" style="color: var(--success); font-weight: 700; border-top: 1px solid var(--border); padding-top: 0.25rem; margin-top: 0.25rem;">${parseFloat(rd.final_score).toFixed(4)}</span>
+                            </div>
+                            <div class="tooltip-formula">
+                                Formula: ${rd.formula}
+                            </div>
+                        </div>
+                    `;
+
+                    return `
+                        <div style="background: rgba(15,23,42,0.4); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.25rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                                <a href="${escapeHTML(r.url)}" target="_blank" style="color: white; text-decoration: none; font-weight:600; font-size: 1.05rem;">${escapeHTML(r.title)}</a>
+                                <div class="score-container">
+                                    <span class="status-badge score-badge-interactive" style="background: rgba(255,255,255,0.05); color:white;">
+                                        Score: ${parseFloat(qualityBadge).toFixed(2)} ⓘ
+                                    </span>
+                                    ${tooltipHtml}
+                                </div>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--primary); margin: 0.25rem 0;">${escapeHTML(r.url)}</div>
+                            <p style="font-size: 0.875rem; color: var(--text-muted); line-height:1.5;">${escapeHTML(r.snippet) || ''}</p>
+                            ${entitiesHtml}
+                            ${duplicatesHtml}
+                            <div style="display: flex; gap: 1rem; margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted);">
+                                <span>Source: <strong>${escapeHTML(r.source).toUpperCase()}</strong></span>
+                                <span>Decision: <strong style="color: ${decisionColor};">${escapeHTML(trustDecision).toUpperCase()}</strong></span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                display.innerHTML = `<div class="empty-state" style="color:var(--danger);">Failed to load search results: ${e.message}</div>`;
+            }
+        }
+
+        // ── Agent Decisions ──────────────────────────────────────────────
+        async function loadDecisions() {
+            const timeline = document.getElementById('decisions-timeline');
+            timeline.innerHTML = `<div class="empty-state">Loading decisions...</div>`;
+
+            try {
+                const res = await fetch('/agent/decisions');
+                if (!res.ok) throw new Error('Failed to fetch decisions');
+                const decisions = await res.json();
+                
+                if (decisions.length === 0) {
+                    timeline.innerHTML = `<div class="empty-state">No agent decisions logged yet.</div>`;
+                    return;
+                }
+
+                timeline.innerHTML = decisions.map(d => `
+                    <div class="timeline-item">
+                        <div class="timeline-marker ${d.success ? '' : 'failed'}"></div>
+                        <div class="timeline-content">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <strong style="color:white; font-size:1.05rem;">${escapeHTML(d.agent_name)}</strong>
+                                <span class="status-badge ${d.success ? 'status-completed' : 'status-failed'}">
+                                    ${d.success ? 'SUCCESS' : 'FAILED'}
+                                </span>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">
+                                Job ID: <strong style="color: var(--primary);">${escapeHTML(d.job_id)}</strong> | 
+                                Conf: <strong>${d.confidence_score.toFixed(2)}</strong> | 
+                                Time: <strong>${d.execution_time_ms || 0}ms</strong>
+                            </div>
+                            <p style="font-size:0.875rem; color:var(--text-muted); border-left: 2px solid var(--primary); padding-left: 0.5rem;">
+                                ${escapeHTML(d.reasoning) || 'No details reasoning provided.'}
+                            </p>
+                            <details style="font-size: 0.8rem; color: var(--primary);">
+                                <summary style="cursor:pointer; user-select:none;">View Raw Payload JSON</summary>
+                                <pre class="code-block" style="margin-top:0.5rem; max-height:150px;">${escapeHTML(JSON.stringify({input: d.input_data, output: d.output_data}, null, 2))}</pre>
+                            </details>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                timeline.innerHTML = `<div class="empty-state" style="color:var(--danger);">Failed to load decisions timeline: ${err.message}</div>`;
+            }
+        }
+
+        // ── Dropdowns loader for entities ──────────────────────────────────
+        async function loadEntitiesDropdown(selectId) {
+            const select = document.getElementById(selectId);
+            const val = select.value;
+            
+            try {
+                const res = await fetch('/evidence/entities');
+                if (!res.ok) return;
+                const entities = await res.json();
+                
+                let html = '<option value="">-- Choose Entity --</option>';
+                entities.forEach(e => {
+                    html += `<option value="${e.id}">${escapeHTML(e.canonical_name)} (${escapeHTML(e.entity_type || 'Entity')})</option>`;
+                });
+                select.innerHTML = html;
+                if (val) select.value = val;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // ── Evidence Graph ───────────────────────────────────────────────
+        async function loadEvidenceGraph(entityId) {
+            const display = document.getElementById('evidence-graph-content');
+            if (!entityId) {
+                display.innerHTML = `<div class="empty-state"><span class="empty-icon">🕸️</span><p>Select a resolved entity to inspect claims and relationships.</p></div>`;
+                return;
+            }
+            display.innerHTML = `<div class="empty-state">Loading Evidence Graph...</div>`;
+
+            try {
+                const res = await fetch(`/evidence/graph/${entityId}`);
+                if (!res.ok) throw new Error('Graph fetch failed');
+                const graph = await res.json();
+                
+                let nodesHtml = '<h4 style="color:white; margin-bottom: 0.5rem;">Graph Nodes (Factual Claims)</h4>';
+                if (graph.nodes.length === 0) {
+                    nodesHtml += '<div style="color:var(--text-muted); font-size:0.875rem;">No claim nodes found.</div>';
+                } else {
+                    nodesHtml += graph.nodes.map(n => `
+                        <div class="graph-node">
+                            <div style="font-weight: 600; color: white;">${escapeHTML(n.canonical_text)}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">
+                                Entity: <strong style="color:var(--accent);">${escapeHTML(n.entity)}</strong> | 
+                                Corroboration: <strong>${n.corroboration_count}</strong> | 
+                                Conf: <strong style="color:var(--success);">${n.confidence.toFixed(2)}</strong>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                let edgesHtml = '<h4 style="color:white; margin-bottom: 0.5rem;">Graph Edges (Supporting / Contradicting Links)</h4>';
+                if (graph.edges.length === 0) {
+                    edgesHtml += '<div style="color:var(--text-muted); font-size:0.875rem;">No relationship edges tracked.</div>';
+                } else {
+                    edgesHtml += graph.edges.map(e => `
+                        <div class="graph-edge">
+                            ${escapeHTML(e.from_node)} ──[<strong style="color:var(--accent);">${escapeHTML(e.relationship).toUpperCase()}</strong> (weight: ${e.weight})]──> ${escapeHTML(e.to_node)}
+                        </div>
+                    `).join('');
+                }
+
+                display.innerHTML = `
+                    <div style="background: rgba(15,23,42,0.4); border: 1px solid var(--border); padding: 1.25rem; border-radius: 0.75rem;">
+                        <h4 style="color:white; margin-bottom:0.5rem;">Summary Metrics</h4>
+                        <div style="font-size:0.85rem; color:var(--text-muted); display:grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                            <div>Nodes: <strong>${graph.summary.total_nodes}</strong></div>
+                            <div>Edges: <strong>${graph.summary.total_edges}</strong></div>
+                            <div>Avg Confidence: <strong>${graph.summary.avg_confidence}</strong></div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+                        <div>${nodesHtml}</div>
+                        <div>${edgesHtml}</div>
+                    </div>
+                `;
+            } catch (e) {
+                display.innerHTML = `<div class="empty-state" style="color:var(--danger);">${e.message}</div>`;
+            }
+        }
+
+        // ── Intelligence Cards ───────────────────────────────────────────
+        async function loadIntelligenceCard(entityId) {
+            const display = document.getElementById('intelligence-card-content');
+            if (!entityId) {
+                display.innerHTML = `<div class="empty-state"><span class="empty-icon">🗂️</span><p>Select a resolved entity to generate intelligence cards.</p></div>`;
+                return;
+            }
+            display.innerHTML = `<div class="empty-state">Compiling Intelligence Profile...</div>`;
+
+            try {
+                const cardRes = await fetch(`/intelligence/card/${entityId}`);
+                if (!cardRes.ok) throw new Error('Failed to fetch card');
+                const card = await cardRes.json();
+                
+                const sumRes = await fetch(`/intelligence/summary/${entityId}`);
+                let summaryMarkdown = 'No synthesized summary available.';
+                if (sumRes.ok) {
+                    const sumData = await sumRes.json();
+                    summaryMarkdown = sumData.summary;
+                }
+
+                display.innerHTML = `
+                    <div class="intel-card">
+                        <div class="intel-header">
+                            <div>
+                                <span class="intel-type">${card.entity_type}</span>
+                                <h2 class="intel-name">${card.canonical_name}</h2>
+                            </div>
+                            <span class="status-badge status-completed">${card.freshness_label}</span>
+                        </div>
+                        
+                        <div>
+                            <h4 style="color:white; margin-bottom: 0.5rem;">Entity Description</h4>
+                            <p style="font-size:0.925rem; color:var(--text-muted); line-height:1.5;">${card.description || 'No database profile description available.'}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 style="color:white; margin-bottom: 0.5rem;">Key Factual Evidence</h4>
+                            <div>
+                                ${card.key_facts.map(f => `
+                                    <div class="intel-fact-item">
+                                        <div style="font-weight: 500; color: white;">${f.claim}</div>
+                                        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">
+                                            Corroboration: <strong>${f.corroboration}</strong> | 
+                                            Factual Confidence: <strong>${f.confidence.toFixed(2)}</strong>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        ${card.contradictions.length > 0 ? `
+                        <div>
+                            <h4 style="color:white; margin-bottom:0.5rem; color:var(--danger);">Risk Signals & Contradictions</h4>
+                            <ul style="list-style:none; font-size:0.875rem; color:var(--text-muted); display:flex; flex-direction:column; gap:0.4rem;">
+                                ${card.contradictions.map(c => `<li style="border-left: 2px solid var(--danger); padding-left: 0.5rem;">⚠️ ${c.claim}</li>`).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
+
+                        <div>
+                            <h4 style="color:white; margin-bottom:0.5rem;">Related Entities Mapping</h4>
+                            <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                                ${card.related_entities.map(re => `
+                                    <span style="background:rgba(255,255,255,0.05); border:1px solid var(--border); font-size:0.75rem; padding: 0.2rem 0.5rem; border-radius: 0.25rem; color: white;">
+                                        🔗 ${re}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 style="color:white; margin-bottom: 0.5rem;">Synthesized Executive Summary</h4>
+                            <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius:0.75rem; padding: 1.25rem; font-size:0.925rem; color:var(--text-muted); line-height:1.6; white-space: pre-wrap;">
+                                ${summaryMarkdown}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                display.innerHTML = `<div class="empty-state" style="color:var(--danger);">${e.message}</div>`;
+            }
+        }
+
+        // ── Vertical Packs ───────────────────────────────────────────────
+        document.getElementById('vertical-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('v-submit-btn');
+            const packName = document.getElementById('v-pack').value;
+            const queryVal = document.getElementById('v-query').value.trim();
+            const display = document.getElementById('vertical-report-content');
+
+            if (!queryVal) return;
+            btn.disabled = true;
+            btn.textContent = 'Running Vertical...';
+            display.innerHTML = `<div class="empty-state">Running vertical intelligence pack workflow. Please wait...</div>`;
+
+            try {
+                const response = await fetch(`/verticals/${packName}/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: queryVal })
+                });
+
+                if (!response.ok) throw new Error('Vertical pack run request failed');
+                const runData = await response.json();
+                
+                if (runData.status === 'completed' && runData.report) {
+                    const report = runData.report;
+                    
+                    // Render beautifully based on pack name
+                    let reportHtml = '';
+                    if (packName === 'company') {
+                        const prof = report.company_profile || {};
+                        reportHtml = `
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <h3 style="color:white;">🏢 Profile: ${prof.name || 'Company'}</h3>
+                                <p style="font-size:0.9rem; color:var(--text-muted);">${prof.description || ''}</p>
+                                
+                                <div>
+                                    <strong style="color:white;">Founders:</strong>
+                                    <p style="font-size:0.875rem; color:var(--text-muted);">${prof.founders?.join(', ') || 'None identified'}</p>
+                                </div>
+                                
+                                <div>
+                                    <strong style="color:white;">Key Competitors:</strong>
+                                    <p style="font-size:0.875rem; color:var(--text-muted);">${prof.key_competitors?.join(', ') || 'None identified'}</p>
+                                </div>
+
+                                <div>
+                                    <strong style="color:white;">Funding Events:</strong>
+                                    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.4rem;">
+                                        ${prof.funding_events?.map(fe => `
+                                            <div style="padding:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:0.25rem; font-size:0.8rem;">
+                                                <strong>${fe.round} - ${fe.amount}</strong>: ${fe.context}
+                                            </div>
+                                        `).join('') || '<p style="color:var(--text-muted); font-size:0.8rem;">None detected</p>'}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (packName === 'research') {
+                        const papers = report.papers || [];
+                        const trends = report.trends || [];
+                        reportHtml = `
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <h3 style="color:white;">📚 Academic Bibliography Report</h3>
+                                <div style="font-size:0.85rem; color:var(--text-muted);">
+                                    Papers: <strong>${report.metrics?.total_papers}</strong> | 
+                                    Citations: <strong>${report.metrics?.total_citations_tracked}</strong>
+                                </div>
+                                
+                                <div>
+                                    <strong style="color:white;">Research Trends identified:</strong>
+                                    <ul style="list-style:disc; margin-left:1.25rem; font-size:0.875rem; color:var(--text-muted); margin-top:0.25rem;">
+                                        ${trends.map(t => `<li>${t}</li>`).join('')}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <strong style="color:white;">Discovered Papers:</strong>
+                                    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.4rem;">
+                                        ${papers.map(p => `
+                                            <div style="padding:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:0.25rem; font-size:0.8rem;">
+                                                <a href="${p.url}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600;">${p.title}</a>
+                                                <div style="color:var(--text-muted); font-size:0.75rem; margin-top:0.25rem;">
+                                                    Authors: ${p.authors?.join(', ') || 'Unknown'} | Year: ${p.year || 'N/A'} | Citations: ${p.citations}
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (packName === 'news') {
+                        const timeline = report.timeline || [];
+                        reportHtml = `
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <h3 style="color:white;">📰 News Monitoring and Events</h3>
+                                <div style="font-size:0.85rem; color:var(--text-muted);">
+                                    Diversity Score: <strong>${report.metrics?.source_diversity_index}</strong> (unique domains: ${report.metrics?.unique_domains?.join(', ')})
+                                </div>
+
+                                <div>
+                                    <strong style="color:white;">Timeline Story Evolution:</strong>
+                                    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.4rem;">
+                                        ${timeline.map(t => `
+                                            <div style="padding:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:0.25rem; font-size:0.8rem;">
+                                                <span class="status-badge" style="background:var(--primary-glow); color:white; font-size:0.65rem; padding:0.1rem 0.3rem; margin-bottom:0.25rem;">${t.date}</span>
+                                                <div style="font-weight:600; color:white; margin:0.15rem 0;">${t.title}</div>
+                                                <span style="font-size:0.75rem; color:var(--text-muted);">Source: ${t.domain}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (packName === 'rag') {
+                        const docs = report.curated_documents || [];
+                        reportHtml = `
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <h3 style="color:white;">🤖 RAG Dataset Builder Export</h3>
+                                <div style="font-size:0.85rem; color:var(--text-muted);">
+                                    Curated Context Documents: <strong>${report.metrics?.accepted_documents}</strong> | 
+                                    Filtered Out: <strong>${report.metrics?.rejected_low_quality}</strong>
+                                </div>
+
+                                <div>
+                                    <strong style="color:white;">Synthesized Response:</strong>
+                                    <p style="font-size:0.85rem; color:var(--text-muted); background:rgba(0,0,0,0.2); padding:0.5rem; border-radius:0.25rem; line-height:1.5; margin-top:0.25rem;">${report.reference_response}</p>
+                                </div>
+
+                                <div>
+                                    <strong style="color:white;">JSONL Dataset Export Content:</strong>
+                                    <pre class="code-block" style="margin-top:0.4rem; max-height:200px;">${report.jsonl_export}</pre>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    display.innerHTML = `
+                        <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem;">
+                            ${reportHtml}
+                        </div>
+                    `;
+                } else {
+                    display.innerHTML = `<div class="empty-state" style="color:var(--danger);">Run status: ${runData.status}. Error: ${runData.error_message || 'Unknown error'}</div>`;
+                }
+
+            } catch (e) {
+                display.innerHTML = `<div class="empty-state" style="color:var(--danger);">${e.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Run Vertical Pack';
+            }
+        });
+    </script>
+</body>
+</html>

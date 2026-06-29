@@ -1,0 +1,80 @@
+# ==============================================================================
+#  CredenceAI – .gitignore
+# ==============================================================================
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+.Python
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+backend/.venv/
+
+# ── Environment secrets ────────────────────────────────────────────────────────
+backend/.env
+frontend/.env
+sdk/.env
+.env
+
+# ── Database files ─────────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Local raw storage (MinIO fallback data) ────────────────────────────────────
+backend/storage_raw/
+backend/src/storage_raw/
+
+# ── Debug / runtime artifacts ──────────────────────────────────────────────────
+backend/scripts/test_report.json
+backend/search_response.json
+
+# ── Alembic ───────────────────────────────────────────────────────────────────
+backend/migrations/versions/*.pyc
+
+# ── Pytest / coverage ─────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.coveragerc
+
+# ── MyPy ──────────────────────────────────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+
+# ── IDEs & editors ────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.cursor/
+.kiro/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Docker volumes (local dev) ────────────────────────────────────────────────
+.docker-volumes/
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+sdk/node_modules/
+frontend/dist/
+sdk/dist/
+npm-debug.log*
