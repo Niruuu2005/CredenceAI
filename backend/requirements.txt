@@ -17,4 +17,5 @@ beautifulsoup4
 tiktoken
 slowapi
 stripe
+PyJWT
 
