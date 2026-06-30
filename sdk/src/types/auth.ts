@@ -17,6 +17,8 @@ export interface GoogleAuthUrlResponse {
   mock: boolean;
 }
 
+export type GitHubAuthUrlResponse = GoogleAuthUrlResponse;
+
 export interface UpgradePlanResponse {
   message: string;
   plan: string;

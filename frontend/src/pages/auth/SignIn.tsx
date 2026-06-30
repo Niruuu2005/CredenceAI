@@ -29,6 +29,20 @@ export function SignIn() {
     window.location.href = url;
   };
 
+  const completeGitHubAuth = async (mock: boolean, url: string) => {
+    if (mock) {
+      if (!isLocalDev) {
+        setErrorMessage("GitHub OAuth is not configured for this environment.");
+        setIsAuthenticating(false);
+        return;
+      }
+      await api.loginWithGitHub("mock_github_code");
+      navigate("/app/dashboard");
+      return;
+    }
+    window.location.href = url;
+  };
+
   const handleOAuth = async (provider: "Google" | "GitHub") => {
     setIsAuthenticating(true);
     setAuthProvider(provider);
@@ -44,8 +58,14 @@ export function SignIn() {
         setIsAuthenticating(false);
       }
     } else {
-      setIsAuthenticating(false);
-      setErrorMessage("GitHub OAuth is not available. Use Google or developer credentials.");
+      try {
+        const { url, mock } = await api.getGitHubAuthUrl();
+        await completeGitHubAuth(mock, url);
+      } catch (err) {
+        console.error("Failed to resolve GitHub auth URL:", err);
+        setErrorMessage("Failed to check GitHub OAuth settings.");
+        setIsAuthenticating(false);
+      }
     }
   };
 

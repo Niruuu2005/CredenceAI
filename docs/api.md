@@ -6,8 +6,8 @@ Base URL: `http://localhost:8000` (development). Most frontend calls use the `/a
 
 | Method | Requirement |
 |--------|-------------|
-| JWT Bearer | `Authorization: Bearer <token>` — session auth from Google OAuth or dev login |
-| API key | `X-API-Key: cred_sk_...` when `ENABLE_API_KEY_AUTH=true` |
+| JWT Bearer | `Authorization: Bearer <token>` — session auth from Google/GitHub OAuth or dev login |
+| API key | `X-API-Key: cred_sk_...` when `ENABLE_API_KEY_AUTH=true` (jobs, search, monitors, collections, etc.) |
 
 ## Health
 
@@ -23,7 +23,7 @@ Returns service status, version, and dependency checks.
 
 Submit a search job.
 
-**Auth:** JWT Bearer (required)
+**Auth:** JWT Bearer or `X-API-Key` (when `ENABLE_API_KEY_AUTH=true`)
 
 **Body:**
 ```json
@@ -42,13 +42,13 @@ Submit a search job.
 
 List jobs for the authenticated user. Query params: `limit`, `offset`, `status`, `q`.
 
-**Auth:** JWT Bearer (required)
+**Auth:** JWT Bearer or `X-API-Key` (when `ENABLE_API_KEY_AUTH=true`)
 
 ### `GET /api/jobs/{job_id}`
 
 Job status and result summary.
 
-**Auth:** JWT Bearer (required)
+**Auth:** JWT Bearer or `X-API-Key` (when `ENABLE_API_KEY_AUTH=true`)
 
 ## Search
 
@@ -56,13 +56,13 @@ Job status and result summary.
 
 Hybrid search over indexed documents.
 
-**Auth:** JWT Bearer (required)
+**Auth:** JWT Bearer or `X-API-Key` (when `ENABLE_API_KEY_AUTH=true`)
 
 ## Goals
 
 ### `POST /api/goals`
 
-**Auth:** JWT Bearer (required)
+**Auth:** JWT Bearer or `X-API-Key` (when `ENABLE_API_KEY_AUTH=true`)
 
 **Body:** `{ "goal": "...", "vertical": "general" }`
 
@@ -73,7 +73,10 @@ Decomposes a goal into planner jobs.
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
 | `/api/auth/google/url` | GET | None | Google OAuth URL (mock in local dev) |
-| `/api/auth/google/callback` | POST | None | Exchange OAuth code for JWT |
+| `/api/auth/google/callback` | POST | None | Exchange Google OAuth code for JWT |
+| `/api/auth/github/url` | GET | None | GitHub OAuth URL (mock in local dev) |
+| `/api/auth/github/callback` | POST | None | Exchange GitHub OAuth code for JWT |
+| `/api/auth/validate` | GET | `X-API-Key` | Validate API key |
 | `/api/auth/login` | POST | None | Dev credentials login (`APP_ENV=local` only) |
 | `/api/auth/me` | GET | JWT | Current user profile |
 | `/api/auth/me` | PATCH | JWT | Update profile (name) |
@@ -92,7 +95,7 @@ Decomposes a goal into planner jobs.
 
 ## Monitors
 
-**Auth:** JWT Bearer (required) — all routes scoped to owner.
+**Auth:** JWT Bearer or `X-API-Key` (when `ENABLE_API_KEY_AUTH=true`) — all routes scoped to owner.
 
 | Endpoint | Method |
 |----------|--------|
@@ -102,7 +105,7 @@ Decomposes a goal into planner jobs.
 
 ## Collections
 
-**Auth:** JWT Bearer (required) — all routes scoped to owner.
+**Auth:** JWT Bearer or `X-API-Key` (when `ENABLE_API_KEY_AUTH=true`) — all routes scoped to owner.
 
 | Endpoint | Method |
 |----------|--------|

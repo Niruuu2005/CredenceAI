@@ -69,6 +69,33 @@ def test_middleware_blocking_and_allowing(client, db_session):
     finally:
         settings.ENABLE_API_KEY_AUTH = original_auth_setting
 
+def test_middleware_protects_monitors_and_collections(client, db_session):
+    original_auth_setting = settings.ENABLE_API_KEY_AUTH
+    settings.ENABLE_API_KEY_AUTH = True
+    try:
+        response = client.get("/monitors")
+        assert response.status_code == 401
+        assert response.json()["error"] == "missing_api_key"
+
+        response = client.get("/collections")
+        assert response.status_code == 401
+        assert response.json()["error"] == "missing_api_key"
+
+        from app.models import User
+        db_session.add(User(id="test_dev_3", email="dev3@test.com", name="Dev 3"))
+        db_session.commit()
+        key_info = create_api_key(db_session, owner="test_dev_3", label="Monitor Key", user_id="test_dev_3")
+        headers = {"X-API-Key": key_info["key"]}
+
+        response = client.get("/monitors", headers=headers)
+        assert response.status_code == 200
+
+        response = client.get("/collections", headers=headers)
+        assert response.status_code == 200
+    finally:
+        settings.ENABLE_API_KEY_AUTH = original_auth_setting
+
+
 def test_api_key_bypass_when_disabled(client):
     # Disable API key authentication
     original_auth_setting = settings.ENABLE_API_KEY_AUTH

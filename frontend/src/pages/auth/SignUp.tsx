@@ -13,37 +13,41 @@ export function SignUp() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authProvider, setAuthProvider] = useState<"Google" | "GitHub" | null>(null);
 
-  const startGoogleSignUp = async () => {
+  const startOAuthSignUp = async (provider: "Google" | "GitHub") => {
     setIsAuthenticating(true);
-    setAuthProvider("Google");
+    setAuthProvider(provider);
     setErrorMessage(null);
 
     try {
-      const { url, mock } = await api.getGoogleAuthUrl();
+      const { url, mock } =
+        provider === "Google"
+          ? await api.getGoogleAuthUrl()
+          : await api.getGitHubAuthUrl();
+
       if (mock) {
         if (!isLocalDev) {
-          setErrorMessage("Google OAuth is not configured for this environment.");
+          setErrorMessage(`${provider} OAuth is not configured for this environment.`);
           setIsAuthenticating(false);
           return;
         }
-        await api.loginWithGoogle("mock_dev_code");
+        if (provider === "Google") {
+          await api.loginWithGoogle("mock_dev_code");
+        } else {
+          await api.loginWithGitHub("mock_github_code");
+        }
         navigate("/app/dashboard");
         return;
       }
       window.location.href = url;
     } catch (err) {
-      console.error("Failed to start Google sign-up:", err);
-      setErrorMessage("Failed to start Google sign-up.");
+      console.error(`Failed to start ${provider} sign-up:`, err);
+      setErrorMessage(`Failed to start ${provider} sign-up.`);
       setIsAuthenticating(false);
     }
   };
 
   const handleOAuth = async (provider: "Google" | "GitHub") => {
-    if (provider === "Google") {
-      await startGoogleSignUp();
-      return;
-    }
-    setErrorMessage("GitHub OAuth is not available. Use Google to create an account.");
+    await startOAuthSignUp(provider);
   };
 
   return (
@@ -70,7 +74,7 @@ export function SignUp() {
       <div>
         <h1 className="text-3xl font-serif italic tracking-tight text-text-title">Create an account</h1>
         <p className="text-[10px] uppercase tracking-widest text-text-subtle mt-2 font-medium">
-          Sign up with Google to create your workspace. Accounts are created on first login.
+          Sign up with Google or GitHub. Accounts are created on first login.
         </p>
       </div>
 
@@ -99,7 +103,7 @@ export function SignUp() {
           onClick={() => handleOAuth("GitHub")}
           className="border-border-subtle bg-bg-surface text-[10px] uppercase tracking-[0.2em] font-medium h-12 text-text-body hover:bg-bg-panel hover:text-text-title"
         >
-          GitHub (coming soon)
+          Continue with GitHub
         </Button>
       </div>
 

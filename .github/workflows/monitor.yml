@@ -1,0 +1,17 @@
+name: Monitor
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: API health check
+        env:
+          API_URL: ${{ secrets.API_URL }}
+        run: |
+          curl -fsS --max-time 30 "$API_URL/api/health"
+          echo "Health check passed for $API_URL"

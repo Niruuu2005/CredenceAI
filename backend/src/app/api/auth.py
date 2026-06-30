@@ -17,6 +17,9 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 class GoogleCallbackRequest(BaseModel):
     code: str
 
+class GitHubCallbackRequest(BaseModel):
+    code: str
+
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -152,6 +155,46 @@ def get_google_auth_url():
             detail="Google OAuth is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI.",
         )
 
+        raise HTTPException(
+            status_code=503,
+            detail="Google OAuth is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI.",
+        )
+
+
+def _issue_session_for_user(db: Session, user_id: str, email: str, name: str, picture: str | None):
+    """Create or update user record and return JWT + user payload."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = User(id=user_id, email=email, name=name, picture=picture)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    else:
+        user.name = name
+        user.picture = picture
+        db.commit()
+        db.refresh(user)
+
+    token_payload = {
+        "sub": user.id,
+        "email": user.email,
+        "name": user.name,
+        "picture": user.picture,
+    }
+    jwt_token = create_access_token(token_payload)
+    return {
+        "token": jwt_token,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "picture": user.picture,
+            "plan": user.plan,
+            "search_quota_limit": user.search_quota_limit,
+        },
+    }
+
+
 @router.post("/google/callback")
 async def google_callback(request: GoogleCallbackRequest, db: Session = Depends(get_db)):
     """Exchanges auth code with Google API for profile details or performs local dev bypass."""
@@ -216,45 +259,124 @@ async def google_callback(request: GoogleCallbackRequest, db: Session = Depends(
     if not user_id or not email:
         raise HTTPException(status_code=400, detail="Missing required user identity properties.")
 
-    # Fetch user, or save if missing
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        user = User(
-            id=user_id,
-            email=email,
-            name=name,
-            picture=picture
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+    return _issue_session_for_user(db, user_id, email, name, picture)
+
+
+# --- GitHub OAuth2 Endpoints ---
+
+@router.get("/github/url")
+def get_github_auth_url():
+    """Generates GitHub login URL or mock callback url for offline testing."""
+    if settings.GITHUB_CLIENT_ID and settings.GITHUB_REDIRECT_URI:
+        from urllib.parse import urlencode
+        params = urlencode({
+            "client_id": settings.GITHUB_CLIENT_ID,
+            "redirect_uri": settings.GITHUB_REDIRECT_URI,
+            "scope": "read:user user:email",
+        })
+        url = f"https://github.com/login/oauth/authorize?{params}"
+        return {"url": url, "mock": False}
+    elif settings.APP_ENV == "local":
+        logger.info("GitHub auth settings missing. Activating offline development mock login.")
+        return {"url": "/auth/github/callback?code=mock_github_code", "mock": True}
     else:
-        # Keep name and picture updated
-        user.name = name
-        user.picture = picture
-        db.commit()
-        db.refresh(user)
+        raise HTTPException(
+            status_code=503,
+            detail="GitHub OAuth is not configured. Set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and GITHUB_REDIRECT_URI.",
+        )
 
-    # Issue session JWT
-    token_payload = {
-        "sub": user.id,
-        "email": user.email,
-        "name": user.name,
-        "picture": user.picture
-    }
-    jwt_token = create_access_token(token_payload)
 
-    return {
-        "token": jwt_token,
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "name": user.name,
-            "picture": user.picture,
-            "plan": user.plan,
-            "search_quota_limit": user.search_quota_limit
-        }
-    }
+@router.post("/github/callback")
+async def github_callback(request: GitHubCallbackRequest, db: Session = Depends(get_db)):
+    """Exchanges auth code with GitHub API for profile details or performs local dev bypass."""
+    user_id = ""
+    email = ""
+    name = ""
+    picture = None
+
+    if settings.GITHUB_CLIENT_ID and settings.GITHUB_CLIENT_SECRET and settings.GITHUB_REDIRECT_URI:
+        try:
+            async with httpx.AsyncClient() as client:
+                token_res = await client.post(
+                    "https://github.com/login/oauth/access_token",
+                    headers={"Accept": "application/json"},
+                    data={
+                        "client_id": settings.GITHUB_CLIENT_ID,
+                        "client_secret": settings.GITHUB_CLIENT_SECRET,
+                        "redirect_uri": settings.GITHUB_REDIRECT_URI,
+                        "code": request.code,
+                    },
+                )
+                if token_res.status_code != 200:
+                    logger.error("GitHub token exchange failed: %s", token_res.text)
+                    raise HTTPException(status_code=400, detail="Token exchange with GitHub failed.")
+
+                token_data = token_res.json()
+                if "error" in token_data:
+                    logger.error("GitHub token error: %s", token_data)
+                    raise HTTPException(status_code=400, detail=token_data.get("error_description", "GitHub OAuth failed."))
+
+                access_token = token_data.get("access_token")
+                if not access_token:
+                    raise HTTPException(status_code=400, detail="GitHub did not return an access token.")
+
+                user_res = await client.get(
+                    "https://api.github.com/user",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Accept": "application/vnd.github+json",
+                    },
+                )
+                if user_res.status_code != 200:
+                    logger.error("GitHub user info fetch failed: %s", user_res.text)
+                    raise HTTPException(status_code=400, detail="Failed to fetch user profile from GitHub.")
+
+                user_info = user_res.json()
+                github_id = user_info.get("id")
+                user_id = f"gh_{github_id}"
+                name = user_info.get("name") or user_info.get("login", "")
+                picture = user_info.get("avatar_url")
+                email = user_info.get("email")
+
+                if not email:
+                    emails_res = await client.get(
+                        "https://api.github.com/user/emails",
+                        headers={
+                            "Authorization": f"Bearer {access_token}",
+                            "Accept": "application/vnd.github+json",
+                        },
+                    )
+                    if emails_res.status_code == 200:
+                        emails = emails_res.json()
+                        primary = next((e for e in emails if e.get("primary")), None)
+                        if primary:
+                            email = primary.get("email")
+                        elif emails:
+                            email = emails[0].get("email")
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("Unexpected error in GitHub OAuth exchange")
+            raise HTTPException(status_code=500, detail="Authentication server error during GitHub OAuth.")
+    elif settings.APP_ENV == "local":
+        if request.code == "mock_github_code":
+            user_id = "gh_mock_dev"
+            email = "dev@github.local"
+            name = "GitHub Dev User"
+            picture = "https://avatars.githubusercontent.com/u/0?v=4"
+        else:
+            raise HTTPException(status_code=400, detail="Invalid code supplied in offline testing mode.")
+    else:
+        raise HTTPException(
+            status_code=503,
+            detail="GitHub OAuth is not configured. Set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and GITHUB_REDIRECT_URI.",
+        )
+
+    if not user_id or not email:
+        raise HTTPException(status_code=400, detail="Missing required user identity properties.")
+
+    return _issue_session_for_user(db, user_id, email, name, picture)
+
 
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):

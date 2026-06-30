@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  deploy-render:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "Skipping Render deploy — set RENDER_DEPLOY_HOOK_URL secret."
+            exit 0
+          fi
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"
+
+  smoke-test:
+    needs: deploy-render
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Health check
+        env:
+          API_URL: ${{ secrets.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "Skipping smoke test — set API_URL repository secret to enable."
+            exit 0
+          fi
+          curl -fsS "$API_URL/api/health" | tee health.json
+          grep -q '"status"' health.json || exit 1
+
+      - name: API key job smoke test
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          SMOKE_TEST_API_KEY: ${{ secrets.SMOKE_TEST_API_KEY }}
+        run: |
+          if [ -z "$API_URL" ] || [ -z "$SMOKE_TEST_API_KEY" ]; then
+            echo "Skipping API key smoke test — set API_URL and SMOKE_TEST_API_KEY secrets."
+            exit 0
+          fi
+          curl -fsS -X POST "$API_URL/api/jobs" \
+            -H "X-API-Key: $SMOKE_TEST_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"job_type":"search_query","query":"smoke test","input":"smoke test"}'

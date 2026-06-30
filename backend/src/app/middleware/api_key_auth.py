@@ -18,7 +18,9 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         # Enforce API key only on actual protected API endpoints
         API_PREFIXES = [
             "/jobs", "/goals", "/search", "/agents", "/evidence", "/intelligence", "/verticals",
-            "/api/jobs", "/api/goals", "/api/search", "/api/agents", "/api/evidence", "/api/intelligence", "/api/verticals"
+            "/monitors", "/collections",
+            "/api/jobs", "/api/goals", "/api/search", "/api/agents", "/api/evidence",
+            "/api/intelligence", "/api/verticals", "/api/monitors", "/api/collections",
         ]
         path = request.url.path
         is_api_route = any(path == prefix or path.startswith(prefix + "/") for prefix in API_PREFIXES)

@@ -4,6 +4,7 @@ import {
   AuthTokenResponse,
   CreateApiKeyResponse,
   GoogleAuthUrlResponse,
+  GitHubAuthUrlResponse,
   UpgradePlanResponse,
   UserProfile,
 } from "../types/auth.js";
@@ -23,6 +24,23 @@ export class AuthService {
     return this.http.request<AuthTokenResponse>({
       method: "POST",
       path: "/auth/google/callback",
+      body: { code },
+      auth: false,
+    });
+  }
+
+  async getGitHubAuthUrl(): Promise<GitHubAuthUrlResponse> {
+    return this.http.request<GitHubAuthUrlResponse>({
+      method: "GET",
+      path: "/auth/github/url",
+      auth: false,
+    });
+  }
+
+  async loginWithGitHub(code: string): Promise<AuthTokenResponse> {
+    return this.http.request<AuthTokenResponse>({
+      method: "POST",
+      path: "/auth/github/callback",
       body: { code },
       auth: false,
     });

@@ -1,0 +1,4 @@
+# Example cron entry for daily Postgres backups on a VPS.
+# Install postgresql-client, set DATABASE_URL, then:
+#
+#   0 2 * * * DATABASE_URL='postgresql://...' /opt/credenceai/backend/scripts/backup_postgres.sh /var/backups/credenceai_$(date +\%Y\%m\%d).sql

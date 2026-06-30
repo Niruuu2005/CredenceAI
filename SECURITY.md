@@ -14,7 +14,7 @@ Contact the maintainers through your organization's preferred private channel.
 - Configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI` for production OAuth — mock auth is disabled when `APP_ENV=production`.
 - `DEV_LOGIN_USERNAME` / `DEV_LOGIN_PASSWORD` work only when `APP_ENV=local`.
 - Enable `ENABLE_API_KEY_AUTH=true` for programmatic API access in production.
-- Restrict `CORS_ALLOWED_ORIGINS` to your frontend domain(s).
+- Configure Google OAuth (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`) and/or GitHub OAuth (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URI`) — at least one provider required in production.
 
 ## Known operational surfaces
 

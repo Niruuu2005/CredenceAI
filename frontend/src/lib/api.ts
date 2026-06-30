@@ -241,6 +241,18 @@ export const api = {
     return data;
   },
 
+  async getGitHubAuthUrl() {
+    return client.auth.getGitHubAuthUrl();
+  },
+
+  async loginWithGitHub(code: string) {
+    const data = await client.auth.loginWithGitHub(code);
+    if (data.token) {
+      storeToken(data.token);
+    }
+    return data;
+  },
+
   async loginWithCredentials(username: string, password: string) {
     const data = await client.auth.loginWithCredentials(username, password);
     if (data.token) {

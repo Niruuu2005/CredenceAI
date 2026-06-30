@@ -16,6 +16,7 @@ import { Legal } from "./pages/marketing/Legal";
 import { SignIn } from "./pages/auth/SignIn";
 import { SignUp } from "./pages/auth/SignUp";
 import { GoogleCallback } from "./pages/auth/GoogleCallback";
+import { GitHubCallback } from "./pages/auth/GitHubCallback";
 
 // App
 import { Dashboard } from "./pages/app/Dashboard";
@@ -47,6 +48,7 @@ export default function App() {
            <Route path="sign-in" element={<SignIn />} />
            <Route path="sign-up" element={<SignUp />} />
            <Route path="google/callback" element={<GoogleCallback />} />
+           <Route path="github/callback" element={<GitHubCallback />} />
         </Route>
 
         {/* App Routes */}
