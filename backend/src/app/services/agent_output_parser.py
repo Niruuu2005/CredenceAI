@@ -53,7 +53,15 @@ class AgentOutputParser:
                 raise ParsingError("No JSON found in LLM output")
             
             # Parse JSON
-            parsed_data = json.loads(json_str)
+            try:
+                parsed_data = json.loads(json_str)
+            except json.JSONDecodeError as e:
+                repaired = AgentOutputParser._repair_json(json_str)
+                if repaired != json_str:
+                    logger.warning("JSON repair attempted after decode error: %s", e)
+                    parsed_data = json.loads(repaired)
+                else:
+                    raise
             
             # Validate against schema if provided
             if schema:
@@ -119,6 +127,38 @@ class AgentOutputParser:
             return AgentOutputParser._extract_json(text[json_start:])
         
         return None
+
+    @staticmethod
+    def _repair_json(text: str) -> str:
+        """
+        Best-effort repair of common LLM JSON mistakes before giving up.
+        Handles trailing commas, Python literals, and single-quoted keys/strings.
+        """
+        repaired = text.strip()
+
+        # Trailing commas before } or ]
+        repaired = re.sub(r",\s*([}\]])", r"\1", repaired)
+
+        # Python booleans / None -> JSON
+        repaired = re.sub(r"\bTrue\b", "true", repaired)
+        repaired = re.sub(r"\bFalse\b", "false", repaired)
+        repaired = re.sub(r"\bNone\b", "null", repaired)
+
+        # Single-quoted keys: 'key': -> "key":
+        repaired = re.sub(
+            r"(?P<q>')(?P<key>[A-Za-z_][A-Za-z0-9_]*)(?P=q)\s*:",
+            r'"\g<key>":',
+            repaired,
+        )
+
+        # Single-quoted string values (simple cases): : 'value' -> : "value"
+        repaired = re.sub(
+            r":\s*'((?:\\'|[^'])*)'",
+            lambda m: ': "' + m.group(1).replace('"', '\\"') + '"',
+            repaired,
+        )
+
+        return repaired
     
     @staticmethod
     def parse_decision(raw_output: str) -> Dict[str, Any]:

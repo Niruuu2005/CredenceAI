@@ -6,29 +6,43 @@ from kombu import Queue, Exchange
 from app.config import settings
 from app.database import SessionLocal
 from app.services.repository import update_job_status, get_job
+from app.utils.redis_ssl import celery_ssl_options, is_rediss_url
 
 logger = logging.getLogger(__name__)
 
+_broker_url = settings.celery_broker_url
+_backend_url = settings.celery_result_backend
+
 celery_app = Celery(
     "credenceai",
-    broker=settings.REDIS_URL,
-    backend=settings.REDIS_URL,
+    broker=_broker_url,
+    backend=_backend_url,
 )
 
-celery_app.conf.update(
-    task_always_eager=settings.CELERY_ALWAYS_EAGER,
-    task_eager_propagates=True,
-    task_default_queue="default",
-    task_queues=(
+_celery_conf: dict = {
+    "task_always_eager": settings.CELERY_ALWAYS_EAGER,
+    "task_eager_propagates": settings.CELERY_ALWAYS_EAGER,
+    "task_default_queue": "default",
+    "task_queues": (
         Queue("default", Exchange("default"), routing_key="default"),
         Queue("crawling", Exchange("crawling"), routing_key="crawling"),
         Queue("dlq", Exchange("dlq"), routing_key="dlq"),
     ),
-    task_routes={
+    "task_routes": {
         "app.services.crawler_task.*": {"queue": "crawling"},
         "app.worker.process_job": {"queue": "default"},
-    }
-)
+    },
+}
+
+if is_rediss_url(_broker_url):
+    _ssl_opts = celery_ssl_options(_broker_url, settings.REDIS_SSL_CERT_REQS)
+    _celery_conf["broker_use_ssl"] = _ssl_opts
+if is_rediss_url(_backend_url):
+    _celery_conf["redis_backend_use_ssl"] = celery_ssl_options(
+        _backend_url, settings.REDIS_SSL_CERT_REQS
+    )
+
+celery_app.conf.update(**_celery_conf)
 
 
 

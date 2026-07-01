@@ -1,4 +1,6 @@
 import logging
+from urllib.parse import urlparse
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -6,6 +8,14 @@ logger = logging.getLogger(__name__)
 DEFAULT_JWT_SECRETS = {"", "change-me", "change-me-in-production-1234567890"}
 
 _LOCALHOST_ORIGIN_PREFIXES = ("http://localhost", "http://127.0.0.1")
+
+
+def _is_localhost_url(url: str) -> bool:
+    try:
+        host = (urlparse(url).hostname or "").lower()
+        return host in ("localhost", "127.0.0.1", "::1")
+    except Exception:
+        return False
 
 
 def _google_oauth_configured() -> bool:
@@ -56,6 +66,20 @@ def validate_production_config() -> None:
             "CORS_ALLOWED_ORIGINS must include at least one https:// frontend origin "
             "in production (not localhost-only)."
         )
+    if settings.CELERY_ALWAYS_EAGER:
+        errors.append(
+            "CELERY_ALWAYS_EAGER must be false in production. "
+            "Run a separate Celery worker service for background jobs."
+        )
+    if (
+        settings.SEARCH_PROVIDER == "searxng"
+        and not settings.MOCK_SERVICES
+        and _is_localhost_url(settings.SEARXNG_BASE_URL)
+    ):
+        errors.append(
+            "SEARXNG_BASE_URL cannot point to localhost when SEARCH_PROVIDER=searxng. "
+            "Set a deployed SearXNG endpoint or use SEARCH_PROVIDER=duckduckgo."
+        )
 
     if errors:
         for err in errors:
@@ -75,15 +99,18 @@ def log_runtime_backends() -> None:
         resolve_search_backend,
         resolve_storage_backend,
     )
+    from app.services.searxng_client import resolve_search_provider
 
     openai = "yes" if settings.OPENAI_API_KEY else "no"
     celery_mode = "eager" if settings.CELERY_ALWAYS_EAGER else "worker"
+    search_provider = resolve_search_provider()
 
     logger.info(
-        "STARTUP >> search_backend=%s storage_backend=%s celery_mode=%s",
+        "STARTUP >> search_backend=%s storage_backend=%s celery_mode=%s search_provider=%s",
         resolve_search_backend(),
         resolve_storage_backend(),
         celery_mode,
+        search_provider,
     )
     if not settings.OPENAI_API_KEY:
         logger.warning(

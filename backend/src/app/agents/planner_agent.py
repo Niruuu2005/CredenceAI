@@ -221,23 +221,45 @@ Output your plan as structured JSON with this format:
             
             logger.info(f"Invoking {self.agent_name} for goal: {user_goal[:100]}...")
             
-            # Call LLM
+            # Call LLM (retry once if JSON parsing fails)
             llm_response = await self.llm_client.call_llm(
                 prompt=prompt,
                 system_prompt=self.system_prompt,
                 max_tokens=self.config.get("max_tokens", 1000),
-                temperature=self.config.get("temperature", 0.3),
+                temperature=self.config.get("temperature", 0.2),
+                response_format={"type": "json_object"},
             )
-            
+
             logger.info(f"LLM response received, tokens used: {llm_response.tokens_used}")
-            
-            # Parse output
+
             parsed_output = self.parse_output(llm_response.content)
-            
-            # Add token usage to metadata
-            parsed_output.metadata["tokens_used"] = llm_response.tokens_used
-            parsed_output.metadata["model"] = llm_response.model
-            
+            if parsed_output.metadata.get("fallback"):
+                logger.warning(
+                    "%s JSON parse failed; retrying once with stricter prompt",
+                    self.agent_name,
+                )
+                retry_prompt = (
+                    f"{prompt}\n\n"
+                    "Respond with ONLY a single valid JSON object. "
+                    "Use double quotes for all keys and string values. "
+                    "No markdown, comments, or trailing commas."
+                )
+                llm_response = await self.llm_client.call_llm(
+                    prompt=retry_prompt,
+                    system_prompt=self.system_prompt,
+                    max_tokens=self.config.get("max_tokens", 1000),
+                    temperature=0.1,
+                    response_format={"type": "json_object"},
+                )
+                parsed_output = self.parse_output(llm_response.content)
+                parsed_output.metadata["tokens_used"] = (
+                    parsed_output.metadata.get("tokens_used", 0) + llm_response.tokens_used
+                )
+                parsed_output.metadata["model"] = llm_response.model
+            else:
+                parsed_output.metadata["tokens_used"] = llm_response.tokens_used
+                parsed_output.metadata["model"] = llm_response.model
+
             return parsed_output
             
         except Exception as e:
@@ -297,28 +319,17 @@ Remember:
             ValueError: If parsing fails
         """
         try:
-            # Parse JSON from LLM response
-            parsed_data = AgentOutputParser.parse_json(raw_output)
-            
-            # Validate and extract required fields
-            jobs_data = parsed_data.get("jobs", [])
-            entities = parsed_data.get("entities", [])
-            verticals = parsed_data.get("recommended_verticals", [])
-            metrics = parsed_data.get("success_metrics", [])
-            reasoning = parsed_data.get("reasoning", "No reasoning provided")
+            # Parse JSON from LLM response and validate against PlannerOutput schema
+            parsed_data = AgentOutputParser.parse_json(raw_output, schema=PlannerOutput)
             
             # Validate we have at least some planning output
+            jobs_data = parsed_data.get("jobs", [])
+            entities = parsed_data.get("entities", [])
             if not jobs_data and not entities:
                 raise ValueError("Plan must contain at least jobs or entities")
-            
-            # Construct PlannerOutput schema
-            planner_output = PlannerOutput(
-                jobs=[Job(**job) for job in jobs_data],
-                entities=entities,
-                recommended_verticals=verticals,
-                success_metrics=metrics,
-                reasoning=reasoning
-            )
+
+            # Construct PlannerOutput schema (already validated)
+            planner_output = PlannerOutput(**parsed_data)
             
             # Calculate confidence based on completeness
             confidence = self._calculate_confidence(planner_output)
@@ -326,18 +337,19 @@ Remember:
             # Build AgentOutput
             agent_output = AgentOutput(
                 decision=planner_output.model_dump(),
-                reasoning=reasoning,
+                reasoning=planner_output.reasoning,
                 confidence_score=confidence,
                 metadata={
-                    "num_jobs": len(jobs_data),
-                    "num_entities": len(entities),
-                    "verticals": verticals,
+                    "num_jobs": len(planner_output.jobs),
+                    "num_entities": len(planner_output.entities),
+                    "verticals": planner_output.recommended_verticals,
+                    "fallback": False,
                 }
             )
             
             logger.info(
                 f"Successfully parsed planner output: "
-                f"{len(jobs_data)} jobs, {len(entities)} entities, "
+                f"{len(planner_output.jobs)} jobs, {len(planner_output.entities)} entities, "
                 f"confidence={confidence:.2f}"
             )
             
@@ -408,7 +420,8 @@ Remember:
             confidence_score=0.1,
             metadata={
                 "error": error_message,
-                "raw_output": str(raw_output)[:500]
+                "raw_output": str(raw_output)[:500],
+                "fallback": True,
             }
         )
 

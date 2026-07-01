@@ -2,8 +2,9 @@ import uuid
 import time
 import logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Job, NormalizedResult, DedupGroup, User
@@ -27,8 +28,7 @@ from app.services.repository import create_job, get_job, get_job_normalized_resu
 from app.services.synthesis import SynthesisService
 from app.services.vertical_packs import RAGPack
 from app.services.quota_service import check_job_quota
-
-
+from app.services.job_dispatch import dispatch_process_job
 from app.limiter import limiter
 
 
@@ -48,6 +48,7 @@ def _get_user_job(db: Session, job_id: str, user_id: str) -> Job:
 def submit_job(
     job_in: JobCreate,
     request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -102,24 +103,22 @@ def submit_job(
         f"vertical={vertical}"
     )
 
-    # Dispatch worker (eager mode — runs synchronously in dev/test)
-    from app.worker import process_job
+    # Dispatch worker after response when eager (avoids proxy timeouts on Render free tier)
     logger.info(f"API  DISPATCH  job_id={job_id}  -> worker=process_job")
-    process_job.delay(job.id)
+    dispatch_process_job(job.id, background_tasks)
 
     elapsed_ms = (time.perf_counter() - t0) * 1000
-    final_status = get_job(db, job_id).status  # read back after worker runs
     logger.info(
         f"API  POST /jobs  STATUS=DISPATCHED  "
         f"job_id={job_id}  "
-        f"final_status={final_status}  "
+        f"status=queued  "
         f"elapsed={elapsed_ms:.2f}ms"
     )
 
     return JobSubmitResponse(
         job_id=job.id,
         trace_id=job.trace_id,
-        status=job.status,
+        status="queued",
         created_at=job.created_at,
     )
 
@@ -302,25 +301,20 @@ def list_jobs(
 
         jobs = query.order_by(Job.created_at.desc()).offset(offset).limit(limit).all()
 
+        job_ids = [job.id for job in jobs]
+        count_map: dict[str, int] = {}
+        if job_ids:
+            rows = (
+                db.query(NormalizedResult.job_id, func.count(NormalizedResult.id))
+                .filter(NormalizedResult.job_id.in_(job_ids))
+                .group_by(NormalizedResult.job_id)
+                .all()
+            )
+            count_map = {job_id: count for job_id, count in rows}
+
         out = []
         for job in jobs:
-            results = get_job_normalized_results(db, job.id)
-            results_count = len(results)
-
-            accepted = 0
-            rejected = 0
-            manual_review = 0
-            for r in results:
-                if r.quality_scores:
-                    dec = r.quality_scores.decision
-                    if dec == "accept":
-                        accepted += 1
-                    elif dec == "reject":
-                        rejected += 1
-                    elif dec == "review":
-                        manual_review += 1
-                else:
-                    accepted += 1
+            results_count = count_map.get(job.id, 0)
 
             db_status = job.status
             if db_status == "queued":
@@ -335,7 +329,7 @@ def list_jobs(
                 status=status_val,
                 results_count=results_count,
                 failed_events=0,
-                quality_summary=QualitySummary(accepted=accepted, rejected=rejected, manual_review=manual_review),
+                quality_summary=QualitySummary(accepted=0, rejected=0, manual_review=0),
                 created_at=job.created_at,
                 completed_at=job.completed_at,
                 error_message=job.error_message,

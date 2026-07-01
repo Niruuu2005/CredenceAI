@@ -9,11 +9,13 @@ Provides a unified caching layer for:
 Uses Redis when available, falls back to a clean thread-safe in-memory cache.
 """
 
-import os
 import json
 import logging
 from typing import Any, Optional, Dict
 from datetime import datetime, timedelta, timezone
+
+from app.config import settings
+from app.utils.redis_ssl import redis_client_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -29,18 +31,15 @@ class CacheManager:
     def __init__(self, default_ttl_seconds: int = 3600):
         self.default_ttl = default_ttl_seconds
         self.redis_client = None
-        
-        # In a real setup, attempt to connect to redis
-        redis_host = os.getenv("REDIS_HOST", "localhost")
-        redis_port = int(os.getenv("REDIS_PORT", "6379"))
+
         try:
             import redis
-            self.redis_client = redis.Redis(
-                host=redis_host,
-                port=redis_port,
-                db=0,
+
+            self.redis_client = redis.from_url(
+                settings.redis_url,
                 socket_timeout=2,
-                decode_responses=True
+                decode_responses=True,
+                **redis_client_kwargs(settings.redis_url, settings.REDIS_SSL_CERT_REQS),
             )
             self.redis_client.ping()
             logger.info("CACHE_MANAGER  Redis connected successfully.")

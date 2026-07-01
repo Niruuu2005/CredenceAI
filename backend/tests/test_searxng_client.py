@@ -1,25 +1,114 @@
 import pytest
 import requests
 from unittest.mock import patch, Mock
-from app.services.searxng_client import SearXNGClient
 
-def test_searxng_client_success():
-    client = SearXNGClient(base_url="http://localhost:8080")
-    
+from app.config import settings
+from app.services.searxng_client import (
+    SearXNGClient,
+    SearchProviderUnavailable,
+    resolve_search_provider,
+)
+
+
+def test_resolve_search_provider_auto_localhost_uses_duckduckgo():
+    assert resolve_search_provider("auto", "http://localhost:8080") == "duckduckgo"
+
+
+def test_resolve_search_provider_auto_remote_uses_searxng():
+    assert (
+        resolve_search_provider("auto", "https://searxng.example.com") == "searxng"
+    )
+
+
+def test_resolve_search_provider_explicit():
+    assert resolve_search_provider("duckduckgo", "http://localhost:8080") == "duckduckgo"
+    assert resolve_search_provider("searxng", "http://localhost:8080") == "searxng"
+
+
+def test_searxng_client_success_with_searxng_provider():
+    original = settings.SEARCH_PROVIDER
+    settings.SEARCH_PROVIDER = "searxng"
+    client = SearXNGClient(base_url="https://searxng.example.com")
+
     mock_response = Mock()
-    mock_response.json.return_value = {"results": [{"title": "Test", "url": "http://example.com"}]}
+    mock_response.json.return_value = {
+        "results": [{"title": "Test", "url": "http://example.com"}]
+    }
     mock_response.raise_for_status = Mock()
-    
-    with patch("requests.get", return_value=mock_response) as mock_get:
-        res = client.search("test query")
-        assert len(res["results"]) == 1
-        assert res["results"][0]["title"] == "Test"
-        mock_get.assert_called_once()
+
+    try:
+        with patch("requests.get", return_value=mock_response) as mock_get:
+            res = client.search("test query")
+            assert len(res["results"]) == 1
+            assert res["results"][0]["title"] == "Test"
+            mock_get.assert_called_once()
+    finally:
+        settings.SEARCH_PROVIDER = original
+
+
+def test_searxng_client_duckduckgo_provider_skips_searxng():
+    original = settings.SEARCH_PROVIDER
+    settings.SEARCH_PROVIDER = "duckduckgo"
+    client = SearXNGClient(base_url="http://localhost:8080")
+
+    ddg_html = """
+    <tr><td class="result-link">
+    <a href="https://example.com">Example Title</a></td></tr>
+    <tr><td class="result-snippet">Example snippet text</td></tr>
+    """
+
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.text = ddg_html
+    mock_response.raise_for_status = Mock()
+
+    try:
+        with patch("requests.get") as mock_get:
+            with patch("requests.post", return_value=mock_response) as mock_post:
+                res = client.search("test query")
+                assert len(res["results"]) == 1
+                assert res["results"][0]["title"] == "Example Title"
+                assert res["results"][0]["url"] == "https://example.com"
+                mock_get.assert_not_called()
+                mock_post.assert_called()
+    finally:
+        settings.SEARCH_PROVIDER = original
+
 
 def test_searxng_client_timeout():
+    original = settings.SEARCH_PROVIDER
+    settings.SEARCH_PROVIDER = "searxng"
+    client = SearXNGClient(base_url="https://searxng.example.com")
+
+    try:
+        with patch("requests.get", side_effect=requests.exceptions.Timeout("Timeout")):
+            with pytest.raises(SearchProviderUnavailable) as exc_info:
+                client.search("test query")
+            assert "timed out" in str(exc_info.value)
+    finally:
+        settings.SEARCH_PROVIDER = original
+
+
+def test_searxng_client_instantiation_never_raises_on_localhost():
+    from app.config import settings
+
+    original = settings.APP_ENV, settings.MOCK_SERVICES, settings.SEARCH_PROVIDER
+    settings.APP_ENV = "production"
+    settings.MOCK_SERVICES = False
+    settings.SEARCH_PROVIDER = "duckduckgo"
+    try:
+        client = SearXNGClient(base_url="http://localhost:8080")
+        assert client.base_url == "http://localhost:8080"
+    finally:
+        settings.APP_ENV, settings.MOCK_SERVICES, settings.SEARCH_PROVIDER = original
+
+
+def test_searxng_provider_requires_non_localhost_url():
+    original = settings.SEARCH_PROVIDER
+    settings.SEARCH_PROVIDER = "searxng"
     client = SearXNGClient(base_url="http://localhost:8080")
-    
-    with patch("requests.get", side_effect=requests.exceptions.Timeout("Timeout")):
-        with pytest.raises(RuntimeError) as exc_info:
+    try:
+        with pytest.raises(SearchProviderUnavailable, match="non-localhost"):
             client.search("test query")
-        assert "timed out" in str(exc_info.value)
+    finally:
+        settings.SEARCH_PROVIDER = original

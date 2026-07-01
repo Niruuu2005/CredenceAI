@@ -4,6 +4,8 @@ from typing import Literal
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.utils.redis_ssl import ensure_rediss_ssl_query_param
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -19,6 +21,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str | None = Field(default=None)
     DATABASE_URL: str = Field(default="postgresql://user:pass@localhost:5432/credenceai")
     REDIS_URL: str = Field(default="redis://localhost:6379/0")
+    REDIS_SSL_CERT_REQS: str = Field(default="CERT_REQUIRED")
+    CELERY_BROKER_URL: str | None = Field(default=None)
+    CELERY_RESULT_BACKEND: str | None = Field(default=None)
     KAFKA_BOOTSTRAP_SERVERS: str = Field(default="localhost:9092")
     MINIO_ENDPOINT: str = Field(default="http://localhost:9000")
     MINIO_ACCESS_KEY: str = Field(default="change-me")
@@ -30,6 +35,7 @@ class Settings(BaseSettings):
 
     # Source Adapter Configs
     SEARXNG_BASE_URL: str = Field(default="http://localhost:8080")
+    SEARCH_PROVIDER: Literal["auto", "searxng", "duckduckgo"] = Field(default="auto")
     ENABLE_WIKIDATA: bool = Field(default=True)
     ENABLE_WIKIPEDIA: bool = Field(default=True)
     ENABLE_GDELT: bool = Field(default=True)
@@ -132,6 +138,21 @@ class Settings(BaseSettings):
     STRIPE_PRICE_ID_ENTERPRISE: str | None = Field(default=None)
     STRIPE_SUCCESS_URL: str | None = Field(default=None)
     STRIPE_CANCEL_URL: str | None = Field(default=None)
+
+    @property
+    def redis_url(self) -> str:
+        return ensure_rediss_ssl_query_param(self.REDIS_URL, self.REDIS_SSL_CERT_REQS)
+
+    @property
+    def celery_broker_url(self) -> str:
+        raw = self.CELERY_BROKER_URL or self.REDIS_URL
+        return ensure_rediss_ssl_query_param(raw, self.REDIS_SSL_CERT_REQS)
+
+    @property
+    def celery_result_backend(self) -> str:
+        raw = self.CELERY_RESULT_BACKEND or self.REDIS_URL
+        return ensure_rediss_ssl_query_param(raw, self.REDIS_SSL_CERT_REQS)
+
 
 settings = Settings()
 

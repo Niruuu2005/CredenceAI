@@ -5,7 +5,7 @@ import datetime
 import asyncio
 from sqlalchemy.orm import Session
 from app.services.repository import get_job, create_source_result, create_normalized_result
-from app.services.searxng_client import SearXNGClient
+from app.services.searxng_client import SearXNGClient, SearchProviderUnavailable
 from app.services.storage import StorageClient
 from app.services.normalizer import normalize_searxng_payload
 from app.agents.planner_agent import PlannerAgent
@@ -219,8 +219,8 @@ def route_and_execute_job(db: Session, job_id: str) -> None:
 
     # Fetch results from search engine
     t_fetch = time.perf_counter()
-    searxng_client = SearXNGClient()
     try:
+        searxng_client = SearXNGClient()
         raw_payload = searxng_client.search(job.input)
         # Fast mode: limit results for speed
         if mode == "fast" and "results" in raw_payload:
@@ -229,6 +229,13 @@ def route_and_execute_job(db: Session, job_id: str) -> None:
         n_raw = len(raw_payload.get("results", []))
         fetch_ms = (time.perf_counter() - t_fetch) * 1000
         logger.info(f"ORCHESTRATOR  FETCH_OK  results={n_raw}  elapsed={fetch_ms:.2f}ms")
+    except SearchProviderUnavailable as exc:
+        logger.exception(
+            "ORCHESTRATOR  FETCH_FAILED  job_id=%s  error=%r",
+            job_id,
+            exc,
+        )
+        raise ValueError("Search provider unavailable") from exc
     except Exception as exc:
         logger.error(f"ORCHESTRATOR  FETCH_FAILED  error='{exc}'")
         raise

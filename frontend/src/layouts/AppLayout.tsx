@@ -9,8 +9,8 @@ export function AppLayout() {
   const location = useLocation();
   const path = location.pathname;
 
-  const [jobCount, setJobCount] = useState(0);
-  const [user, setUser] = useState<{ name: string; email: string; picture: string | null } | null>(null);
+  const [searchUsed, setSearchUsed] = useState(0);
+  const [user, setUser] = useState<{ name: string; email: string; picture: string | null; plan?: string; search_quota_limit?: number } | null>(null);
 
   const fetchUser = async (): Promise<boolean> => {
     try {
@@ -23,10 +23,10 @@ export function AppLayout() {
     }
   };
 
-  const fetchJobCount = async (): Promise<boolean> => {
+  const fetchQuota = async (): Promise<boolean> => {
     try {
-      const data = await api.getJobs(100);
-      setJobCount(data.length);
+      const status = await api.getBillingStatus();
+      setSearchUsed(status.search_used ?? 0);
       return true;
     } catch (err) {
       console.error("Failed to load layout quota:", err);
@@ -42,8 +42,8 @@ export function AppLayout() {
     const tick = async () => {
       if (cancelled) return;
       const userOk = await fetchUser();
-      const jobsOk = await fetchJobCount();
-      intervalMs = userOk && jobsOk ? 5000 : Math.min(30000, intervalMs * 2);
+      const quotaOk = await fetchQuota();
+      intervalMs = userOk && quotaOk ? 5000 : Math.min(30000, intervalMs * 2);
       if (!cancelled) {
         timer = setTimeout(tick, intervalMs);
       }
@@ -68,7 +68,7 @@ export function AppLayout() {
     { name: "Billing", href: "/app/billing", icon: CreditCard },
   ];
 
-  const currentUsage = 12 + jobCount;
+  const quotaLimit = user?.search_quota_limit || 50;
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg-deep text-text-body">
@@ -103,12 +103,12 @@ export function AppLayout() {
           <div className="px-3 py-2 space-y-2">
              <div className="flex justify-between text-xs mb-1">
                 <span className="text-text-subtle">Searches ({user?.plan || "Free"})</span>
-                <span className="font-mono text-text-body">{jobCount}/{user?.search_quota_limit || 50}</span>
+                <span className="font-mono text-text-body">{searchUsed}/{quotaLimit}</span>
              </div>
              <div className="h-1 w-full bg-border-subtle overflow-hidden">
                 <div 
                    className="h-full bg-border-accent transition-all duration-500" 
-                   style={{ width: `${Math.min(100, (jobCount / (user?.search_quota_limit || 50)) * 100)}%` }}
+                   style={{ width: `${Math.min(100, (searchUsed / quotaLimit) * 100)}%` }}
                 />
              </div>
              <Link to="/app/billing" className="text-[10px] uppercase tracking-widest text-text-title hover:text-text-subtle mt-2 block font-medium">Upgrade Plan</Link>

@@ -12,6 +12,7 @@ from app.schemas import SystemMetricsResponse
 from app.services.backend_selection import search_backend_label, storage_backend_label
 from app.services.search_index import SearchIndexClient
 from app.services.storage import StorageClient
+from app.utils.redis_ssl import redis_client_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,11 @@ def health_options() -> Dict[str, str]:
 
 def _check_redis() -> str:
     try:
-        r = redis.from_url(settings.REDIS_URL, socket_connect_timeout=2)
+        r = redis.from_url(
+            settings.redis_url,
+            socket_connect_timeout=2,
+            **redis_client_kwargs(settings.redis_url, settings.REDIS_SSL_CERT_REQS),
+        )
         r.ping()
         return "ok"
     except Exception as e:

@@ -1,7 +1,7 @@
 import uuid
 import logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -9,11 +9,11 @@ from app.database import get_db
 from app.config import settings
 from app.models import User
 from app.schemas import JobStatusResponse, QualitySummary
-from app.services.repository import create_job, get_job, get_job_normalized_results
+from app.services.repository import create_job, get_job, update_job_status
 from app.services.orchestrator import invoke_planner_agent
 from app.services.security import get_current_user
 from app.services.quota_service import check_job_quota
-from app.worker import process_job
+from app.services.job_dispatch import dispatch_process_job, JobEnqueueError
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/goals", tags=["Goals"])
@@ -30,34 +30,18 @@ def _map_db_status(db_status: str) -> str:
     return db_status
 
 
-def _job_status_response(db: Session, job_id: str) -> JobStatusResponse:
-    """Build job status from DB after process_job (eager or async)."""
+def _submitted_job_response(db: Session, job_id: str) -> JobStatusResponse:
+    """Return lightweight submitted status; job runs in background."""
     job = get_job(db, job_id)
     if not job:
         raise HTTPException(status_code=500, detail="Job record missing after submit")
 
-    results = get_job_normalized_results(db, job_id)
-    accepted = rejected = manual_review = 0
-    for r in results:
-        if r.quality_scores:
-            dec = r.quality_scores.decision
-            if dec == "accept":
-                accepted += 1
-            elif dec == "reject":
-                rejected += 1
-            elif dec == "review":
-                manual_review += 1
-        else:
-            accepted += 1
-
     return JobStatusResponse(
         job_id=job.id,
         status=_map_db_status(job.status),
-        results_count=len(results),
+        results_count=0,
         failed_events=0,
-        quality_summary=QualitySummary(
-            accepted=accepted, rejected=rejected, manual_review=manual_review
-        ),
+        quality_summary=QualitySummary(accepted=0, rejected=0, manual_review=0),
         created_at=job.created_at,
         completed_at=job.completed_at,
         error_message=job.error_message,
@@ -65,6 +49,34 @@ def _job_status_response(db: Session, job_id: str) -> JobStatusResponse:
         input=job.input,
         submitted_at=job.created_at,
     )
+
+
+def _enqueue_goal_job(
+    db: Session,
+    job_id: str,
+    background_tasks: BackgroundTasks,
+    plan_id: str,
+    user_id: str,
+) -> None:
+    try:
+        dispatch_process_job(job_id, background_tasks)
+    except JobEnqueueError as exc:
+        logger.exception(
+            "Failed to enqueue goal job plan_id=%s job_id=%s user_id=%s",
+            plan_id,
+            job_id,
+            user_id,
+        )
+        update_job_status(
+            db,
+            job_id,
+            "failed",
+            error_message="Failed to enqueue background job",
+        )
+        raise HTTPException(
+            status_code=503,
+            detail="Background worker unavailable. Please try again later.",
+        ) from exc.cause
 
 class GoalCreate(BaseModel):
     goal: str
@@ -79,6 +91,7 @@ class GoalResponse(BaseModel):
 async def submit_goal(
     goal_in: GoalCreate,
     request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -152,9 +165,8 @@ async def submit_goal(
                     user_id=user_id,
                 )
 
-                process_job.delay(db_job.id)
-                db.expire_all()
-                jobs_out.append(_job_status_response(db, db_job.id))
+                _enqueue_goal_job(db, db_job.id, background_tasks, plan_id, user_id)
+                jobs_out.append(_submitted_job_response(db, db_job.id))
         else:
             logger.warning(
                 "API GOAL_PLAN plan_id=%s planning_failed using_search_fallback",
@@ -171,9 +183,8 @@ async def submit_goal(
                 user_id=user_id,
             )
 
-            process_job.delay(db_job.id)
-            db.expire_all()
-            jobs_out.append(_job_status_response(db, db_job.id))
+            _enqueue_goal_job(db, db_job.id, background_tasks, plan_id, user_id)
+            jobs_out.append(_submitted_job_response(db, db_job.id))
 
         logger.info("API POST /goals OK plan_id=%s jobs_submitted=%d", plan_id, len(jobs_out))
         return GoalResponse(goal=goal_in.goal, plan_id=plan_id, jobs=jobs_out)
