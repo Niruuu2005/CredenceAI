@@ -8,7 +8,8 @@ Replace placeholders with your real URLs:
 
 ```
 FRONTEND_URL=https://your-app.vercel.app
-API_URL=https://your-api.onrender.com
+API_URL=https://credenceai-api.onrender.com
+FRONTEND_URL=https://credence-ai-gamma.vercel.app
 ```
 
 The OAuth **redirect URI** always points to the **frontend** callback route (`/auth/google/callback` or `/auth/github/callback`). The browser receives the authorization code; the frontend exchanges it with the API using `VITE_API_BASE_URL`.
