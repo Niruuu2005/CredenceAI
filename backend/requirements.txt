@@ -12,6 +12,7 @@ boto3
 requests
 jinja2
 pytest
+pytest-asyncio
 httpx
 beautifulsoup4
 tiktoken
