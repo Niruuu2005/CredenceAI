@@ -19,17 +19,22 @@ export function validateApiKey(apiKey?: string): void {
 }
 
 export function normalizeBaseUrl(baseUrl: string): string {
-  if (!baseUrl || typeof baseUrl !== "string" || !baseUrl.trim()) {
-    throw new ValidationError("Base URL must be a non-empty string.");
+  if (typeof baseUrl !== "string") {
+    throw new ValidationError("Base URL must be a string.");
+  }
+  const trimmed = baseUrl.trim();
+  if (!trimmed) {
+    // Empty base URL = same-origin relative paths (e.g. /api/health via Vercel proxy).
+    return "";
   }
   try {
-    new URL(baseUrl);
+    new URL(trimmed);
   } catch {
     throw new ValidationError(
       `Invalid base URL: '${baseUrl}'. Must be a valid URL (e.g., 'http://127.0.0.1:8000' or 'https://api.yourdomain.com').`
     );
   }
-  return baseUrl.replace(/\/+$/, "");
+  return trimmed.replace(/\/+$/, "");
 }
 
 export function validateTimeout(timeoutMs?: number): void {

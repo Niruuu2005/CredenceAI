@@ -30,15 +30,15 @@ describe("CredenceAIClient Configuration", () => {
     expect((client as any).baseUrl).toBe("https://api.example.com");
   });
 
-  it("should throw ValidationError if baseUrl is empty or invalid format", () => {
-    expect(
-      () =>
-        new CredenceAIClient({
-          apiKey: "cred_sk_valid_key_123",
-          baseUrl: "",
-        })
-    ).toThrow(ValidationError);
+  it("should allow empty base URL for same-origin relative requests", () => {
+    const client = new CredenceAIClient({
+      apiKey: "cred_sk_valid_key_123",
+      baseUrl: "",
+    });
+    expect((client as any).baseUrl).toBe("");
+  });
 
+  it("should throw ValidationError if baseUrl is invalid format", () => {
     expect(
       () =>
         new CredenceAIClient({

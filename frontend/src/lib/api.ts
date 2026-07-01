@@ -9,30 +9,36 @@ function isVercelHost(): boolean {
   );
 }
 
+function sameOriginBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'http://localhost:8000';
+}
+
 function getApiBaseUrl(): string {
-  // On Vercel, always use same-origin /api (vercel.json rewrites to Render).
-  // Avoids CORS and cold-start 502s that browsers report as CORS failures.
+  // On Vercel, use same-origin /api (vercel.json rewrites to Render).
   if (isVercelHost()) {
-    return '';
+    return sameOriginBaseUrl();
   }
 
   const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
   if (configured) {
     const trimmed = configured.trim();
     if (trimmed === '/api' || trimmed === '') {
-      return '';
+      return sameOriginBaseUrl();
     }
     if (typeof window !== 'undefined' && /onrender\.com/i.test(trimmed)) {
       console.warn(
-        '[CredenceAI] VITE_API_BASE_URL points at Render; use your Vercel URL + /api or leave unset on Vercel.',
+        '[CredenceAI] VITE_API_BASE_URL points at Render; using same-origin /api proxy instead.',
       );
-      return '';
+      return sameOriginBaseUrl();
     }
     return trimmed.replace(/\/api\/?$/, '');
   }
 
   if (typeof window !== 'undefined') {
-    return '';
+    return sameOriginBaseUrl();
   }
   return 'http://localhost:8000';
 }
