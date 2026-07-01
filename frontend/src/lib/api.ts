@@ -40,6 +40,27 @@ function getClient(): CredenceAIClient {
   return client;
 }
 
+export interface JobNormalizedEntity {
+  id: string;
+  canonical_name: string;
+  entity_type?: string | null;
+  confidence: number;
+}
+
+export interface JobNormalizedResult {
+  id: string;
+  job_id: string;
+  title: string;
+  url: string;
+  snippet?: string | null;
+  source: string;
+  entities?: JobNormalizedEntity[];
+  quality_scores?: {
+    final_trust_score: number;
+    decision?: string;
+  };
+}
+
 export interface JobResponse {
   job_id: string;
   status: string;
@@ -49,6 +70,8 @@ export interface JobResponse {
   completed_at: string | null;
   results_count: number;
   failed_events: number;
+  error_message?: string | null;
+  result?: { results?: JobNormalizedResult[] } | null;
 }
 
 export interface GoalResponse {
@@ -130,6 +153,8 @@ function mapJob(job: Record<string, unknown>): JobResponse {
     completed_at: (job.completed_at as string | null) ?? null,
     results_count: Number(job.results_count ?? 0),
     failed_events: Number(job.failed_events ?? 0),
+    error_message: (job.error_message as string | null) ?? null,
+    result: (job.result as JobResponse['result']) ?? null,
   };
 }
 
@@ -183,8 +208,25 @@ export const api = {
   },
 
   async getJob(jobId: string): Promise<JobResponse> {
-    const res = await getClient().getJob(jobId);
+    const res = await withWakeupRetry(() => getClient().getJob(jobId));
     return mapJob(res as unknown as Record<string, unknown>);
+  },
+
+  async getJobResults(jobId: string): Promise<JobNormalizedResult[]> {
+    return withWakeupRetry(async () => {
+      const res = await fetch(
+        `${getApiBaseUrl()}/api/jobs/${encodeURIComponent(jobId)}/results`,
+        { headers: { Authorization: `Bearer ${getStoredToken()}` } }
+      );
+      if (!res.ok) {
+        const err = new Error(`Failed to load job results (${res.status})`) as Error & {
+          statusCode?: number;
+        };
+        err.statusCode = res.status;
+        throw err;
+      }
+      return res.json();
+    });
   },
 
   async getJobs(limit: number = 20): Promise<JobResponse[]> {

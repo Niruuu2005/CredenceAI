@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Search, Filter, Database, ShieldCheck, ShieldAlert, 
-  FileText, Download, Loader2, PlayCircle, CheckCircle2, 
+  FileText, Download, Loader2, CheckCircle2, 
   XCircle, ArrowRight, Activity 
 } from "lucide-react";
-import { api, SearchDocument, JobResponse } from "@/lib/api";
+import { api, SearchDocument, JobResponse, JobNormalizedResult } from "@/lib/api";
 import { withWakeupRetry } from "@/lib/retry";
 
 function formatApiError(err: unknown, fallback: string): string {
@@ -19,6 +19,60 @@ function formatApiError(err: unknown, fallback: string): string {
   return traceId ? `${base} (trace: ${traceId})` : base;
 }
 
+type ExtractedEntity = { name: string; type?: string; confidence: number };
+
+function deriveSource(url: string, source?: string): string {
+  if (source?.trim()) return source.trim();
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "web";
+  }
+}
+
+function mapNormalizedResultToDocument(r: JobNormalizedResult): SearchDocument {
+  const score = r.quality_scores?.final_trust_score ?? 0.85;
+  return {
+    document_id: r.id,
+    job_id: r.job_id,
+    url: r.url,
+    title: r.title,
+    main_text: r.snippet || "",
+    description: r.snippet || "",
+    language: "en",
+    content_type: "web",
+    source: deriveSource(r.url, r.source),
+    source_type: "web",
+    quality_score: score,
+    extraction_quality_score: score,
+    trusted: r.quality_scores?.decision === "accept" || score > 0.8,
+    indexed_at: null,
+    created_at: null,
+  };
+}
+
+function collectEntities(results: JobNormalizedResult[]): ExtractedEntity[] {
+  const seen = new Map<string, ExtractedEntity>();
+  for (const r of results) {
+    for (const e of r.entities ?? []) {
+      const key = e.canonical_name.toLowerCase();
+      const existing = seen.get(key);
+      if (!existing || e.confidence > existing.confidence) {
+        seen.set(key, {
+          name: e.canonical_name,
+          type: e.entity_type ?? undefined,
+          confidence: e.confidence,
+        });
+      }
+    }
+  }
+  return Array.from(seen.values()).sort((a, b) => b.confidence - a.confidence);
+}
+
+function isJobPending(job: JobResponse): boolean {
+  return job.status === "submitted" || job.status === "processing";
+}
+
 export function SearchApp() {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"search" | "goal">("search");
@@ -29,6 +83,7 @@ export function SearchApp() {
   // Search Results State
   const [searchResults, setSearchResults] = useState<SearchDocument[]>([]);
   const [totalResults, setTotalResults] = useState(0);
+  const [extractedEntities, setExtractedEntities] = useState<ExtractedEntity[]>([]);
 
   // Goal Plan State
   const [activeGoal, setActiveGoal] = useState<{ planId: string; goal: string } | null>(null);
@@ -41,10 +96,12 @@ export function SearchApp() {
     if (mode === "search") {
       setActiveGoal(null);
       setPollingJobs([]);
+      setExtractedEntities([]);
       performSearch(query);
     } else {
       setSearchResults([]);
       setTotalResults(0);
+      setExtractedEntities([]);
       handleGoalSubmit(query);
     }
   };
@@ -54,11 +111,58 @@ export function SearchApp() {
     setError(null);
     try {
       const res = await withWakeupRetry(() => api.search(q));
-      setSearchResults(res.results.map(r => r.document));
+      setSearchResults(
+        res.results.map((r) => ({
+          ...r.document,
+          source: deriveSource(r.document.url, r.document.source),
+        }))
+      );
       setTotalResults(res.total);
+      setExtractedEntities([]);
       setHasSearched(true);
     } catch (err: unknown) {
       setError(formatApiError(err, "Failed to fetch search results"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadGoalResults = async (jobs: JobResponse[], goalText: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const completed = jobs.filter((j) => j.status === "completed");
+      const allResults: JobNormalizedResult[] = [];
+
+      for (const job of completed) {
+        const embedded = job.result?.results;
+        if (Array.isArray(embedded) && embedded.length > 0) {
+          allResults.push(...embedded);
+        } else if (job.results_count > 0) {
+          const results = await api.getJobResults(job.job_id);
+          allResults.push(...results);
+        }
+      }
+
+      if (allResults.length > 0) {
+        const docs = allResults.map(mapNormalizedResultToDocument);
+        setSearchResults(docs);
+        setTotalResults(docs.length);
+        setExtractedEntities(collectEntities(allResults));
+        return;
+      }
+
+      const res = await withWakeupRetry(() => api.search(goalText));
+      setSearchResults(
+        res.results.map((r) => ({
+          ...r.document,
+          source: deriveSource(r.document.url, r.document.source),
+        }))
+      );
+      setTotalResults(res.total);
+      setExtractedEntities([]);
+    } catch (err: unknown) {
+      setError(formatApiError(err, "Failed to load research results"));
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +191,7 @@ export function SearchApp() {
               : "Research job failed. Try a simpler query."
           );
         } else if (res.jobs.some((j) => j.status === "completed")) {
-          await performSearch(res.goal);
+          await loadGoalResults(res.jobs, res.goal);
         }
       }
     } catch (err: unknown) {
@@ -101,9 +205,7 @@ export function SearchApp() {
   useEffect(() => {
     if (pollingJobs.length === 0) return;
     
-    const hasPending = pollingJobs.some(
-      (job) => job.status === "submitted" || job.status === "processing"
-    );
+    const hasPending = pollingJobs.some(isJobPending);
 
     const anyFailed = pollingJobs.some((job) => job.status === "failed");
 
@@ -118,7 +220,7 @@ export function SearchApp() {
         return;
       }
       if (activeGoal) {
-        performSearch(activeGoal.goal);
+        loadGoalResults(pollingJobs, activeGoal.goal);
       }
       return;
     }
@@ -127,7 +229,7 @@ export function SearchApp() {
       try {
         const updatedJobs = await Promise.all(
           pollingJobs.map(async (job) => {
-            if (job.status === "submitted" || job.status === "processing") {
+            if (isJobPending(job)) {
               return await api.getJob(job.job_id);
             }
             return job;
@@ -177,8 +279,12 @@ export function SearchApp() {
     document.body.removeChild(link);
   };
 
-  // Extract unique sources and entities dynamically from search results
-  const uniqueSources = Array.from(new Set(searchResults.map(r => r.source).filter(Boolean)));
+  const uniqueSources = Array.from(
+    new Set(searchResults.map((r) => deriveSource(r.url, r.source)).filter(Boolean))
+  );
+
+  const jobsStillRunning =
+    activeGoal && pollingJobs.some(isJobPending);
   
   // Calculate aggregate stats for standard results
   const avgTrustScore = searchResults.length > 0 
@@ -320,13 +426,13 @@ export function SearchApp() {
                   ))}
                 </div>
 
-                {pollingJobs.some(j => j.status === "submitted" || j.status === "processing") ? (
+                {pollingJobs.some(isJobPending) ? (
                   <p className="text-[10px] text-text-subtle uppercase tracking-widest font-semibold mt-4 flex items-center gap-2">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Running simulated pipeline... fetching details.
+                    <Loader2 className="h-3 w-3 animate-spin" /> Research pipeline running — fetching sources and entities.
                   </p>
                 ) : (
                   <div className="mt-4 p-3 bg-highlight-color/5 border border-highlight-color/20 text-highlight-color text-[10px] uppercase tracking-wider font-bold rounded flex items-center justify-between">
-                    <span>Goal processing complete! Loading indexed documents...</span>
+                    <span>Goal processing complete! Loading research results...</span>
                     <Activity className="h-4 w-4 animate-pulse" />
                   </div>
                 )}
@@ -354,8 +460,10 @@ export function SearchApp() {
               <div className="text-center py-12 p-6 border border-dashed border-border-subtle rounded-md">
                 <Database className="h-8 w-8 text-text-subtle mx-auto mb-4 opacity-50" />
                 <h4 className="text-md font-serif italic text-text-title">No documents indexed yet</h4>
-                <p className="text-[10px] text-text-subtle uppercase tracking-wider mt-2">
-                  Try running a "Deep Research Goal" plan to crawl and analyze this query.
+                <p className="text-[10px] text-text-subtle uppercase tracking-wider mt-2 max-w-md mx-auto leading-relaxed">
+                  {activeGoal
+                    ? "Jobs finished but returned no crawl results. Try a simpler query or check the error above."
+                    : "Use AI Agent Goal Plan first to crawl and analyze the web — then standard search will query your index."}
                 </p>
               </div>
             ) : (
@@ -442,12 +550,39 @@ export function SearchApp() {
             <h3 className="font-medium text-[10px] mb-6 border-b border-border-subtle pb-2 uppercase tracking-[0.2em] text-text-subtle">Entity Extraction</h3>
             <div className="space-y-8">
               <div>
+                <div className="text-[10px] uppercase tracking-widest text-text-title mb-3 font-semibold">Extracted Entities</div>
+                <div className="flex flex-wrap gap-2">
+                  {extractedEntities.length === 0 ? (
+                    <span className="text-[9px] uppercase text-text-subtle italic">
+                      {jobsStillRunning
+                        ? "Extracting from research pipeline..."
+                        : "No entities extracted yet"}
+                    </span>
+                  ) : (
+                    extractedEntities.slice(0, 15).map((entity) => (
+                      <span
+                        key={entity.name}
+                        className="text-[10px] uppercase tracking-widest font-semibold border border-border-subtle bg-bg-panel text-text-body px-2.5 py-1"
+                        title={entity.type ? `${entity.type} · ${Math.round(entity.confidence * 100)}%` : undefined}
+                      >
+                        {entity.name}
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="h-px bg-border-subtle"></div>
+
+              <div>
                 <div className="text-[10px] uppercase tracking-widest text-text-title mb-3 font-semibold">Active Sources</div>
                 <div className="flex flex-wrap gap-2">
                   {uniqueSources.length === 0 ? (
-                    <span className="text-[9px] uppercase text-text-subtle italic">No sources tracked</span>
+                    <span className="text-[9px] uppercase text-text-subtle italic">
+                      {jobsStillRunning ? "Collecting sources from jobs..." : "No sources tracked"}
+                    </span>
                   ) : (
-                    uniqueSources.map(src => (
+                    uniqueSources.map((src) => (
                       <span key={src} className="text-[10px] uppercase tracking-widest font-semibold border border-border-subtle bg-bg-panel text-text-body px-2.5 py-1">
                         {src}
                       </span>
@@ -480,6 +615,10 @@ export function SearchApp() {
                         </p>
                       </div>
                     </>
+                  ) : jobsStillRunning ? (
+                    <p className="text-[9px] uppercase text-text-subtle italic">
+                      Research pipeline running — convergence map after jobs complete
+                    </p>
                   ) : (
                     <p className="text-[9px] uppercase text-text-subtle italic">Run search to map agreement indicators</p>
                   )}

@@ -44,7 +44,12 @@ export function Billing() {
           return;
         }
       } catch {
-        // Stripe not configured — fall back to local mock upgrade
+        if (import.meta.env.PROD) {
+          setMessage(
+            "Paid upgrades are not configured on this deployment. The Free plan includes search and AI goal research."
+          );
+          return;
+        }
       }
       const res = await api.upgradePlan(plan);
       setMessage(res.message);
