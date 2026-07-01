@@ -42,7 +42,7 @@ services:
       - key: GITHUB_CLIENT_SECRET
         sync: false
       - key: GITHUB_REDIRECT_URI
-        sync: false
+        value: https://credence-ai-patilniraj413-5474s-projects.vercel.app/auth/github/callback
       - key: CORS_ALLOWED_ORIGINS
         value: '["https://credence-ai-patilniraj413-5474s-projects.vercel.app","https://credence-ai-gamma.vercel.app"]'
 

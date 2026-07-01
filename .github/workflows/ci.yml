@@ -25,6 +25,7 @@ jobs:
         env:
           APP_ENV: local
           CELERY_ALWAYS_EAGER: "true"
+          DATABASE_URL: sqlite:///:memory:
 
   sdk:
     runs-on: ubuntu-latest
