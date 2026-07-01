@@ -5,17 +5,27 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { api } from "@/lib/api";
 
+type LayoutUser = {
+  name: string;
+  email: string;
+  picture: string | null;
+  plan?: string;
+  search_quota_limit?: number;
+  search_used?: number;
+};
+
 export function AppLayout() {
   const location = useLocation();
   const path = location.pathname;
 
   const [searchUsed, setSearchUsed] = useState(0);
-  const [user, setUser] = useState<{ name: string; email: string; picture: string | null; plan?: string; search_quota_limit?: number } | null>(null);
+  const [user, setUser] = useState<LayoutUser | null>(null);
 
   const fetchUser = async (): Promise<boolean> => {
     try {
       const u = await api.getCurrentUser();
       setUser(u);
+      setSearchUsed(u.search_used ?? 0);
       return true;
     } catch (err) {
       console.error("Failed to load user profile in layout:", err);
@@ -23,27 +33,15 @@ export function AppLayout() {
     }
   };
 
-  const fetchQuota = async (): Promise<boolean> => {
-    try {
-      const status = await api.getBillingStatus();
-      setSearchUsed(status.search_used ?? 0);
-      return true;
-    } catch (err) {
-      console.error("Failed to load layout quota:", err);
-      return false;
-    }
-  };
-
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     let cancelled = false;
-    let intervalMs = 5000;
+    let intervalMs = 30000;
 
     const tick = async () => {
       if (cancelled) return;
       const userOk = await fetchUser();
-      const quotaOk = await fetchQuota();
-      intervalMs = userOk && quotaOk ? 5000 : Math.min(30000, intervalMs * 2);
+      intervalMs = userOk ? 30000 : Math.min(120000, intervalMs * 2);
       if (!cancelled) {
         timer = setTimeout(tick, intervalMs);
       }

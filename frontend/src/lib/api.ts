@@ -1,4 +1,5 @@
 import { CredenceAIClient } from '@credenceai/sdk';
+import { withWakeupRetry } from '@/lib/retry';
 
 const TOKEN_KEY = 'cred_token';
 
@@ -298,15 +299,23 @@ export const api = {
   },
 
   async getBillingStatus() {
-    const res = await fetch(`${getApiBaseUrl()}/api/billing/status`, {
-      headers: { Authorization: `Bearer ${getStoredToken()}` },
+    return withWakeupRetry(async () => {
+      const res = await fetch(`${getApiBaseUrl()}/api/billing/status`, {
+        headers: { Authorization: `Bearer ${getStoredToken()}` },
+      });
+      if (!res.ok) {
+        const err = new Error(`Failed to load billing status (${res.status})`) as Error & {
+          statusCode?: number;
+        };
+        err.statusCode = res.status;
+        throw err;
+      }
+      return res.json();
     });
-    if (!res.ok) throw new Error('Failed to load billing status');
-    return res.json();
   },
 
   async getCurrentUser() {
-    return getClient().auth.getCurrentUser();
+    return withWakeupRetry(() => getClient().auth.getCurrentUser());
   },
 
   logout() {

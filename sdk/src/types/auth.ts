@@ -5,6 +5,7 @@ export interface UserProfile {
   picture: string | null;
   plan?: string;
   search_quota_limit?: number;
+  search_used?: number;
 }
 
 export interface AuthTokenResponse {

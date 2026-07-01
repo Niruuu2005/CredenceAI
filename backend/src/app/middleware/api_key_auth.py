@@ -7,9 +7,10 @@ from app.services.security import _user_from_jwt
 
 PROTECTED_API_PREFIXES = [
     "/jobs", "/goals", "/search", "/agents", "/evidence", "/intelligence", "/verticals",
-    "/monitors", "/collections",
+    "/monitors", "/collections", "/billing",
     "/api/jobs", "/api/goals", "/api/search", "/api/agents", "/api/evidence",
     "/api/intelligence", "/api/verticals", "/api/monitors", "/api/collections",
+    "/api/billing",
 ]
 
 

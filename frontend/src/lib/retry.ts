@@ -5,11 +5,18 @@ function isWakeupError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const name = (err as { name?: string }).name ?? "";
   const message = String((err as { message?: string }).message ?? "");
+  const statusCode = (err as { statusCode?: number }).statusCode;
   return (
     name === "NetworkError" ||
+    statusCode === 502 ||
+    statusCode === 503 ||
+    statusCode === 504 ||
     message.includes("Network connection failed") ||
     message.includes("Failed to fetch") ||
-    message.includes("Load failed")
+    message.includes("Load failed") ||
+    message.includes("502") ||
+    message.includes("503") ||
+    message.includes("504")
   );
 }
 

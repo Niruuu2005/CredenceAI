@@ -9,6 +9,7 @@ from app.services.api_key_service import create_api_key, validate_api_key
 from app.models import ApiKey, User
 from app.schemas import ApiKeyCreateRequest, ApiKeyCreateResponse, ApiKeyResponse
 from app.services.security import create_access_token, get_current_user
+from app.services.quota_service import count_user_jobs_in_period
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -386,15 +387,20 @@ async def github_callback(request: GitHubCallbackRequest, db: Session = Depends(
 
 
 @router.get("/me")
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Returns profile for currently authenticated user session."""
+    search_used = count_user_jobs_in_period(db, current_user)
     return {
         "id": current_user.id,
         "email": current_user.email,
         "name": current_user.name,
         "picture": current_user.picture,
         "plan": current_user.plan,
-        "search_quota_limit": current_user.search_quota_limit
+        "search_quota_limit": current_user.search_quota_limit,
+        "search_used": search_used,
     }
 
 class ProfileUpdateRequest(BaseModel):
