@@ -5,6 +5,7 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from typing import Dict, Any, Optional
 from app.config import settings
+from app.services.backend_selection import resolve_storage_backend
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +22,14 @@ class StorageClient:
         os.makedirs(self.local_dir, exist_ok=True)
         
         if _s3_available is None:
-            if settings.MOCK_SERVICES:
+            backend = resolve_storage_backend()
+            if backend == "local":
                 _s3_available = False
                 _cached_client = None
-                logger.info("MOCK_SERVICES enabled. Storage client falling back to local storage instantly.")
+                logger.info(
+                    "STORAGE_BACKEND=local (ephemeral filesystem) — skipping MinIO/S3 probe"
+                )
             else:
-                # Try to initialize boto3 client with short timeout to fail fast if offline
                 from botocore.config import Config
                 try:
                     client = boto3.client(
@@ -40,9 +43,12 @@ class StorageClient:
                     client.list_buckets()
                     _cached_client = client
                     _s3_available = True
-                    logger.info("MinIO/S3 storage client connected successfully")
+                    logger.info("MinIO/S3 storage client connected at %s", self.endpoint)
                 except Exception as e:
-                    logger.warning(f"MinIO/S3 connection failed ({e}). Falling back to local filesystem storage.")
+                    logger.warning(
+                        "MinIO/S3 connection failed (%s). Falling back to local filesystem storage.",
+                        e,
+                    )
                     _s3_available = False
                     _cached_client = None
                 

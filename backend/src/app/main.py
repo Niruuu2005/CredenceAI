@@ -40,10 +40,14 @@ async def lifespan(app: FastAPI):
 
     try:
         from app.services.search_index import SearchIndexClient
+        from app.services.storage import StorageClient
+
         logger.info("STARTUP >> warming up search index client")
         SearchIndexClient()
+        logger.info("STARTUP >> warming up storage client")
+        StorageClient()
     except Exception as e:
-        logger.warning(f"STARTUP >> search index client warmup failed: {e}")
+        logger.warning("STARTUP >> dependency client warmup failed: %s", e)
 
     keepalive_stop = asyncio.Event()
     keepalive_task: asyncio.Task | None = None
@@ -157,12 +161,20 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     trace_id = getattr(request.state, "trace_id", None)
-    logger.exception(f"Unhandled exception occurred. Trace ID: {trace_id}")
+    user_id = getattr(request.state, "api_key_user_id", None)
+    logger.exception(
+        "Unhandled exception path=%s method=%s trace_id=%s user_id=%s",
+        request.url.path,
+        request.method,
+        trace_id,
+        user_id,
+    )
     return JSONResponse(
         status_code=500,
         content={
             "error": "internal_error",
             "message": "An unexpected error occurred.",
+            "detail": "Internal server error",
             "trace_id": trace_id,
         }
     )

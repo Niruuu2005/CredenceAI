@@ -8,6 +8,17 @@ import {
 import { api, SearchDocument, JobResponse } from "@/lib/api";
 import { withWakeupRetry } from "@/lib/retry";
 
+function formatApiError(err: unknown, fallback: string): string {
+  const e = err as {
+    message?: string;
+    traceId?: string;
+    details?: { trace_id?: string };
+  };
+  const base = e?.message || fallback;
+  const traceId = e?.traceId || e?.details?.trace_id;
+  return traceId ? `${base} (trace: ${traceId})` : base;
+}
+
 export function SearchApp() {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"search" | "goal">("search");
@@ -46,8 +57,8 @@ export function SearchApp() {
       setSearchResults(res.results.map(r => r.document));
       setTotalResults(res.total);
       setHasSearched(true);
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch search results");
+    } catch (err: unknown) {
+      setError(formatApiError(err, "Failed to fetch search results"));
     } finally {
       setIsLoading(false);
     }
@@ -64,8 +75,23 @@ export function SearchApp() {
       });
       setPollingJobs(res.jobs);
       setHasSearched(true);
-    } catch (err: any) {
-      setError(err.message || "Failed to submit goal plan");
+      const allDone = res.jobs.every(
+        (j) => j.status === "completed" || j.status === "failed"
+      );
+      if (allDone) {
+        const failed = res.jobs.find((j) => j.status === "failed");
+        if (failed) {
+          setError(
+            failed.error_message
+              ? `Research job failed: ${failed.error_message}`
+              : "Research job failed. Try a simpler query."
+          );
+        } else if (res.jobs.some((j) => j.status === "completed")) {
+          await performSearch(res.goal);
+        }
+      }
+    } catch (err: unknown) {
+      setError(formatApiError(err, "Failed to submit goal plan"));
     } finally {
       setIsLoading(false);
     }
@@ -78,9 +104,19 @@ export function SearchApp() {
     const hasPending = pollingJobs.some(
       (job) => job.status === "submitted" || job.status === "processing"
     );
-    
+
+    const anyFailed = pollingJobs.some((job) => job.status === "failed");
+
     if (!hasPending) {
-      // All jobs completed! Automatically load standard search results
+      if (anyFailed) {
+        const failed = pollingJobs.find((j) => j.status === "failed");
+        setError(
+          failed?.error_message
+            ? `Research job failed: ${failed.error_message}`
+            : "Research job failed. Check Render logs or try a simpler query."
+        );
+        return;
+      }
       if (activeGoal) {
         performSearch(activeGoal.goal);
       }

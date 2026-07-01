@@ -3,6 +3,7 @@ import time
 import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Job, NormalizedResult, DedupGroup, User
@@ -282,6 +283,7 @@ async def export_job_data(
 
 @router.get("", response_model=List[JobStatusResponse])
 def list_jobs(
+    request: Request,
     status: Optional[str] = None,
     q: Optional[str] = None,
     limit: int = 20,
@@ -290,57 +292,75 @@ def list_jobs(
     current_user: User = Depends(get_current_user),
 ):
     """Get a paginated list of jobs, optionally filtered by status and query."""
-    query = db.query(Job).filter(Job.user_id == current_user.id)
-    if status:
-        query = query.filter(Job.status == status)
-    if q:
-        query = query.filter(Job.input.ilike(f"%{q}%"))
-        
-    jobs = query.order_by(Job.created_at.desc()).offset(offset).limit(limit).all()
-    
-    out = []
-    for job in jobs:
-        results = get_job_normalized_results(db, job.id)
-        results_count = len(results)
-        
-        accepted = 0
-        rejected = 0
-        manual_review = 0
-        for r in results:
-            if r.quality_scores:
-                dec = r.quality_scores.decision
-                if dec == "accept":
-                    accepted += 1
-                elif dec == "reject":
-                    rejected += 1
-                elif dec == "review":
-                    manual_review += 1
-            else:
-                accepted += 1
-                
-        db_status = job.status
-        if db_status == "queued":
-            status_val = "submitted"
-        elif db_status == "running":
-            status_val = "processing"
-        else:
-            status_val = db_status
+    trace_id = getattr(request.state, "trace_id", None)
+    try:
+        query = db.query(Job).filter(Job.user_id == current_user.id)
+        if status:
+            query = query.filter(Job.status == status)
+        if q:
+            query = query.filter(Job.input.ilike(f"%{q}%"))
 
-        out.append(JobStatusResponse(
-            job_id=job.id,
-            status=status_val,
-            results_count=results_count,
-            failed_events=0,
-            quality_summary=QualitySummary(accepted=accepted, rejected=rejected, manual_review=manual_review),
-            created_at=job.created_at,
-            completed_at=job.completed_at,
-            error_message=job.error_message,
-            job_type=job.job_type,
-            input=job.input,
-            submitted_at=job.created_at,
-            trace_id=job.trace_id,
-        ))
-    return out
+        jobs = query.order_by(Job.created_at.desc()).offset(offset).limit(limit).all()
+
+        out = []
+        for job in jobs:
+            results = get_job_normalized_results(db, job.id)
+            results_count = len(results)
+
+            accepted = 0
+            rejected = 0
+            manual_review = 0
+            for r in results:
+                if r.quality_scores:
+                    dec = r.quality_scores.decision
+                    if dec == "accept":
+                        accepted += 1
+                    elif dec == "reject":
+                        rejected += 1
+                    elif dec == "review":
+                        manual_review += 1
+                else:
+                    accepted += 1
+
+            db_status = job.status
+            if db_status == "queued":
+                status_val = "submitted"
+            elif db_status == "running":
+                status_val = "processing"
+            else:
+                status_val = db_status
+
+            out.append(JobStatusResponse(
+                job_id=job.id,
+                status=status_val,
+                results_count=results_count,
+                failed_events=0,
+                quality_summary=QualitySummary(accepted=accepted, rejected=rejected, manual_review=manual_review),
+                created_at=job.created_at,
+                completed_at=job.completed_at,
+                error_message=job.error_message,
+                job_type=job.job_type,
+                input=job.input,
+                submitted_at=job.created_at,
+                trace_id=job.trace_id,
+            ))
+        return out
+    except Exception as exc:
+        logger.exception(
+            "API GET /jobs FAILED user_id=%s trace_id=%s error=%s",
+            current_user.id,
+            trace_id,
+            exc,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "internal_error",
+                "message": "Failed to list jobs.",
+                "detail": "Internal server error",
+                "trace_id": trace_id,
+            },
+        )
 
 
 def _build_job_results_list(db: Session, job_id: str) -> List[NormalizedResultResponse]:

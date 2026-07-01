@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import SessionLocal
 from app.models import NormalizedResult, DedupGroup, DedupMember
+from app.services.backend_selection import resolve_search_backend
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +27,13 @@ class SearchIndexClient:
         self.index_name = "credence-results"
         
         if _opensearch_available is None:
-            if settings.MOCK_SERVICES:
+            backend = resolve_search_backend()
+            if backend == "database":
                 _opensearch_available = False
                 _cached_opensearch_client = None
-                logger.info("MOCK_SERVICES enabled. Search index client falling back to database index instantly.")
+                logger.info(
+                    "SEARCH_BACKEND=database (PostgreSQL NormalizedResult) — skipping OpenSearch probe"
+                )
             else:
                 try:
                     client = OpenSearch(
@@ -41,10 +45,6 @@ class SearchIndexClient:
                         max_retries=0
                     )
                     client.ping()
-                    _cached_opensearch_client = client
-                    _opensearch_available = True
-                    logger.info("OpenSearch client connected successfully")
-                    
                     if not client.indices.exists(index=self.index_name):
                         client.indices.create(
                             index=self.index_name,
@@ -68,8 +68,14 @@ class SearchIndexClient:
                                 }
                             }
                         )
+                    _cached_opensearch_client = client
+                    _opensearch_available = True
+                    logger.info("OpenSearch client connected and index ready at %s", self.url)
                 except Exception as e:
-                    logger.warning(f"OpenSearch connection failed ({e}). Falling back to metadata database search index.")
+                    logger.warning(
+                        "OpenSearch connection failed (%s). Falling back to PostgreSQL search index.",
+                        e,
+                    )
                     _opensearch_available = False
                     _cached_opensearch_client = None
                 

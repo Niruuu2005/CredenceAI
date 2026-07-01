@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.schemas import SystemMetricsResponse
+from app.services.backend_selection import search_backend_label, storage_backend_label
 from app.services.search_index import SearchIndexClient
 from app.services.storage import StorageClient
 
@@ -33,62 +34,71 @@ def _check_redis() -> str:
     try:
         r = redis.from_url(settings.REDIS_URL, socket_connect_timeout=2)
         r.ping()
-        return "healthy"
+        return "ok"
     except Exception as e:
-        return f"unhealthy: {str(e)[:80]}"
+        return f"error: {str(e)[:80]}"
 
 
 @router.get("/health/ready")
 def health_ready(db: Session = Depends(get_db)) -> Dict[str, Any]:
-    """Readiness probe — checks database, cache, storage, and search index."""
+    """Readiness probe — dependency status for operators and dashboards."""
 
-    db_status = "unhealthy"
+    db_ok = False
     try:
         db.execute(text("SELECT 1"))
-        db_status = "healthy"
+        db_ok = True
     except Exception as e:
         logger.error("Health ready check: database unhealthy: %s", e)
 
     redis_status = _check_redis()
-    if redis_status != "healthy":
-        logger.warning("Health ready check: redis %s", redis_status)
-
     storage = StorageClient()
-    storage_status = "healthy (MinIO)" if storage.use_s3 else "degraded (local fallback)"
-
     search = SearchIndexClient()
-    search_status = "healthy (OpenSearch)" if search.use_opensearch else "degraded (SQLite fallback)"
+
+    search_label = (
+        "opensearch_ok" if search.use_opensearch else search_backend_label()
+    )
+    storage_label = "s3_ok" if storage.use_s3 else storage_backend_label()
+
+    if not db_ok:
+        readiness = "offline"
+    elif search_label != "opensearch_ok" or storage_label != "s3_ok":
+        readiness = "degraded"
+    else:
+        readiness = "ready"
+
+    celery_mode = "eager" if settings.CELERY_ALWAYS_EAGER else "worker"
+    worker_available = not settings.CELERY_ALWAYS_EAGER
+
+    payload: Dict[str, Any] = {
+        "status": readiness,
+        "service": "credenceai-api",
+        "database": "ok" if db_ok else "error",
+        "cache": redis_status,
+        "search": search_label,
+        "storage": storage_label,
+        "celery_mode": celery_mode,
+        "worker_available": worker_available,
+        "version": settings.API_VERSION,
+        "mock_mode": settings.MOCK_SERVICES,
+        "components": {
+            "database": "healthy" if db_ok else "unhealthy",
+            "redis": "healthy" if redis_status == "ok" else redis_status,
+            "object_storage": "healthy (S3)" if storage.use_s3 else "degraded (local fallback)",
+            "search_index": (
+                "healthy (OpenSearch)"
+                if search.use_opensearch
+                else "degraded (PostgreSQL fallback)"
+            ),
+        },
+    }
+
+    if settings.APP_ENV == "production":
+        payload["cors_origins_configured"] = len(settings.CORS_ALLOWED_ORIGINS)
 
     from app.services.health_router import HealthRouter
 
-    hr = HealthRouter()
-    provider_status = hr.get_status_report()
+    payload["providers"] = HealthRouter().get_status_report()
 
-    overall = "online" if db_status == "healthy" else "offline"
-
-    dependencies = {
-        "database": "ok" if db_status == "healthy" else "error",
-        "cache": "ok" if redis_status == "healthy" else "error",
-        "storage": "ok" if storage.use_s3 else "degraded",
-    }
-
-    payload: Dict[str, Any] = {
-        "status": "ok" if overall == "online" else "error",
-        "service": "credenceai-api",
-        "overall": overall,
-        "version": settings.API_VERSION if hasattr(settings, "API_VERSION") else "0.5.0",
-        "dependencies": dependencies,
-        "mock_mode": settings.MOCK_SERVICES,
-        "components": {
-            "database": db_status,
-            "redis": redis_status,
-            "object_storage": storage_status,
-            "search_index": search_status,
-        },
-        "providers": provider_status,
-    }
-    if settings.APP_ENV == "production":
-        payload["cors_origins_configured"] = len(settings.CORS_ALLOWED_ORIGINS)
     return payload
 
 

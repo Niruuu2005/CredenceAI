@@ -1,4 +1,5 @@
 import json
+from typing import Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,6 +24,8 @@ class Settings(BaseSettings):
     MINIO_ACCESS_KEY: str = Field(default="change-me")
     MINIO_SECRET_KEY: str = Field(default="change-me")
     OPENSEARCH_URL: str = Field(default="http://localhost:9200")
+    SEARCH_BACKEND: Literal["auto", "opensearch", "database"] = Field(default="auto")
+    STORAGE_BACKEND: Literal["auto", "s3", "local"] = Field(default="auto")
     LOG_LEVEL: str = Field(default="INFO")
 
     # Source Adapter Configs

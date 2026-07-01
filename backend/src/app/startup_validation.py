@@ -67,3 +67,27 @@ def validate_production_config() -> None:
         len(settings.CORS_ALLOWED_ORIGINS),
         ", ".join(settings.CORS_ALLOWED_ORIGINS),
     )
+    log_runtime_backends()
+
+
+def log_runtime_backends() -> None:
+    from app.services.backend_selection import (
+        resolve_search_backend,
+        resolve_storage_backend,
+    )
+
+    openai = "yes" if settings.OPENAI_API_KEY else "no"
+    celery_mode = "eager" if settings.CELERY_ALWAYS_EAGER else "worker"
+
+    logger.info(
+        "STARTUP >> search_backend=%s storage_backend=%s celery_mode=%s",
+        resolve_search_backend(),
+        resolve_storage_backend(),
+        celery_mode,
+    )
+    if not settings.OPENAI_API_KEY:
+        logger.warning(
+            "STARTUP >> OPENAI_API_KEY not configured — planner will use search fallback"
+        )
+    else:
+        logger.info("STARTUP >> OPENAI_API_KEY configured=%s", openai)

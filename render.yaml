@@ -1,12 +1,15 @@
-# Render Blueprint — CredenceAI API + Celery worker
+# Render Blueprint — CredenceAI API (free tier)
 # Docs: https://render.com/docs/blueprint-spec
-# Setup guide: docs/manual-setup.md
+# Setup guide: docs/manual-setup.md §2.4 (Celery on free tier)
 #
 # Before deploy:
 # 1. Create Neon Postgres → set DATABASE_URL in Render dashboard
 # 2. Create Upstash Redis → set REDIS_URL in Render dashboard
 # 3. Update FRONTEND URLs below if your Vercel app URL changes
 # 4. Set OAuth secrets in Render dashboard (see docs/oauth-setup.md)
+#
+# Free tier: CELERY_ALWAYS_EAGER=true — jobs run inline in the API process.
+# Background workers require a paid Render plan (see docs/manual-setup.md §2.4).
 #
 # Canonical frontend: https://credence-ai-gamma.vercel.app
 
@@ -25,7 +28,11 @@ services:
       - key: MOCK_SERVICES
         value: "false"
       - key: CELERY_ALWAYS_EAGER
-        value: "false"
+        value: "true"
+      - key: SEARCH_BACKEND
+        value: database
+      - key: STORAGE_BACKEND
+        value: local
       - key: RATE_LIMIT_ENABLED
         value: "true"
       - key: ENABLE_API_KEY_AUTH
@@ -63,29 +70,34 @@ services:
       - key: API_PUBLIC_URL
         value: https://credenceai-api.onrender.com
 
-  - type: worker
-    name: credenceai-worker
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    plan: free
-    dockerCommand: celery -A app.worker worker --loglevel=info
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: MOCK_SERVICES
-        value: "false"
-      - key: CELERY_ALWAYS_EAGER
-        value: "false"
-      - key: SELF_KEEPALIVE_ENABLED
-        value: "false"
-      - key: DATABASE_URL
-        fromService:
-          name: credenceai-api
-          type: web
-          envVarKey: DATABASE_URL
-      - key: REDIS_URL
-        fromService:
-          name: credenceai-api
-          type: web
-          envVarKey: REDIS_URL
+# Paid tier only — uncomment and set CELERY_ALWAYS_EAGER=false on credenceai-api:
+#  - type: worker
+#    name: credenceai-worker
+#    runtime: docker
+#    dockerfilePath: ./backend/Dockerfile
+#    dockerContext: ./backend
+#    plan: starter
+#    dockerCommand: celery -A app.worker worker --loglevel=info
+#    envVars:
+#      - key: APP_ENV
+#        value: production
+#      - key: MOCK_SERVICES
+#        value: "false"
+#      - key: CELERY_ALWAYS_EAGER
+#        value: "false"
+#      - key: SEARCH_BACKEND
+#        value: database
+#      - key: STORAGE_BACKEND
+#        value: local
+#      - key: SELF_KEEPALIVE_ENABLED
+#        value: "false"
+#      - key: DATABASE_URL
+#        fromService:
+#          name: credenceai-api
+#          type: web
+#          envVarKey: DATABASE_URL
+#      - key: REDIS_URL
+#        fromService:
+#          name: credenceai-api
+#          type: web
+#          envVarKey: REDIS_URL

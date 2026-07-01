@@ -6,9 +6,10 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.database import get_db
+from app.config import settings
 from app.models import User
 from app.schemas import JobStatusResponse, QualitySummary
-from app.services.repository import create_job
+from app.services.repository import create_job, get_job, get_job_normalized_results
 from app.services.orchestrator import invoke_planner_agent
 from app.services.security import get_current_user
 from app.services.quota_service import check_job_quota
@@ -16,6 +17,54 @@ from app.worker import process_job
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/goals", tags=["Goals"])
+
+# With CELERY_ALWAYS_EAGER, each process_job.delay() runs inline — cap to avoid proxy timeouts.
+MAX_EAGER_GOAL_JOBS = 1
+
+
+def _map_db_status(db_status: str) -> str:
+    if db_status == "queued":
+        return "submitted"
+    if db_status == "running":
+        return "processing"
+    return db_status
+
+
+def _job_status_response(db: Session, job_id: str) -> JobStatusResponse:
+    """Build job status from DB after process_job (eager or async)."""
+    job = get_job(db, job_id)
+    if not job:
+        raise HTTPException(status_code=500, detail="Job record missing after submit")
+
+    results = get_job_normalized_results(db, job_id)
+    accepted = rejected = manual_review = 0
+    for r in results:
+        if r.quality_scores:
+            dec = r.quality_scores.decision
+            if dec == "accept":
+                accepted += 1
+            elif dec == "reject":
+                rejected += 1
+            elif dec == "review":
+                manual_review += 1
+        else:
+            accepted += 1
+
+    return JobStatusResponse(
+        job_id=job.id,
+        status=_map_db_status(job.status),
+        results_count=len(results),
+        failed_events=0,
+        quality_summary=QualitySummary(
+            accepted=accepted, rejected=rejected, manual_review=manual_review
+        ),
+        created_at=job.created_at,
+        completed_at=job.completed_at,
+        error_message=job.error_message,
+        job_type=job.job_type,
+        input=job.input,
+        submitted_at=job.created_at,
+    )
 
 class GoalCreate(BaseModel):
     goal: str
@@ -53,14 +102,24 @@ async def submit_goal(
 
         plan = await invoke_planner_agent(db, plan_id, goal_in.goal)
 
+        job_defs = plan.get("jobs", []) if plan else []
+        if settings.CELERY_ALWAYS_EAGER and len(job_defs) > MAX_EAGER_GOAL_JOBS:
+            logger.warning(
+                "API GOAL_PLAN plan_id=%s capping jobs %d -> %d (CELERY_ALWAYS_EAGER)",
+                plan_id,
+                len(job_defs),
+                MAX_EAGER_GOAL_JOBS,
+            )
+            job_defs = job_defs[:MAX_EAGER_GOAL_JOBS]
+
         jobs_out = []
-        if plan and plan.get("jobs"):
+        if plan and job_defs:
             logger.info(
                 "API GOAL_PLAN plan_id=%s decomposed_jobs=%d",
                 plan_id,
-                len(plan["jobs"]),
+                len(job_defs),
             )
-            for job_def in plan["jobs"]:
+            for job_def in job_defs:
                 job_id = f"job_{uuid.uuid4().hex[:12]}"
 
                 input_val = None
@@ -94,22 +153,8 @@ async def submit_goal(
                 )
 
                 process_job.delay(db_job.id)
-
-                jobs_out.append(
-                    JobStatusResponse(
-                        job_id=db_job.id,
-                        status="submitted",
-                        results_count=0,
-                        failed_events=0,
-                        quality_summary=QualitySummary(accepted=0, rejected=0, manual_review=0),
-                        created_at=db_job.created_at,
-                        completed_at=db_job.completed_at,
-                        error_message=db_job.error_message,
-                        job_type=db_job.job_type,
-                        input=db_job.input,
-                        submitted_at=db_job.created_at,
-                    )
-                )
+                db.expire_all()
+                jobs_out.append(_job_status_response(db, db_job.id))
         else:
             logger.warning(
                 "API GOAL_PLAN plan_id=%s planning_failed using_search_fallback",
@@ -127,22 +172,8 @@ async def submit_goal(
             )
 
             process_job.delay(db_job.id)
-
-            jobs_out.append(
-                JobStatusResponse(
-                    job_id=db_job.id,
-                    status="submitted",
-                    results_count=0,
-                    failed_events=0,
-                    quality_summary=QualitySummary(accepted=0, rejected=0, manual_review=0),
-                    created_at=db_job.created_at,
-                    completed_at=db_job.completed_at,
-                    error_message=db_job.error_message,
-                    job_type=db_job.job_type,
-                    input=db_job.input,
-                    submitted_at=db_job.created_at,
-                )
-            )
+            db.expire_all()
+            jobs_out.append(_job_status_response(db, db_job.id))
 
         logger.info("API POST /goals OK plan_id=%s jobs_submitted=%d", plan_id, len(jobs_out))
         return GoalResponse(goal=goal_in.goal, plan_id=plan_id, jobs=jobs_out)
