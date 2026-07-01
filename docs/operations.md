@@ -45,7 +45,7 @@ Jobs require JWT Bearer auth. Sign in via frontend or pass a valid token.
 ### Celery jobs not processing
 
 - Ensure Redis is running
-- Start worker: `celery -A app.worker.celery_app worker --loglevel=info`
+- Start worker: `celery -A app.worker worker --loglevel=info`
 - Or set `CELERY_ALWAYS_EAGER=true` for inline execution
 
 ### Google auth returns 503

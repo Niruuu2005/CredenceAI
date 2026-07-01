@@ -36,7 +36,7 @@ API_URL=https://________________.onrender.com
   — or manually create two **Docker** services from `backend/Dockerfile`:
   - **Web service** `credenceai-api` — port 8000, health check `/api/health`
   - **Background worker** `credenceai-worker` — command:  
-    `celery -A app.worker.celery_app worker --loglevel=info`
+    `celery -A app.worker worker --loglevel=info`
 - [ ] Note your API URL after first deploy → `API_URL`
 
 ### 1.4 Vercel (frontend)

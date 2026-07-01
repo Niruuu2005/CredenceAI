@@ -151,7 +151,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: credenceai-worker-prod
-    command: celery -A app.worker.celery_app worker --loglevel=info
+    command: celery -A app.worker worker --loglevel=info
     environment:
       - APP_ENV=production
       - MOCK_SERVICES=false

@@ -46,7 +46,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```bash
 cd backend
 set PYTHONPATH=src
-celery -A app.worker.celery_app worker --loglevel=info
+celery -A app.worker worker --loglevel=info
 ```
 
 ## Tests

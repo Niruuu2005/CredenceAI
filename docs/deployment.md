@@ -30,7 +30,7 @@
    - `GOOGLE_*` and/or `GITHUB_*` OAuth vars
    - `CORS_ALLOWED_ORIGINS=["https://YOUR-APP.vercel.app"]`
 4. Health check path: `/api/health`
-5. Worker command: `celery -A app.worker.celery_app worker --loglevel=info`
+5. Worker command: `celery -A app.worker worker --loglevel=info`
 
 ### 3. Deploy frontend (Vercel)
 

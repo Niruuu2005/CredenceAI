@@ -52,7 +52,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: free
-    dockerCommand: celery -A app.worker.celery_app worker --loglevel=info
+    dockerCommand: celery -A app.worker worker --loglevel=info
     envVars:
       - key: APP_ENV
         value: production
