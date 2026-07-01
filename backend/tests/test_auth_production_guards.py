@@ -13,6 +13,11 @@ def production_client(monkeypatch):
     monkeypatch.setattr(settings, "GOOGLE_REDIRECT_URI", "http://localhost/callback")
     monkeypatch.setattr(settings, "DEV_LOGIN_USERNAME", None)
     monkeypatch.setattr(settings, "DEV_LOGIN_PASSWORD", None)
+    monkeypatch.setattr(
+        settings,
+        "CORS_ALLOWED_ORIGINS",
+        ["https://app.example.com"],
+    )
 
     with TestClient(fastapi_app) as client:
         yield client
