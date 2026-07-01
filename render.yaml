@@ -20,7 +20,7 @@ services:
       - key: MOCK_SERVICES
         value: "false"
       - key: CELERY_ALWAYS_EAGER
-        value: "false"
+        value: "true"
       - key: RATE_LIMIT_ENABLED
         value: "true"
       - key: ENABLE_API_KEY_AUTH
