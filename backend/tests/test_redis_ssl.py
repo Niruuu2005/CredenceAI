@@ -43,7 +43,7 @@ def test_redis_client_kwargs_for_rediss():
 def test_ensure_rediss_ssl_query_param_appends_when_missing():
     url = "rediss://default:pass@host:6379/0"
     normalized = ensure_rediss_ssl_query_param(url, "CERT_REQUIRED")
-    assert "ssl_cert_reqs=CERT_REQUIRED" in normalized
+    assert "ssl_cert_reqs=required" in normalized
     assert normalized.startswith("rediss://")
 
 
@@ -64,5 +64,5 @@ def test_settings_redis_url_normalizes_rediss():
         REDIS_URL="rediss://default:secret@upstash.example:6379/0",
         REDIS_SSL_CERT_REQS="CERT_REQUIRED",
     )
-    assert "ssl_cert_reqs=CERT_REQUIRED" in s.redis_url
-    assert "ssl_cert_reqs=CERT_REQUIRED" in s.celery_broker_url
+    assert "ssl_cert_reqs=required" in s.redis_url
+    assert "ssl_cert_reqs=required" in s.celery_broker_url

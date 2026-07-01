@@ -7,8 +7,14 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 _CERT_REQS_MAP: dict[str, ssl.VerifyMode] = {
     "CERT_REQUIRED": ssl.CERT_REQUIRED,
+    "REQUIRED": ssl.CERT_REQUIRED,
+    "required": ssl.CERT_REQUIRED,
     "CERT_OPTIONAL": ssl.CERT_OPTIONAL,
+    "OPTIONAL": ssl.CERT_OPTIONAL,
+    "optional": ssl.CERT_OPTIONAL,
     "CERT_NONE": ssl.CERT_NONE,
+    "NONE": ssl.CERT_NONE,
+    "none": ssl.CERT_NONE,
 }
 
 
@@ -52,6 +58,7 @@ def ensure_rediss_ssl_query_param(
         return url
 
     cert_name = default_cert_reqs.upper()
-    query["ssl_cert_reqs"] = [cert_name]
+    url_value = "required" if cert_name == "CERT_REQUIRED" else cert_name.lower()
+    query["ssl_cert_reqs"] = [url_value]
     new_query = urlencode(query, doseq=True)
     return urlunparse(parsed._replace(query=new_query))
