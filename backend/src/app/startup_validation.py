@@ -66,11 +66,6 @@ def validate_production_config() -> None:
             "CORS_ALLOWED_ORIGINS must include at least one https:// frontend origin "
             "in production (not localhost-only)."
         )
-    if settings.CELERY_ALWAYS_EAGER:
-        errors.append(
-            "CELERY_ALWAYS_EAGER must be false in production. "
-            "Run a separate Celery worker service for background jobs."
-        )
     if (
         settings.SEARCH_PROVIDER == "searxng"
         and not settings.MOCK_SERVICES
@@ -91,6 +86,10 @@ def validate_production_config() -> None:
         len(settings.CORS_ALLOWED_ORIGINS),
         ", ".join(settings.CORS_ALLOWED_ORIGINS),
     )
+    if settings.CELERY_ALWAYS_EAGER:
+        logger.info(
+            "STARTUP >> celery_mode=eager (Render free tier — jobs run via BackgroundTasks)"
+        )
     log_runtime_backends()
 
 

@@ -33,7 +33,7 @@ def test_health_ready_degraded_mode(health_client):
     assert body["search"] == "database_fallback"
     assert body["storage"] == "local_fallback"
     assert body["celery_mode"] == "eager"
-    assert body["worker_available"] is False
+    assert body["worker_available"] is True
 
 
 def test_health_liveness_no_db(health_client):

@@ -72,7 +72,7 @@ def health_ready(db: Session = Depends(get_db)) -> Dict[str, Any]:
         readiness = "ready"
 
     celery_mode = "eager" if settings.CELERY_ALWAYS_EAGER else "worker"
-    worker_available = not settings.CELERY_ALWAYS_EAGER
+    worker_available = True
 
     payload: Dict[str, Any] = {
         "status": readiness,

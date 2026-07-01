@@ -20,7 +20,7 @@ EXPOSE 8000
 
 ENV APP_ENV=production
 ENV MOCK_SERVICES=false
-ENV CELERY_ALWAYS_EAGER=false
+ENV CELERY_ALWAYS_EAGER=true
 ENV RATE_LIMIT_ENABLED=true
 
 CMD ["./docker-entrypoint.sh"]

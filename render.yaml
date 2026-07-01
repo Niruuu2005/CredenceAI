@@ -1,6 +1,6 @@
-# Render Blueprint — CredenceAI API
+# Render Blueprint — CredenceAI API (free tier)
 # Docs: https://render.com/docs/blueprint-spec
-# Setup guide: docs/manual-setup.md §2.4 (Celery worker)
+# Setup guide: docs/manual-setup.md
 #
 # Before deploy:
 # 1. Create Neon Postgres → set DATABASE_URL in Render dashboard
@@ -8,9 +8,9 @@
 #    Code auto-appends ?ssl_cert_reqs=CERT_REQUIRED when missing from rediss:// URLs
 # 3. Update FRONTEND URLs below if your Vercel app URL changes
 # 4. Set OAuth secrets in Render dashboard (see docs/oauth-setup.md)
-# 5. Set SEARXNG_BASE_URL when using SEARCH_PROVIDER=searxng (or use duckduckgo)
 #
-# API handles HTTP only; credenceai-worker runs Celery background jobs.
+# Free tier: CELERY_ALWAYS_EAGER=true — jobs run via FastAPI BackgroundTasks after response.
+# No paid worker service required. Upgrade to paid Render + worker for heavy job loads.
 # SEARCH_PROVIDER=duckduckgo — no SearXNG hosting required (Render may block DDG).
 #
 # Canonical frontend: https://credence-ai-gamma.vercel.app
@@ -30,7 +30,7 @@ services:
       - key: MOCK_SERVICES
         value: "false"
       - key: CELERY_ALWAYS_EAGER
-        value: "false"
+        value: "true"
       - key: SEARCH_BACKEND
         value: database
       - key: SEARCH_PROVIDER
@@ -52,6 +52,8 @@ services:
         value: CERT_REQUIRED
       # Optional — required when SEARCH_PROVIDER=searxng
       - key: SEARXNG_BASE_URL
+        sync: false
+      - key: OPENAI_API_KEY
         sync: false
       - key: JWT_SECRET
         generateValue: true
@@ -79,58 +81,3 @@ services:
         value: "30"
       - key: API_PUBLIC_URL
         value: https://credenceai-api.onrender.com
-
-  - type: worker
-    name: credenceai-worker
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    plan: starter
-    dockerCommand: celery -A app.worker.celery_app worker --loglevel=info
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: MOCK_SERVICES
-        value: "false"
-      - key: CELERY_ALWAYS_EAGER
-        value: "false"
-      - key: SEARCH_BACKEND
-        value: database
-      - key: SEARCH_PROVIDER
-        value: duckduckgo
-      - key: STORAGE_BACKEND
-        value: local
-      - key: REDIS_SSL_CERT_REQS
-        value: CERT_REQUIRED
-      - key: SELF_KEEPALIVE_ENABLED
-        value: "false"
-      - key: DATABASE_URL
-        fromService:
-          name: credenceai-api
-          type: web
-          envVarKey: DATABASE_URL
-      - key: REDIS_URL
-        fromService:
-          name: credenceai-api
-          type: web
-          envVarKey: REDIS_URL
-      - key: CELERY_BROKER_URL
-        fromService:
-          name: credenceai-api
-          type: web
-          envVarKey: REDIS_URL
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          name: credenceai-api
-          type: web
-          envVarKey: REDIS_URL
-      - key: SEARXNG_BASE_URL
-        fromService:
-          name: credenceai-api
-          type: web
-          envVarKey: SEARXNG_BASE_URL
-      - key: OPENAI_API_KEY
-        fromService:
-          name: credenceai-api
-          type: web
-          envVarKey: OPENAI_API_KEY

@@ -79,7 +79,7 @@ def test_production_passes_with_github_only():
     settings.SEARXNG_BASE_URL = "https://searxng.example.com"
     settings.MOCK_SERVICES = False
     settings.SEARCH_PROVIDER = "duckduckgo"
-    settings.CELERY_ALWAYS_EAGER = False
+    settings.CELERY_ALWAYS_EAGER = True
     try:
         startup_validation.validate_production_config()
     finally:
@@ -213,7 +213,7 @@ def test_production_passes_with_duckduckgo_and_localhost_searxng():
     settings.SEARXNG_BASE_URL = "http://localhost:8080"
     settings.MOCK_SERVICES = False
     settings.SEARCH_PROVIDER = "duckduckgo"
-    settings.CELERY_ALWAYS_EAGER = False
+    settings.CELERY_ALWAYS_EAGER = True
     try:
         startup_validation.validate_production_config()
     finally:
@@ -234,7 +234,7 @@ def test_production_passes_with_duckduckgo_and_localhost_searxng():
         ) = original
 
 
-def test_production_rejects_celery_always_eager():
+def test_production_passes_with_celery_always_eager():
     original = (
         settings.APP_ENV,
         settings.JWT_SECRET,
@@ -258,8 +258,7 @@ def test_production_rejects_celery_always_eager():
     settings.CORS_ALLOWED_ORIGINS = ["https://app.example.com"]
     settings.CELERY_ALWAYS_EAGER = True
     try:
-        with pytest.raises(RuntimeError, match="CELERY_ALWAYS_EAGER"):
-            startup_validation.validate_production_config()
+        startup_validation.validate_production_config()
     finally:
         (
             settings.APP_ENV,
