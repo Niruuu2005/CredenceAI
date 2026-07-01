@@ -159,16 +159,26 @@ def get_google_auth_url():
 def _issue_session_for_user(db: Session, user_id: str, email: str, name: str, picture: str | None):
     """Create or update user record and return JWT + user payload."""
     user = db.query(User).filter(User.id == user_id).first()
+    if not user and email:
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            if name:
+                user.name = name
+            if picture:
+                user.picture = picture
+            db.commit()
+            db.refresh(user)
     if not user:
         user = User(id=user_id, email=email, name=name, picture=picture)
         db.add(user)
         db.commit()
         db.refresh(user)
     else:
-        user.name = name
-        user.picture = picture
-        db.commit()
-        db.refresh(user)
+        if user.id == user_id:
+            user.name = name
+            user.picture = picture
+            db.commit()
+            db.refresh(user)
 
     token_payload = {
         "sub": user.id,
@@ -234,7 +244,9 @@ async def google_callback(request: GoogleCallbackRequest, db: Session = Depends(
                 email = user_info.get("email")
                 name = user_info.get("name")
                 picture = user_info.get("picture")
-        except Exception as e:
+        except HTTPException:
+            raise
+        except Exception:
             logger.exception("Unexpected error in real Google OAuth exchange")
             raise HTTPException(status_code=500, detail="Authentication server error during Google OAuth.")
     elif settings.APP_ENV == "local":
