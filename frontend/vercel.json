@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm --prefix ../sdk ci && npm --prefix ../sdk run build && npm ci",
+  "installCommand": "npm --prefix ../sdk install && npm --prefix ../sdk run build && npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
