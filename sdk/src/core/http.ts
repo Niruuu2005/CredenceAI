@@ -51,13 +51,13 @@ export class HttpClient {
       : typeof fetch !== "undefined"
         ? fetch.bind(globalThis)
         : undefined;
-    this.fetchImpl = config.fetchImpl ?? defaultFetch;
-
-    if (!this.fetchImpl) {
+    const resolvedFetch = config.fetchImpl ?? defaultFetch;
+    if (!resolvedFetch) {
       throw new Error(
         "A fetch implementation is required. Please run in an environment with global fetch or pass a fetch polyfill."
       );
     }
+    this.fetchImpl = resolvedFetch;
     this.userAgent = config.userAgent ?? DEFAULT_USER_AGENT;
     this.getAccessToken = config.getAccessToken;
   }

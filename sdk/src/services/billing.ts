@@ -13,14 +13,25 @@ export class BillingService {
   constructor(private http: HttpClient) {}
 
   async createCheckoutSession(plan: string): Promise<{ url: string }> {
-    return this.http.post('/billing/checkout-session', { plan });
+    return this.http.request<{ url: string }>({
+      method: 'POST',
+      path: '/billing/checkout-session',
+      body: { plan },
+    });
   }
 
   async createPortalSession(): Promise<{ url: string }> {
-    return this.http.post('/billing/portal-session', {});
+    return this.http.request<{ url: string }>({
+      method: 'POST',
+      path: '/billing/portal-session',
+      body: {},
+    });
   }
 
   async getStatus(): Promise<BillingStatus> {
-    return this.http.get('/billing/status');
+    return this.http.request<BillingStatus>({
+      method: 'GET',
+      path: '/billing/status',
+    });
   }
 }
