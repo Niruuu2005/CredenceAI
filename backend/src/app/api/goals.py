@@ -34,98 +34,125 @@ async def submit_goal(
     current_user: User = Depends(get_current_user),
 ):
     user_id = current_user.id
-    check_job_quota(db, current_user)
-
     plan_id = f"plan_{uuid.uuid4().hex[:12]}"
-    logger.info(f"API  POST /goals  STATUS=RECEIVED  goal='{goal_in.goal[:60]}'  plan_id={plan_id}")
+    logger.info(
+        "API POST /goals RECEIVED user_id=%s plan_id=%s goal_preview=%r",
+        user_id,
+        plan_id,
+        goal_in.goal[:60],
+    )
 
-    if not goal_in.goal or len(goal_in.goal.strip()) < 3:
-        raise HTTPException(status_code=400, detail="Goal must be a non-empty string with at least 3 characters")
+    try:
+        check_job_quota(db, current_user)
 
-    plan = await invoke_planner_agent(db, plan_id, goal_in.goal)
+        if not goal_in.goal or len(goal_in.goal.strip()) < 3:
+            raise HTTPException(
+                status_code=400,
+                detail="Goal must be a non-empty string with at least 3 characters",
+            )
 
-    jobs_out = []
-    if plan and plan.get("jobs"):
-        logger.info(f"API  GOAL_PLAN  plan_id={plan_id}  -> decomposed into {len(plan['jobs'])} jobs")
-        for job_def in plan["jobs"]:
+        plan = await invoke_planner_agent(db, plan_id, goal_in.goal)
+
+        jobs_out = []
+        if plan and plan.get("jobs"):
+            logger.info(
+                "API GOAL_PLAN plan_id=%s decomposed_jobs=%d",
+                plan_id,
+                len(plan["jobs"]),
+            )
+            for job_def in plan["jobs"]:
+                job_id = f"job_{uuid.uuid4().hex[:12]}"
+
+                input_val = None
+                params = job_def.get("parameters") or {}
+                if "query" in params:
+                    input_val = params["query"]
+                elif "entity" in params:
+                    input_val = params["entity"]
+                elif "topic" in params:
+                    input_val = params["topic"]
+
+                if not input_val:
+                    input_val = job_def.get("description", goal_in.goal)
+
+                job_type = job_def.get("job_type") or "search_query"
+                if job_type == "search":
+                    job_type = "search_query"
+
+                vertical = params.get("vertical") or goal_in.vertical or "general"
+                priority = "high" if job_def.get("priority", 1) == 1 else "normal"
+
+                db_job = create_job(
+                    db=db,
+                    job_id=job_id,
+                    trace_id=plan_id,
+                    job_type=job_type,
+                    input_val=input_val,
+                    vertical=vertical,
+                    priority=priority,
+                    user_id=user_id,
+                )
+
+                process_job.delay(db_job.id)
+
+                jobs_out.append(
+                    JobStatusResponse(
+                        job_id=db_job.id,
+                        status="submitted",
+                        results_count=0,
+                        failed_events=0,
+                        quality_summary=QualitySummary(accepted=0, rejected=0, manual_review=0),
+                        created_at=db_job.created_at,
+                        completed_at=db_job.completed_at,
+                        error_message=db_job.error_message,
+                        job_type=db_job.job_type,
+                        input=db_job.input,
+                        submitted_at=db_job.created_at,
+                    )
+                )
+        else:
+            logger.warning(
+                "API GOAL_PLAN plan_id=%s planning_failed using_search_fallback",
+                plan_id,
+            )
             job_id = f"job_{uuid.uuid4().hex[:12]}"
-            
-            input_val = None
-            params = job_def.get("parameters") or {}
-            if "query" in params:
-                input_val = params["query"]
-            elif "entity" in params:
-                input_val = params["entity"]
-            elif "topic" in params:
-                input_val = params["topic"]
-            
-            if not input_val:
-                input_val = job_def.get("description", goal_in.goal)
-
-            job_type = job_def.get("job_type") or "search_query"
-            if job_type == "search":
-                job_type = "search_query"
-
-            vertical = params.get("vertical") or goal_in.vertical or "general"
-            priority = "high" if job_def.get("priority", 1) == 1 else "normal"
-
             db_job = create_job(
                 db=db,
                 job_id=job_id,
                 trace_id=plan_id,
-                job_type=job_type,
-                input_val=input_val,
-                vertical=vertical,
-                priority=priority,
+                job_type="search_query",
+                input_val=goal_in.goal,
+                vertical=goal_in.vertical or "general",
                 user_id=user_id,
             )
-            
+
             process_job.delay(db_job.id)
 
-            jobs_out.append(JobStatusResponse(
-                job_id=db_job.id,
-                status="submitted",
-                results_count=0,
-                failed_events=0,
-                quality_summary=QualitySummary(accepted=0, rejected=0, manual_review=0),
-                created_at=db_job.created_at,
-                completed_at=db_job.completed_at,
-                error_message=db_job.error_message,
-                job_type=db_job.job_type,
-                input=db_job.input,
-                submitted_at=db_job.created_at
-            ))
-    else:
-        logger.warning(f"API  GOAL_PLAN  plan_id={plan_id}  -> planning failed or returned no jobs, using search fallback")
-        job_id = f"job_{uuid.uuid4().hex[:12]}"
-        db_job = create_job(
-            db=db,
-            job_id=job_id,
-            trace_id=plan_id,
-            job_type="search_query",
-            input_val=goal_in.goal,
-            vertical=goal_in.vertical or "general",
-            user_id=user_id,
+            jobs_out.append(
+                JobStatusResponse(
+                    job_id=db_job.id,
+                    status="submitted",
+                    results_count=0,
+                    failed_events=0,
+                    quality_summary=QualitySummary(accepted=0, rejected=0, manual_review=0),
+                    created_at=db_job.created_at,
+                    completed_at=db_job.completed_at,
+                    error_message=db_job.error_message,
+                    job_type=db_job.job_type,
+                    input=db_job.input,
+                    submitted_at=db_job.created_at,
+                )
+            )
+
+        logger.info("API POST /goals OK plan_id=%s jobs_submitted=%d", plan_id, len(jobs_out))
+        return GoalResponse(goal=goal_in.goal, plan_id=plan_id, jobs=jobs_out)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception(
+            "API POST /goals FAILED plan_id=%s user_id=%s error=%s",
+            plan_id,
+            user_id,
+            exc,
         )
-        
-        process_job.delay(db_job.id)
-
-        jobs_out.append(JobStatusResponse(
-            job_id=db_job.id,
-            status="submitted",
-            results_count=0,
-            failed_events=0,
-            quality_summary=QualitySummary(accepted=0, rejected=0, manual_review=0),
-            created_at=db_job.created_at,
-            completed_at=db_job.completed_at,
-            error_message=db_job.error_message,
-            job_type=db_job.job_type,
-            input=db_job.input,
-            submitted_at=db_job.created_at
-        ))
-
-    return GoalResponse(
-        goal=goal_in.goal,
-        plan_id=plan_id,
-        jobs=jobs_out
-    )
+        raise HTTPException(status_code=500, detail="Failed to submit goal. Please try again.") from exc

@@ -78,3 +78,5 @@ sdk/node_modules/
 frontend/dist/
 sdk/dist/
 npm-debug.log*
+
+.vercel

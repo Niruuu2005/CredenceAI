@@ -1,57 +1,68 @@
 # Deployment
 
+> **Start here for production:** [manual-setup.md](manual-setup.md) — complete step-by-step checklist for Vercel + Render + Neon + Upstash.
+
+---
+
 ## Architectures
 
 | Mode | When to use |
 |------|-------------|
-| **Free-tier split** | Vercel (frontend) + Render (API/worker) + Neon + Upstash |
-| **Docker Compose** | Self-hosted VPS with full search stack |
+| **Free-tier split** | Vercel (frontend) + Render (API) + Neon + Upstash — default for MVP |
+| **Docker Compose** | Self-hosted VPS with full search stack (OpenSearch, MinIO, SearXNG) |
 
 ---
 
 ## Free-tier split deploy (Vercel + Render)
 
-### 1. Managed services
+### Architecture
 
-| Service | Provider | Notes |
-|---------|----------|-------|
-| Frontend | [Vercel](https://vercel.com) | Root directory: `frontend` |
-| API + Celery | [Render](https://render.com) | Blueprint: [`render.yaml`](../render.yaml) |
-| Postgres | [Neon](https://neon.tech) | Copy `DATABASE_URL` |
-| Redis | [Upstash](https://upstash.com) | Copy `REDIS_URL` (`rediss://...`) |
+```
+Browser → Vercel (React SPA)
+              ↓ JWT Bearer or X-API-Key
+         Render API (credenceai-api)
+              ↓              ↓
+           Neon          Upstash
+         (Postgres)       (Redis)
+```
 
-### 2. Deploy backend (Render)
+On Render **free tier**, background workers are not available. The blueprint sets `CELERY_ALWAYS_EAGER=true` so jobs run inline in the API process. Upgrade to a paid plan to run [`credenceai-worker`](../render.yaml) separately.
 
-1. Connect GitHub repo to Render.
-2. Apply blueprint from `render.yaml` or create two Docker services from `backend/Dockerfile`.
-3. Set environment variables (see [`backend/.env.production.example`](../backend/.env.production.example)):
-   - `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`
-   - `ENABLE_API_KEY_AUTH=true`
-   - `GOOGLE_*` and/or `GITHUB_*` OAuth vars
-   - `CORS_ALLOWED_ORIGINS=["https://YOUR-APP.vercel.app"]`
-4. Health check path: `/api/health`
-5. Worker command: `celery -A app.worker worker --loglevel=info`
+### Quick steps
 
-### 3. Deploy frontend (Vercel)
+| Step | Action | Doc section |
+|------|--------|-------------|
+| 1 | Create Neon + Upstash; copy URLs | [manual-setup.md § Phase 1](manual-setup.md#phase-1--databases) |
+| 2 | Apply Render blueprint; set secrets | [manual-setup.md § Phase 2](manual-setup.md#phase-2--render-api-blueprint) |
+| 3 | Deploy Vercel frontend; set `VITE_API_BASE_URL` | [manual-setup.md § Phase 3](manual-setup.md#phase-3--vercel-frontend) |
+| 4 | Configure Google + GitHub OAuth | [manual-setup.md § Phase 4–5](manual-setup.md#phase-4--google-oauth) |
+| 5 | Run verification checklist | [manual-setup.md § Phase 6](manual-setup.md#phase-6--full-deployment-verification) |
 
-1. Import repo; set **Root Directory** to `frontend`.
-2. Environment variable:
-   ```
-   VITE_API_BASE_URL=https://YOUR-API.onrender.com/api
-   ```
-3. [`frontend/vercel.json`](../frontend/vercel.json) builds the local SDK and enables SPA routing.
+### Key files
 
-### 4. OAuth setup
+| File | Purpose |
+|------|---------|
+| [`render.yaml`](../render.yaml) | Render Blueprint — API env defaults, CORS, OAuth redirect URIs |
+| [`frontend/vercel.json`](../frontend/vercel.json) | Vercel build (SDK + SPA routing) |
+| [`backend/.env.production.example`](../backend/.env.production.example) | All production env vars |
+| [`scripts/render-env.template.env`](../scripts/render-env.template.env) | Copy-paste template for Render dashboard |
+| [`scripts/verify-deployment.ps1`](../scripts/verify-deployment.ps1) | Post-deploy smoke test |
 
-Follow **[manual-setup.md](manual-setup.md)** (full checklist) or **[oauth-setup.md](oauth-setup.md)** (OAuth detail only).
-
-### 5. Validate deployment
+### Validate deployment
 
 ```bash
-# Health
 curl https://YOUR-API.onrender.com/api/health
+curl https://YOUR-API.onrender.com/api/auth/github/url
+curl https://YOUR-API.onrender.com/api/auth/google/url
+```
 
-# After sign-in and creating an API key in Settings:
+```powershell
+.\scripts\verify-deployment.ps1 -ApiUrl "https://YOUR-API.onrender.com"
+```
+
+After creating an API key in Settings:
+
+```bash
 curl -X POST https://YOUR-API.onrender.com/api/jobs \
   -H "X-API-Key: cred_sk_YOUR_KEY" \
   -H "Content-Type: application/json" \
@@ -60,7 +71,13 @@ curl -X POST https://YOUR-API.onrender.com/api/jobs \
 
 ### Free-tier limitations
 
-Without OpenSearch, MinIO, and SearXNG, search runs in **degraded mode** (SQLite index, local/ephemeral storage). Acceptable for MVP; add full stack via Docker Compose on a VPS when scaling.
+| Component | On free tier |
+|-----------|--------------|
+| OpenSearch, MinIO, SearXNG | Not deployed — search uses SQLite fallback + external APIs |
+| Celery worker | Not available — `CELERY_ALWAYS_EAGER=true` on API |
+| Render spin-down | Cold starts after ~15 min idle |
+
+Acceptable for MVP. For full search stack, use Docker Compose on a VPS (below).
 
 ---
 
@@ -85,8 +102,9 @@ docker compose -f docker-compose.prod.yml --env-file .env up --build
 - `APP_ENV=production`
 - `MOCK_SERVICES=false`
 - `ENABLE_API_KEY_AUTH=true`
+- `CELERY_ALWAYS_EAGER=false` (worker runs separately)
 - `DATABASE_URL` → Postgres
-- `JWT_SECRET` — strong random (`openssl rand -hex 32`)
+- `JWT_SECRET` — `openssl rand -hex 32`
 - `CORS_ALLOWED_ORIGINS` — frontend URL(s)
 - `VITE_API_BASE_URL` — build arg for frontend image
 - At least one OAuth provider (Google or GitHub)
@@ -97,19 +115,28 @@ docker compose -f docker-compose.prod.yml --env-file .env up --build
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | Push/PR | Tests + builds |
-| [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) | Push to main | Render deploy hook + smoke tests |
+| [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | Push/PR to `master`/`main` | Backend pytest, SDK + frontend build |
+| [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) | Push to `master`/`main` | Render deploy hook + smoke tests |
 | [`.github/workflows/backup.yml`](../.github/workflows/backup.yml) | Weekly cron | Postgres `pg_dump` artifact |
 | [`.github/workflows/monitor.yml`](../.github/workflows/monitor.yml) | Every 6 hours | API health check |
 
-**GitHub repository secrets:**
+**CI backend env** (no secrets required):
+
+```yaml
+APP_ENV: local
+CELERY_ALWAYS_EAGER: "true"
+DATABASE_URL: "sqlite:///:memory:"
+PYTHONPATH: src
+```
+
+**GitHub repository secrets** (optional):
 
 | Secret | Purpose |
 |--------|---------|
-| `RENDER_DEPLOY_HOOK_URL` | Auto-deploy API on push to main |
-| `API_URL` | Smoke tests + monitoring (`https://your-api.onrender.com`) |
+| `RENDER_DEPLOY_HOOK_URL` | Auto-deploy API on push |
+| `API_URL` | Smoke tests + monitoring |
 | `DATABASE_URL` | Weekly backup workflow |
-| `SMOKE_TEST_API_KEY` | Optional post-deploy API key test |
+| `SMOKE_TEST_API_KEY` | Post-deploy API key test |
 
 Vercel deploys automatically via Git integration.
 
@@ -149,12 +176,23 @@ Then run the API and worker on the host with `MOCK_SERVICES=false`.
 
 ## Backups
 
-- **Neon free tier:** use [`.github/workflows/backup.yml`](../.github/workflows/backup.yml) (weekly `pg_dump` artifacts).
-- **VPS / Compose:** cron example in [`backend/scripts/backup_cron.example`](../backend/scripts/backup_cron.example).
+- **Neon free tier:** [`.github/workflows/backup.yml`](../.github/workflows/backup.yml) (weekly `pg_dump` artifacts)
+- **VPS / Compose:** [`backend/scripts/backup_cron.example`](../backend/scripts/backup_cron.example)
 - **Restore:** `psql "$DATABASE_URL" < backup.sql`
 
 ## Monitoring
 
 1. Render health check on `/api/health`
 2. GitHub Actions [`monitor.yml`](../.github/workflows/monitor.yml) (set `API_URL` secret)
-3. [UptimeRobot](https://uptimerobot.com) (free) for external uptime alerts
+3. [UptimeRobot](https://uptimerobot.com) for external uptime alerts
+
+---
+
+## Related docs
+
+| Doc | Description |
+|-----|-------------|
+| [manual-setup.md](manual-setup.md) | **Complete production deploy checklist** |
+| [oauth-setup.md](oauth-setup.md) | OAuth configuration and troubleshooting |
+| [environment.md](environment.md) | Full environment variable reference |
+| [operations.md](operations.md) | Day-2 operations |

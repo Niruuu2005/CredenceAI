@@ -56,7 +56,12 @@ class Settings(BaseSettings):
 
     # CORS (split frontend deploy — set to your SPA origin in production)
     CORS_ALLOWED_ORIGINS: list[str] = Field(
-        default_factory=lambda: ["http://localhost:3000", "http://127.0.0.1:3000"]
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ]
     )
 
     @field_validator("CORS_ALLOWED_ORIGINS", mode="before")

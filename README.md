@@ -107,18 +107,22 @@ See [docs/environment.md](docs/environment.md). Copy examples — never commit r
 - `frontend/.env.example`
 - `sdk/.env.example`
 
-Production requires `JWT_SECRET`, Google OAuth (`GOOGLE_*`), and Stripe keys for paid plans.
+Production requires `JWT_SECRET`, at least one OAuth provider (Google and/or GitHub), and Stripe keys for paid plans. See [docs/manual-setup.md](docs/manual-setup.md).
 
 ---
 
 ## Deployment
+
+**Production (Vercel + Render):** follow the complete checklist in **[docs/manual-setup.md](docs/manual-setup.md)**.
+
+**Self-hosted (Docker Compose):**
 
 ```bash
 cd backend
 docker compose -f docker-compose.prod.yml up --build
 ```
 
-Details: [docs/deployment.md](docs/deployment.md)
+Overview: [docs/deployment.md](docs/deployment.md)
 
 ---
 
@@ -126,9 +130,11 @@ Details: [docs/deployment.md](docs/deployment.md)
 
 | Doc | Description |
 |-----|-------------|
+| [docs/manual-setup.md](docs/manual-setup.md) | **Complete production deploy checklist** |
 | [docs/architecture.md](docs/architecture.md) | System design |
 | [docs/api.md](docs/api.md) | REST API reference |
-| [docs/deployment.md](docs/deployment.md) | Production deployment |
+| [docs/deployment.md](docs/deployment.md) | Deployment architecture and Compose |
+| [docs/oauth-setup.md](docs/oauth-setup.md) | OAuth setup and troubleshooting |
 | [docs/database.md](docs/database.md) | Schema and migrations |
 | [docs/testing.md](docs/testing.md) | Test commands |
 

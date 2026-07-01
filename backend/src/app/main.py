@@ -19,6 +19,9 @@ from app.limiter import limiter
 setup_logging()
 logger = logging.getLogger(__name__)
 
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+CORS_ALLOW_HEADERS = ["Content-Type", "Authorization"]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -100,17 +103,17 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(ApiKeyMiddleware)
 app.add_middleware(TraceIdMiddleware)
 
+# CORS must be outermost so preflight OPTIONS is answered before auth/routes.
+app.add_middleware(CorsGuardMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ALLOWED_ORIGINS,
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_methods=CORS_ALLOW_METHODS,
+    allow_headers=CORS_ALLOW_HEADERS,
     expose_headers=["X-Trace-Id"],
 )
-
-app.add_middleware(CorsGuardMiddleware)
 
 
 @app.exception_handler(RequestValidationError)

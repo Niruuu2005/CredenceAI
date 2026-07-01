@@ -1,15 +1,42 @@
 # OAuth Setup (Google + GitHub)
 
-> **Full manual checklist (accounts, env vars, CI secrets, validation):** [manual-setup.md](manual-setup.md)
+> **Complete deploy checklist (start here):** [manual-setup.md](manual-setup.md)
 
-Use this document after deploying the frontend (Vercel) and API (Render). Replace placeholders with your real URLs:
+Use this document for OAuth-specific configuration and troubleshooting after the frontend (Vercel) and API (Render) are deployed.
+
+Replace placeholders with your real URLs:
 
 ```
 FRONTEND_URL=https://your-app.vercel.app
 API_URL=https://your-api.onrender.com
 ```
 
-The OAuth **redirect URI** always points to the **frontend** callback route. The frontend exchanges the code with the API.
+The OAuth **redirect URI** always points to the **frontend** callback route (`/auth/google/callback` or `/auth/github/callback`). The browser receives the authorization code; the frontend exchanges it with the API using `VITE_API_BASE_URL`.
+
+---
+
+## How auth works in production
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Vercel as Vercel SPA
+  participant Provider as Google or GitHub
+  participant Render as Render API
+  User->>Vercel: Click sign in
+  Vercel->>Render: GET /api/auth/google/url or github/url
+  Render-->>Vercel: OAuth authorize URL
+  Vercel->>Provider: Redirect to authorize
+  Provider->>Vercel: Redirect to /auth/*/callback?code=
+  Vercel->>Render: POST code to /api/auth/*/callback
+  Render-->>Vercel: JWT token
+  Vercel->>Render: API calls with Bearer JWT
+```
+
+With `ENABLE_API_KEY_AUTH=true`:
+
+- **Web UI** uses `Authorization: Bearer <JWT>` after OAuth.
+- **Scripts / SDK** use `X-API-Key: cred_sk_...` from Settings.
 
 ---
 
@@ -19,12 +46,14 @@ The OAuth **redirect URI** always points to the **frontend** callback route. The
 
 1. Open [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**.
 2. **Create Credentials** → **OAuth 2.0 Client ID** → type **Web application**.
-3. **Authorized JavaScript origins:**
+3. **Authorized JavaScript origins** (no trailing slash):
    - `FRONTEND_URL`
-   - `http://localhost:3000` (local dev)
-4. **Authorized redirect URIs** (must match exactly):
+   - Any Vercel alias users open (e.g. `https://your-app-alias.vercel.app`)
+   - `http://localhost:3000` (local dev, optional)
+4. **Authorized redirect URIs** (must match **exactly**):
    - `FRONTEND_URL/auth/google/callback`
-   - `http://localhost:3000/auth/google/callback`
+   - `FRONTEND_ALIAS/auth/google/callback` (if using alias)
+   - `http://localhost:3000/auth/google/callback` (optional)
 5. Copy **Client ID** and **Client Secret**.
 
 ### 2. OAuth consent screen
@@ -32,7 +61,8 @@ The OAuth **redirect URI** always points to the **frontend** callback route. The
 1. **APIs & Services** → **OAuth consent screen**
 2. User type: **External** (public) or **Internal** (Google Workspace)
 3. Scopes: `openid`, `email`, `profile`
-4. While in **Testing** mode, add test users; **Publish** when ready for production.
+4. While in **Testing** mode, add test users under **Test users**
+5. **Publish app** when ready for public sign-in
 
 ### 3. Render environment variables
 
@@ -42,17 +72,28 @@ GOOGLE_CLIENT_SECRET=<from Google Console>
 GOOGLE_REDIRECT_URI=FRONTEND_URL/auth/google/callback
 ```
 
+These may be set in the Render dashboard (`sync: false`) or pinned in [`render.yaml`](../render.yaml) for blueprint sync. After changes, **redeploy** the API.
+
 ### 4. Verify
 
+```bash
+curl API_URL/api/auth/google/url
+# Expect: "mock": false
+```
+
+Browser:
+
 1. Open `FRONTEND_URL/auth/sign-in` → **Google**
-2. Complete Google login → redirected to `/auth/google/callback`
-3. Land on `/app/dashboard` with session active
+2. Complete Google login → `/auth/google/callback`
+3. Land on `/app/dashboard`
 
 | Error | Fix |
 |-------|-----|
 | `redirect_uri_mismatch` | Redirect URI in Google Console must exactly match `GOOGLE_REDIRECT_URI` |
 | `503 Google OAuth not configured` | Set all three `GOOGLE_*` vars on Render and redeploy |
-| CORS error | `CORS_ALLOWED_ORIGINS` must include `FRONTEND_URL` (no trailing slash) |
+| `access_denied` / app not verified | Add test users or publish consent screen |
+| CORS error | `CORS_ALLOWED_ORIGINS` must include every frontend origin (no trailing slash) |
+| Sign-in works but dashboard fails | API needs latest JWT middleware; redeploy from `master` |
 
 ---
 
@@ -64,9 +105,10 @@ GOOGLE_REDIRECT_URI=FRONTEND_URL/auth/google/callback
 2. **Application name:** CredenceAI
 3. **Homepage URL:** `FRONTEND_URL`
 4. **Authorization callback URL:** `FRONTEND_URL/auth/github/callback`
-5. Copy **Client ID**; generate a **Client Secret**
 
-For local dev, add a second OAuth app or use the same app with callback `http://localhost:3000/auth/github/callback`.
+> GitHub allows **one** callback URL per OAuth app. Use your canonical `FRONTEND_URL`. For local dev, create a second OAuth app with `http://localhost:3000/auth/github/callback`.
+
+5. Copy **Client ID**; generate a **Client Secret**
 
 ### 2. Render environment variables
 
@@ -76,7 +118,16 @@ GITHUB_CLIENT_SECRET=<from GitHub>
 GITHUB_REDIRECT_URI=FRONTEND_URL/auth/github/callback
 ```
 
+May be dashboard-only or blueprint-pinned in [`render.yaml`](../render.yaml). Redeploy after changes.
+
 ### 3. Verify
+
+```bash
+curl API_URL/api/auth/github/url
+# Expect: "mock": false and redirect_uri=FRONTEND_URL/auth/github/callback
+```
+
+Browser:
 
 1. Open `FRONTEND_URL/auth/sign-in` → **GitHub**
 2. Authorize on GitHub → `/auth/github/callback`
@@ -85,24 +136,29 @@ GITHUB_REDIRECT_URI=FRONTEND_URL/auth/github/callback
 | Error | Fix |
 |-------|-----|
 | Redirect URI not associated | Callback URL in GitHub app must match `GITHUB_REDIRECT_URI` |
-| `incorrect_client_credentials` | Regenerate client secret |
-| Missing email | Ensure `user:email` scope (configured in backend) and grant email access on GitHub |
+| `incorrect_client_credentials` | Regenerate client secret; update Render |
+| Missing email | Grant `user:email` scope; set primary email on GitHub |
+| `X-API-Key header is required` | Redeploy API from latest `master` |
 
 ---
 
 ## Production requirements
 
-- `APP_ENV=production`
-- `JWT_SECRET` — generate with `openssl rand -hex 32`
-- **At least one** OAuth provider fully configured (Google or GitHub)
-- `CORS_ALLOWED_ORIGINS=["FRONTEND_URL"]`
-- `ENABLE_API_KEY_AUTH=true`
+| Variable | Required |
+|----------|----------|
+| `APP_ENV` | `production` |
+| `JWT_SECRET` | Strong random (`openssl rand -hex 32`) |
+| OAuth | At least one of Google or GitHub fully configured |
+| `CORS_ALLOWED_ORIGINS` | JSON array of all frontend origins |
+| `ENABLE_API_KEY_AUTH` | `true` |
 
-On **Vercel**:
+**Vercel:**
 
 ```env
 VITE_API_BASE_URL=API_URL/api
 ```
+
+Must redeploy frontend after changing this variable.
 
 ---
 
@@ -124,11 +180,23 @@ curl API_URL/api/auth/validate -H "X-API-Key: cred_sk_YOUR_KEY"
 
 ---
 
-## Custom domain (later)
+## Custom domain
 
 When you add a domain:
 
 1. Point `app.yourdomain.com` → Vercel, `api.yourdomain.com` → Render
-2. Update redirect URIs in **both** Google Console and GitHub OAuth App
-3. Update `GOOGLE_REDIRECT_URI`, `GITHUB_REDIRECT_URI`, `CORS_ALLOWED_ORIGINS`, `VITE_API_BASE_URL`
-4. Redeploy frontend and API
+2. Update authorized origins and redirect URIs in **Google Console** and **GitHub OAuth App**
+3. Update on Render: `GOOGLE_REDIRECT_URI`, `GITHUB_REDIRECT_URI`, `CORS_ALLOWED_ORIGINS`
+4. Update on Vercel: `VITE_API_BASE_URL=https://api.yourdomain.com/api`
+5. Redeploy frontend and API; sync Render blueprint
+
+---
+
+## Security
+
+If OAuth secrets were exposed, rotate immediately:
+
+- **Google:** GCP Credentials → reset client secret → update Render
+- **GitHub:** OAuth App → regenerate client secret → update Render
+
+Never commit secrets. See [manual-setup.md#security-rotation-after-exposure](manual-setup.md#security-rotation-after-exposure).

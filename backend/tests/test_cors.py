@@ -61,6 +61,26 @@ def test_get_health_includes_cors_header(cors_client):
     response = cors_client.get("/api/health", headers={"Origin": LOCAL_ORIGIN})
     assert response.status_code == 200
     assert response.headers.get("access-control-allow-origin") == LOCAL_ORIGIN
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["service"] == "credenceai-api"
+
+
+def test_options_health_preflight_includes_patch(cors_client):
+    response = cors_client.options(
+        "/api/health",
+        headers={
+            "Origin": LOCAL_ORIGIN,
+            "Access-Control-Request-Method": "PATCH",
+            "Access-Control-Request-Headers": "authorization,content-type",
+        },
+    )
+    assert response.status_code == 200
+    methods = response.headers.get("access-control-allow-methods", "")
+    assert "PATCH" in methods
+    allowed_headers = response.headers.get("access-control-allow-headers", "")
+    assert "Authorization" in allowed_headers
+    assert "Content-Type" in allowed_headers
 
 
 def test_disallowed_origin_has_no_cors_header(cors_client):

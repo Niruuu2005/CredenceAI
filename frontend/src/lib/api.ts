@@ -2,15 +2,35 @@ import { CredenceAIClient } from '@credenceai/sdk';
 
 const TOKEN_KEY = 'cred_token';
 
+function isVercelHost(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    window.location.hostname.endsWith('.vercel.app')
+  );
+}
+
 function getApiBaseUrl(): string {
+  // On Vercel, always use same-origin /api (vercel.json rewrites to Render).
+  // Avoids CORS and cold-start 502s that browsers report as CORS failures.
+  if (isVercelHost()) {
+    return '';
+  }
+
   const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
   if (configured) {
     const trimmed = configured.trim();
     if (trimmed === '/api' || trimmed === '') {
       return '';
     }
+    if (typeof window !== 'undefined' && /onrender\.com/i.test(trimmed)) {
+      console.warn(
+        '[CredenceAI] VITE_API_BASE_URL points at Render; use your Vercel URL + /api or leave unset on Vercel.',
+      );
+      return '';
+    }
     return trimmed.replace(/\/api\/?$/, '');
   }
+
   if (typeof window !== 'undefined') {
     return '';
   }
@@ -183,7 +203,7 @@ export const api = {
     const res = await client.health();
     return {
       status: String((res as { status?: string }).status ?? 'unknown'),
-      service: String((res as { service?: string }).service ?? 'credenceai'),
+      service: String((res as { service?: string }).service ?? 'credenceai-api'),
       version: String((res as { version?: string }).version ?? ''),
     };
   },
