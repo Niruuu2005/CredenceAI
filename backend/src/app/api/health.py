@@ -50,7 +50,7 @@ def health_check(db: Session = Depends(get_db)) -> Dict[str, Any]:
         "storage": "ok" if storage.use_s3 else "degraded",
     }
 
-    return {
+    payload: Dict[str, Any] = {
         "status": "ok" if overall == "online" else "error",
         "overall": overall,
         "version": settings.API_VERSION if hasattr(settings, "API_VERSION") else "0.5.0",
@@ -62,8 +62,11 @@ def health_check(db: Session = Depends(get_db)) -> Dict[str, Any]:
             "object_storage": storage_status,
             "search_index": search_status,
         },
-        "providers": provider_status
+        "providers": provider_status,
     }
+    if settings.APP_ENV == "production":
+        payload["cors_origins_configured"] = len(settings.CORS_ALLOWED_ORIGINS)
+    return payload
 
 
 @router.get("/system/metrics", response_model=SystemMetricsResponse)

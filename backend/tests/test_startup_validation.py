@@ -61,6 +61,7 @@ def test_production_passes_with_github_only():
         settings.GITHUB_CLIENT_ID,
         settings.GITHUB_CLIENT_SECRET,
         settings.GITHUB_REDIRECT_URI,
+        settings.CORS_ALLOWED_ORIGINS,
     )
     settings.APP_ENV = "production"
     settings.JWT_SECRET = "a" * 64
@@ -70,6 +71,7 @@ def test_production_passes_with_github_only():
     settings.GITHUB_CLIENT_ID = "gh_client"
     settings.GITHUB_CLIENT_SECRET = "gh_secret"
     settings.GITHUB_REDIRECT_URI = "https://app.example.com/auth/github/callback"
+    settings.CORS_ALLOWED_ORIGINS = ["https://app.example.com"]
     try:
         startup_validation.validate_production_config()
     finally:
@@ -82,4 +84,43 @@ def test_production_passes_with_github_only():
             settings.GITHUB_CLIENT_ID,
             settings.GITHUB_CLIENT_SECRET,
             settings.GITHUB_REDIRECT_URI,
+            settings.CORS_ALLOWED_ORIGINS,
+        ) = original
+
+
+def test_production_rejects_localhost_only_cors():
+    original = (
+        settings.APP_ENV,
+        settings.JWT_SECRET,
+        settings.GOOGLE_CLIENT_ID,
+        settings.GOOGLE_CLIENT_SECRET,
+        settings.GOOGLE_REDIRECT_URI,
+        settings.GITHUB_CLIENT_ID,
+        settings.GITHUB_CLIENT_SECRET,
+        settings.GITHUB_REDIRECT_URI,
+        settings.CORS_ALLOWED_ORIGINS,
+    )
+    settings.APP_ENV = "production"
+    settings.JWT_SECRET = "a" * 64
+    settings.GOOGLE_CLIENT_ID = None
+    settings.GOOGLE_CLIENT_SECRET = None
+    settings.GOOGLE_REDIRECT_URI = None
+    settings.GITHUB_CLIENT_ID = "gh_client"
+    settings.GITHUB_CLIENT_SECRET = "gh_secret"
+    settings.GITHUB_REDIRECT_URI = "https://app.example.com/auth/github/callback"
+    settings.CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+    try:
+        with pytest.raises(RuntimeError, match="CORS_ALLOWED_ORIGINS"):
+            startup_validation.validate_production_config()
+    finally:
+        (
+            settings.APP_ENV,
+            settings.JWT_SECRET,
+            settings.GOOGLE_CLIENT_ID,
+            settings.GOOGLE_CLIENT_SECRET,
+            settings.GOOGLE_REDIRECT_URI,
+            settings.GITHUB_CLIENT_ID,
+            settings.GITHUB_CLIENT_SECRET,
+            settings.GITHUB_REDIRECT_URI,
+            settings.CORS_ALLOWED_ORIGINS,
         ) = original

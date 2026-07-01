@@ -1,5 +1,7 @@
+import json
+
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -56,6 +58,32 @@ class Settings(BaseSettings):
     CORS_ALLOWED_ORIGINS: list[str] = Field(
         default_factory=lambda: ["http://localhost:3000", "http://127.0.0.1:3000"]
     )
+
+    @field_validator("CORS_ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, value: object) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            stripped = value.strip()
+            if stripped.startswith("["):
+                try:
+                    parsed = json.loads(stripped)
+                    value = parsed if isinstance(parsed, list) else [parsed]
+                except json.JSONDecodeError:
+                    value = [stripped]
+            elif "," in stripped:
+                value = [part.strip() for part in stripped.split(",") if part.strip()]
+            else:
+                value = [stripped] if stripped else []
+        if not isinstance(value, list):
+            value = [value]
+        normalized: list[str] = []
+        for origin in value:
+            text = str(origin).strip().rstrip("/")
+            if text:
+                normalized.append(text)
+        return normalized
 
     # Local-only developer login (disabled when unset)
     DEV_LOGIN_USERNAME: str | None = Field(default=None)
