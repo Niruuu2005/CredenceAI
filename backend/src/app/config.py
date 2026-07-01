@@ -93,6 +93,11 @@ class Settings(BaseSettings):
     RATE_LIMIT_ENABLED: bool = Field(default=False)
     RATE_LIMIT_PER_MINUTE: int = Field(default=60)
 
+    # Render free-tier: ping own public /api/health to prevent spin-down
+    SELF_KEEPALIVE_ENABLED: bool = Field(default=False)
+    SELF_KEEPALIVE_INTERVAL_SEC: int = Field(default=30)
+    API_PUBLIC_URL: str | None = Field(default=None)
+
     # SDK Metadata
     API_VERSION: str = Field(default="0.1.0")
 

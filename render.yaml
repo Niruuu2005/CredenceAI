@@ -1,10 +1,12 @@
 # Render Blueprint — CredenceAI API + Celery worker
 # Docs: https://render.com/docs/blueprint-spec
+# Setup guide: docs/manual-setup.md
 #
 # Before deploy:
 # 1. Create Neon Postgres → set DATABASE_URL in Render dashboard
 # 2. Create Upstash Redis → set REDIS_URL in Render dashboard
-# 3. Set OAuth, JWT, and CORS env vars (see backend/.env.production.example)
+# 3. Update FRONTEND URLs below to match your Vercel app
+# 4. Set OAuth secrets in Render dashboard (see docs/oauth-setup.md)
 
 services:
   - type: web
@@ -45,6 +47,12 @@ services:
         value: https://credence-ai-patilniraj413-5474s-projects.vercel.app/auth/github/callback
       - key: CORS_ALLOWED_ORIGINS
         value: '["https://credence-ai-patilniraj413-5474s-projects.vercel.app","https://credence-ai-gamma.vercel.app"]'
+      - key: SELF_KEEPALIVE_ENABLED
+        value: "true"
+      - key: SELF_KEEPALIVE_INTERVAL_SEC
+        value: "30"
+      - key: API_PUBLIC_URL
+        value: https://credenceai-api.onrender.com
 
   - type: worker
     name: credenceai-worker

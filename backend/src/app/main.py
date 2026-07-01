@@ -1,5 +1,6 @@
 import os
 import logging
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -41,7 +42,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"STARTUP >> search index client warmup failed: {e}")
 
+    keepalive_stop = asyncio.Event()
+    keepalive_task: asyncio.Task | None = None
+    if settings.SELF_KEEPALIVE_ENABLED:
+        from app.services.self_keepalive import start_self_keepalive
+
+        keepalive_task = start_self_keepalive(keepalive_stop)
+
     yield
+
+    if keepalive_task is not None:
+        keepalive_stop.set()
+        keepalive_task.cancel()
+        try:
+            await keepalive_task
+        except asyncio.CancelledError:
+            pass
+
     logger.info("SHUTDOWN >> CredenceAI shutting down gracefully")
 
 
