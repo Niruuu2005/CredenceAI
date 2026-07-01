@@ -155,11 +155,6 @@ def get_google_auth_url():
             detail="Google OAuth is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI.",
         )
 
-        raise HTTPException(
-            status_code=503,
-            detail="Google OAuth is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI.",
-        )
-
 
 def _issue_session_for_user(db: Session, user_id: str, email: str, name: str, picture: str | None):
     """Create or update user record and return JWT + user payload."""

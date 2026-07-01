@@ -40,7 +40,7 @@ def test_middleware_blocking_and_allowing(client, db_session):
         response = client.post("/jobs", json={"job_type": "search_query", "input": "test"})
         assert response.status_code == 401
         data = response.json()
-        assert data["error"] == "missing_api_key"
+        assert data["error"] == "missing_auth"
         
         # 2. Access protected endpoint with invalid key format -> 401
         response = client.post("/jobs", json={"job_type": "search_query", "input": "test"}, headers={"X-API-Key": "invalid_key"})
@@ -75,11 +75,11 @@ def test_middleware_protects_monitors_and_collections(client, db_session):
     try:
         response = client.get("/monitors")
         assert response.status_code == 401
-        assert response.json()["error"] == "missing_api_key"
+        assert response.json()["error"] == "missing_auth"
 
         response = client.get("/collections")
         assert response.status_code == 401
-        assert response.json()["error"] == "missing_api_key"
+        assert response.json()["error"] == "missing_auth"
 
         from app.models import User
         db_session.add(User(id="test_dev_3", email="dev3@test.com", name="Dev 3"))
@@ -92,6 +92,36 @@ def test_middleware_protects_monitors_and_collections(client, db_session):
 
         response = client.get("/collections", headers=headers)
         assert response.status_code == 200
+    finally:
+        settings.ENABLE_API_KEY_AUTH = original_auth_setting
+
+
+def test_middleware_accepts_jwt_bearer_in_production(client, db_session, monkeypatch):
+    monkeypatch.setattr(settings, "APP_ENV", "production")
+    monkeypatch.setattr(settings, "JWT_SECRET", "ci-test-jwt-secret-not-default-value")
+    monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", "test-client-id")
+    monkeypatch.setattr(settings, "GOOGLE_CLIENT_SECRET", "test-secret")
+    monkeypatch.setattr(settings, "GOOGLE_REDIRECT_URI", "http://localhost/callback")
+    original_auth_setting = settings.ENABLE_API_KEY_AUTH
+    settings.ENABLE_API_KEY_AUTH = True
+    try:
+        from app.models import User
+        from app.services.security import create_access_token
+
+        db_session.add(User(id="jwt_user", email="jwt@test.com", name="JWT User"))
+        db_session.commit()
+        token = create_access_token({"sub": "jwt_user", "email": "jwt@test.com", "name": "JWT User"})
+        headers = {"Authorization": f"Bearer {token}"}
+
+        response = client.get("/jobs", headers=headers)
+        assert response.status_code == 200
+
+        response = client.post(
+            "/jobs",
+            json={"job_type": "search_query", "input": "jwt test"},
+            headers=headers,
+        )
+        assert response.status_code == 202
     finally:
         settings.ENABLE_API_KEY_AUTH = original_auth_setting
 

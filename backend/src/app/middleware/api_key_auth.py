@@ -1,8 +1,24 @@
-from fastapi import Request, Response, BackgroundTasks
+from fastapi import Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.config import settings
 from app.services.api_key_service import validate_api_key, update_key_last_used
+from app.services.security import _user_from_jwt
+
+PROTECTED_API_PREFIXES = [
+    "/jobs", "/goals", "/search", "/agents", "/evidence", "/intelligence", "/verticals",
+    "/monitors", "/collections",
+    "/api/jobs", "/api/goals", "/api/search", "/api/agents", "/api/evidence",
+    "/api/intelligence", "/api/verticals", "/api/monitors", "/api/collections",
+]
+
+
+def _bearer_token(request: Request) -> str | None:
+    auth = request.headers.get("authorization") or request.headers.get("Authorization")
+    if auth and auth.lower().startswith("bearer "):
+        token = auth[7:].strip()
+        return token or None
+    return None
 
 
 class ApiKeyMiddleware(BaseHTTPMiddleware):
@@ -15,25 +31,43 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        # Enforce API key only on actual protected API endpoints
-        API_PREFIXES = [
-            "/jobs", "/goals", "/search", "/agents", "/evidence", "/intelligence", "/verticals",
-            "/monitors", "/collections",
-            "/api/jobs", "/api/goals", "/api/search", "/api/agents", "/api/evidence",
-            "/api/intelligence", "/api/verticals", "/api/monitors", "/api/collections",
-        ]
         path = request.url.path
-        is_api_route = any(path == prefix or path.startswith(prefix + "/") for prefix in API_PREFIXES)
+        is_api_route = any(
+            path == prefix or path.startswith(prefix + "/") for prefix in PROTECTED_API_PREFIXES
+        )
         if not is_api_route:
             return await call_next(request)
 
-        # Get API key from headers
+        import app.database as database_module
+
+        bearer = _bearer_token(request)
+        if bearer:
+            db = database_module.SessionLocal()
+            try:
+                user = _user_from_jwt(bearer, db)
+                if user:
+                    request.state.api_key_owner = user.id
+                    request.state.api_key_user_id = user.id
+                    return await call_next(request)
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "error": "invalid_token",
+                        "message": "Invalid or expired Bearer token.",
+                    },
+                )
+            finally:
+                db.close()
+
         api_key = request.headers.get("x-api-key") or request.headers.get("X-API-Key")
 
         if not api_key:
             return JSONResponse(
                 status_code=401,
-                content={"error": "missing_api_key", "message": "X-API-Key header is required."}
+                content={
+                    "error": "missing_auth",
+                    "message": "Authentication required. Provide a valid Bearer token or X-API-Key.",
+                },
             )
 
         if not api_key.startswith("cred_sk_"):
@@ -42,8 +76,6 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
                 content={"error": "invalid_api_key_format", "message": "API key format is invalid."}
             )
 
-        # Load SessionLocal dynamically to ensure any test mocking (e.g. from conftest.py) is active
-        import app.database as database_module
         db = database_module.SessionLocal()
         try:
             key_record = validate_api_key(db, api_key)
