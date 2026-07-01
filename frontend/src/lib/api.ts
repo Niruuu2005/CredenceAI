@@ -2,56 +2,42 @@ import { CredenceAIClient } from '@credenceai/sdk';
 
 const TOKEN_KEY = 'cred_token';
 
-function isVercelHost(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    window.location.hostname.endsWith('.vercel.app')
-  );
-}
-
-function sameOriginBaseUrl(): string {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return 'http://localhost:8000';
-}
-
 function getApiBaseUrl(): string {
-  // On Vercel, use same-origin /api (vercel.json rewrites to Render).
-  if (isVercelHost()) {
-    return sameOriginBaseUrl();
-  }
-
-  const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  if (configured) {
-    const trimmed = configured.trim();
-    if (trimmed === '/api' || trimmed === '') {
-      return sameOriginBaseUrl();
-    }
-    if (typeof window !== 'undefined' && /onrender\.com/i.test(trimmed)) {
-      console.warn(
-        '[CredenceAI] VITE_API_BASE_URL points at Render; using same-origin /api proxy instead.',
-      );
-      return sameOriginBaseUrl();
-    }
-    return trimmed.replace(/\/api\/?$/, '');
-  }
-
   if (typeof window !== 'undefined') {
-    return sameOriginBaseUrl();
+    const origin = window.location.origin;
+    // Production builds always proxy /api via vercel.json — never call Render directly.
+    if (import.meta.env.PROD) {
+      return origin;
+    }
+
+    const configured = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+    if (configured && !configured.startsWith('/') && !/onrender\.com/i.test(configured)) {
+      return configured.replace(/\/api\/?$/, '');
+    }
+    // Local dev: Vite proxies /api to the backend.
+    return origin;
   }
-  return 'http://localhost:8000';
+
+  const configured = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  return configured?.replace(/\/api\/?$/, '') || 'http://localhost:8000';
 }
 
 function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
-const client = new CredenceAIClient({
-  baseUrl: getApiBaseUrl(),
-  apiPrefix: '/api',
-  getAccessToken: () => getStoredToken(),
-});
+let client: CredenceAIClient | null = null;
+
+function getClient(): CredenceAIClient {
+  if (!client) {
+    client = new CredenceAIClient({
+      baseUrl: getApiBaseUrl(),
+      apiPrefix: '/api',
+      getAccessToken: () => getStoredToken(),
+    });
+  }
+  return client;
+}
 
 export interface JobResponse {
   job_id: string;
@@ -174,11 +160,11 @@ function storeToken(token: string) {
 
 export const api = {
   async search(query: string, limit: number = 10): Promise<SearchResponse> {
-    return client.search({ q: query, limit }) as Promise<SearchResponse>;
+    return getClient().search({ q: query, limit }) as Promise<SearchResponse>;
   },
 
   async submitJob(input: string, jobType: string = 'search_query', priority: string = 'normal'): Promise<JobResponse> {
-    const res = await client.createJob({
+    const res = await getClient().createJob({
       input,
       job_type: jobType,
       priority,
@@ -187,7 +173,7 @@ export const api = {
   },
 
   async submitGoal(goal: string, vertical: string = 'general'): Promise<GoalResponse> {
-    const res = await client.goals.submit({ goal, vertical });
+    const res = await getClient().goals.submit({ goal, vertical });
     return {
       goal: res.goal,
       plan_id: res.plan_id,
@@ -196,17 +182,17 @@ export const api = {
   },
 
   async getJob(jobId: string): Promise<JobResponse> {
-    const res = await client.getJob(jobId);
+    const res = await getClient().getJob(jobId);
     return mapJob(res as unknown as Record<string, unknown>);
   },
 
   async getJobs(limit: number = 20): Promise<JobResponse[]> {
-    const jobs = await client.listJobs(limit);
+    const jobs = await getClient().listJobs(limit);
     return jobs.map((j) => mapJob(j as unknown as Record<string, unknown>));
   },
 
   async checkHealth(): Promise<{ status: string; service: string; version: string }> {
-    const res = await client.health();
+    const res = await getClient().health();
     return {
       status: String((res as { status?: string }).status ?? 'unknown'),
       service: String((res as { service?: string }).service ?? 'credenceai-api'),
@@ -215,56 +201,56 @@ export const api = {
   },
 
   async getApiKeys(): Promise<ApiKey[]> {
-    return client.auth.listApiKeys();
+    return getClient().auth.listApiKeys();
   },
 
   async createApiKey(label?: string) {
-    return client.auth.createApiKey(label);
+    return getClient().auth.createApiKey(label);
   },
 
   async revokeApiKey(keyId: number) {
-    return client.auth.revokeApiKey(keyId);
+    return getClient().auth.revokeApiKey(keyId);
   },
 
   async getMonitors(): Promise<Monitor[]> {
-    const data = await client.monitors.list();
+    const data = await getClient().monitors.list();
     return data.map(mapMonitor);
   },
 
   async createMonitor(topic: string, scope?: string, interval?: string): Promise<Monitor> {
-    const m = await client.monitors.create({ topic, scope, interval });
+    const m = await getClient().monitors.create({ topic, scope, interval });
     return mapMonitor(m);
   },
 
   async syncMonitor(monitorId: string): Promise<Monitor> {
-    const m = await client.monitors.sync(monitorId);
+    const m = await getClient().monitors.sync(monitorId);
     return mapMonitor(m);
   },
 
   async deleteMonitor(monitorId: string) {
-    return client.monitors.delete(monitorId);
+    return getClient().monitors.delete(monitorId);
   },
 
   async getCollections(): Promise<Collection[]> {
-    const data = await client.collections.list();
+    const data = await getClient().collections.list();
     return data.map(mapCollection);
   },
 
   async createCollection(name: string, description?: string): Promise<Collection> {
-    const c = await client.collections.create({ name, description });
+    const c = await getClient().collections.create({ name, description });
     return mapCollection(c);
   },
 
   async deleteCollection(collectionId: string) {
-    return client.collections.delete(collectionId);
+    return getClient().collections.delete(collectionId);
   },
 
   async getGoogleAuthUrl() {
-    return client.auth.getGoogleAuthUrl();
+    return getClient().auth.getGoogleAuthUrl();
   },
 
   async loginWithGoogle(code: string) {
-    const data = await client.auth.loginWithGoogle(code);
+    const data = await getClient().auth.loginWithGoogle(code);
     if (data.token) {
       storeToken(data.token);
     }
@@ -272,11 +258,11 @@ export const api = {
   },
 
   async getGitHubAuthUrl() {
-    return client.auth.getGitHubAuthUrl();
+    return getClient().auth.getGitHubAuthUrl();
   },
 
   async loginWithGitHub(code: string) {
-    const data = await client.auth.loginWithGitHub(code);
+    const data = await getClient().auth.loginWithGitHub(code);
     if (data.token) {
       storeToken(data.token);
     }
@@ -284,7 +270,7 @@ export const api = {
   },
 
   async loginWithCredentials(username: string, password: string) {
-    const data = await client.auth.loginWithCredentials(username, password);
+    const data = await getClient().auth.loginWithCredentials(username, password);
     if (data.token) {
       storeToken(data.token);
     }
@@ -292,7 +278,7 @@ export const api = {
   },
 
   async upgradePlan(plan: string) {
-    return client.auth.upgradePlan(plan);
+    return getClient().auth.upgradePlan(plan);
   },
 
   async createCheckoutSession(plan: string): Promise<{ url: string }> {
@@ -320,7 +306,7 @@ export const api = {
   },
 
   async getCurrentUser() {
-    return client.auth.getCurrentUser();
+    return getClient().auth.getCurrentUser();
   },
 
   logout() {
