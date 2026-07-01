@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from sqlalchemy import inspect
 
 revision: str = "b1c2d3e4f5a6"
-down_revision: Union[str, None] = "ad9bb0cbfcdb"
+down_revision: Union[str, None] = "fda5d7dfffb3"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -120,15 +120,6 @@ def upgrade() -> None:
             sa.Column("event_type", sa.String(100), nullable=False),
             sa.Column("processed_at", sa.DateTime(), nullable=True),
         )
-
-    if _table_exists("jobs"):
-        bind = op.get_bind()
-        indexes = {idx["name"] for idx in inspect(bind).get_indexes("jobs")}
-        if "ix_jobs_user_id" not in indexes:
-            op.create_index("ix_jobs_user_id", "jobs", ["user_id"])
-        if "ix_jobs_user_id_created_at" not in indexes:
-            op.create_index("ix_jobs_user_id_created_at", "jobs", ["user_id", "created_at"])
-
 
 def downgrade() -> None:
     op.drop_table("stripe_events")
