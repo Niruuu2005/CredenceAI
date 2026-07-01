@@ -6,6 +6,7 @@ import {
   XCircle, ArrowRight, Activity 
 } from "lucide-react";
 import { api, SearchDocument, JobResponse } from "@/lib/api";
+import { withWakeupRetry } from "@/lib/retry";
 
 export function SearchApp() {
   const [query, setQuery] = useState("");
@@ -41,7 +42,7 @@ export function SearchApp() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.search(q);
+      const res = await withWakeupRetry(() => api.search(q));
       setSearchResults(res.results.map(r => r.document));
       setTotalResults(res.total);
       setHasSearched(true);
@@ -56,7 +57,7 @@ export function SearchApp() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.submitGoal(q);
+      const res = await withWakeupRetry(() => api.submitGoal(q));
       setActiveGoal({
         planId: res.plan_id,
         goal: res.goal,

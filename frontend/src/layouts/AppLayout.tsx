@@ -12,34 +12,48 @@ export function AppLayout() {
   const [jobCount, setJobCount] = useState(0);
   const [user, setUser] = useState<{ name: string; email: string; picture: string | null } | null>(null);
 
-  const fetchUser = async () => {
+  const fetchUser = async (): Promise<boolean> => {
     try {
       const u = await api.getCurrentUser();
       setUser(u);
+      return true;
     } catch (err) {
       console.error("Failed to load user profile in layout:", err);
+      return false;
     }
   };
 
-  const fetchJobCount = async () => {
+  const fetchJobCount = async (): Promise<boolean> => {
     try {
       const data = await api.getJobs(100);
       setJobCount(data.length);
+      return true;
     } catch (err) {
       console.error("Failed to load layout quota:", err);
+      return false;
     }
   };
 
   useEffect(() => {
-    fetchUser();
-    fetchJobCount();
-    
-    // Periodically sync sidebar indicators & user plan details
-    const interval = setInterval(() => {
-      fetchUser();
-      fetchJobCount();
-    }, 5000);
-    return () => clearInterval(interval);
+    let timer: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+    let intervalMs = 5000;
+
+    const tick = async () => {
+      if (cancelled) return;
+      const userOk = await fetchUser();
+      const jobsOk = await fetchJobCount();
+      intervalMs = userOk && jobsOk ? 5000 : Math.min(30000, intervalMs * 2);
+      if (!cancelled) {
+        timer = setTimeout(tick, intervalMs);
+      }
+    };
+
+    tick();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   const navItems = [

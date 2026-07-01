@@ -10,6 +10,7 @@ from app.config import settings
 from app.logging_config import setup_logging
 from app.api.middleware import TraceIdMiddleware
 from app.middleware.api_key_auth import ApiKeyMiddleware
+from app.middleware.cors_guard import CorsGuardMiddleware
 from app.api import jobs, search, health, agents, evidence, intelligence, verticals, goals, auth, monitors, collections, billing, admin
 from slowapi.errors import RateLimitExceeded
 from app.limiter import limiter
@@ -88,9 +89,11 @@ app.add_middleware(
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["X-API-Key", "Authorization", "Content-Type", "Accept"],
+    allow_headers=["*"],
     expose_headers=["X-Trace-Id"],
 )
+
+app.add_middleware(CorsGuardMiddleware)
 
 
 @app.exception_handler(RequestValidationError)

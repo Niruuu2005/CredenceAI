@@ -5,10 +5,14 @@ const TOKEN_KEY = 'cred_token';
 function getApiBaseUrl(): string {
   const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
   if (configured) {
-    return configured.replace(/\/api\/?$/, '');
+    const trimmed = configured.trim();
+    if (trimmed === '/api' || trimmed === '') {
+      return '';
+    }
+    return trimmed.replace(/\/api\/?$/, '');
   }
   if (typeof window !== 'undefined') {
-    return window.location.origin;
+    return '';
   }
   return 'http://localhost:8000';
 }

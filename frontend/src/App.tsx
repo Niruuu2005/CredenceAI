@@ -25,10 +25,12 @@ import { Billing } from "./pages/app/Billing";
 import { Collections } from "./pages/app/Collections";
 import { Monitors } from "./pages/app/Monitors";
 import { Settings } from "./pages/app/Settings";
+import { ApiKeepAlive } from "./components/ApiKeepAlive";
 
 export default function App() {
   return (
     <BrowserRouter>
+      <ApiKeepAlive />
       <Routes>
         {/* Marketing Routes */}
         <Route element={<MarketingLayout />}>
