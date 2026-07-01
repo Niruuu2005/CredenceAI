@@ -35,6 +35,7 @@ function getClient(): CredenceAIClient {
       baseUrl: getApiBaseUrl(),
       apiPrefix: '/api',
       getAccessToken: () => getStoredToken(),
+      timeoutMs: import.meta.env.PROD ? 90000 : 30000,
     });
   }
   return client;

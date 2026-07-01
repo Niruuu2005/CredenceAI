@@ -12,7 +12,7 @@ def test_submit_job_success(client):
     data = response.json()
     assert "job_id" in data
     assert "trace_id" in data
-    assert data["status"] == "completed"
+    assert data["status"] == "queued"
     
     # Check trace ID header is returned
     assert response.headers["x-trace-id"] == data["trace_id"]

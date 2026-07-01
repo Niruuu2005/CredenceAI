@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
-  Search, Filter, Database, ShieldCheck, ShieldAlert, 
+  Search, Database, ShieldCheck, ShieldAlert, 
   FileText, Download, Loader2, CheckCircle2, 
   XCircle, ArrowRight, Activity 
 } from "lucide-react";
@@ -230,7 +230,7 @@ export function SearchApp() {
         const updatedJobs = await Promise.all(
           pollingJobs.map(async (job) => {
             if (isJobPending(job)) {
-              return await api.getJob(job.job_id);
+              return await withWakeupRetry(() => api.getJob(job.job_id));
             }
             return job;
           })
@@ -356,9 +356,6 @@ export function SearchApp() {
             ) : (
               "Plan Goal"
             )}
-          </Button>
-          <Button type="button" variant="outline" size="icon" className="h-[46px] w-12 shrink-0 border-border-subtle bg-bg-surface">
-            <Filter className="h-4 w-4 text-text-subtle" />
           </Button>
         </form>
 

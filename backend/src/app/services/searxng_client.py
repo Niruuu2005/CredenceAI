@@ -1,4 +1,5 @@
 import logging
+import random
 import re
 import time
 from html import unescape
@@ -8,6 +9,7 @@ from urllib.parse import urlparse
 import requests
 
 from app.config import settings
+from app.services.health_router import HealthRouter
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +25,15 @@ _DDG_HEADERS = {
     "Accept": "text/html,application/xhtml+xml",
     "Accept-Language": "en-US,en;q=0.9",
 }
-_DDG_TIMEOUT = (5, 12)
-_DDG_MAX_ATTEMPTS = 3
+_DDG_CAPTCHA_MARKERS = (
+    "anomaly-modal",
+    "bots use duckduckgo",
+    "verify you are human",
+    "challenge-form",
+    "sorry, you have been blocked",
+)
+
+_health_router = HealthRouter()
 
 
 class SearchProviderUnavailable(Exception):
@@ -37,6 +46,21 @@ def _is_localhost_url(url: str) -> bool:
         return host in ("localhost", "127.0.0.1", "::1")
     except Exception:
         return False
+
+
+def is_ddg_challenge_page(html: str) -> bool:
+    """Detect DuckDuckGo CAPTCHA/bot challenge pages."""
+    lowered = html.lower()
+    return any(marker in lowered for marker in _DDG_CAPTCHA_MARKERS)
+
+
+def _ddg_timeout() -> tuple[float, float]:
+    return (settings.DDG_CONNECT_TIMEOUT, settings.DDG_READ_TIMEOUT)
+
+
+def _ddg_backoff_seconds(attempt: int) -> float:
+    base = 0.5 * (2 ** (attempt - 1))
+    return min(base + random.uniform(0, 0.5), 8.0)
 
 
 def resolve_search_provider(
@@ -130,6 +154,7 @@ class SearXNGClient:
             n_results = len(data.get("results", []))
             elapsed_ms = (time.perf_counter() - t0) * 1000
             engines = list({r.get("engine", "unknown") for r in data.get("results", [])})
+            _health_router.record_result("searxng", True)
             logger.info(
                 "SEARXNG  STATUS=SUCCESS  query=%r  results=%d  engines=%s  elapsed=%.2fms",
                 query[:60],
@@ -141,6 +166,7 @@ class SearXNGClient:
 
         except requests.exceptions.Timeout:
             elapsed_ms = (time.perf_counter() - t0) * 1000
+            _health_router.record_result("searxng", False)
             logger.error(
                 "SEARXNG  STATUS=TIMEOUT  query=%r  endpoint=%s  elapsed=%.2fms",
                 query[:60],
@@ -151,6 +177,7 @@ class SearXNGClient:
 
         except requests.exceptions.ConnectionError as exc:
             elapsed_ms = (time.perf_counter() - t0) * 1000
+            _health_router.record_result("searxng", False)
             logger.warning(
                 "SEARXNG  STATUS=CONNECTION_FAILED  query=%r  endpoint=%s  "
                 "error=%r  elapsed=%.2fms  falling back to DuckDuckGo",
@@ -173,6 +200,7 @@ class SearXNGClient:
 
         except Exception as exc:
             elapsed_ms = (time.perf_counter() - t0) * 1000
+            _health_router.record_result("searxng", False)
             logger.error(
                 "SEARXNG  STATUS=FAILED  query=%r  endpoint=%s  error=%r  elapsed=%.2fms",
                 query[:60],
@@ -182,12 +210,47 @@ class SearXNGClient:
             )
             raise SearchProviderUnavailable(f"SearXNG search failed: {exc}") from exc
 
-    def _search_duckduckgo(self, query: str, t0: float) -> Dict[str, Any]:
-        """Query DuckDuckGo Lite/HTML with retries across endpoints."""
+    def _search_duckduckgo_ddgs(self, query: str) -> list[Dict[str, Any]]:
+        """Primary DDG path via duckduckgo-search library."""
+        try:
+            try:
+                from ddgs import DDGS
+            except ImportError:
+                from duckduckgo_search import DDGS
+        except ImportError:
+            logger.warning("DUCKDUCKGO  ddgs package not installed; skipping library path")
+            return []
+
+        results: list[Dict[str, Any]] = []
+        try:
+            with DDGS() as ddgs:
+                for item in ddgs.text(query, max_results=10):
+                    url = item.get("href") or item.get("url") or ""
+                    title = item.get("title") or ""
+                    body = item.get("body") or item.get("snippet") or ""
+                    if not url or not title:
+                        continue
+                    results.append(
+                        {
+                            "title": title,
+                            "url": url,
+                            "content": body,
+                            "engine": "duckduckgo-ddgs",
+                        }
+                    )
+        except Exception as exc:
+            logger.warning("DUCKDUCKGO  ddgs failed  error=%r", exc)
+            return []
+
+        return results
+
+    def _search_duckduckgo_html(self, query: str, t0: float) -> Dict[str, Any]:
+        """Fallback DDG path via HTML scraping with retries."""
         last_error: Exception | None = None
         endpoints = (_DDG_LITE_URL, _DDG_HTML_URL)
+        max_attempts = settings.DDG_MAX_ATTEMPTS
 
-        for attempt in range(1, _DDG_MAX_ATTEMPTS + 1):
+        for attempt in range(1, max_attempts + 1):
             endpoint = endpoints[(attempt - 1) % len(endpoints)]
             headers = {**_DDG_HEADERS, "Referer": endpoint}
             try:
@@ -195,7 +258,7 @@ class SearXNGClient:
                     endpoint,
                     data={"q": query},
                     headers=headers,
-                    timeout=_DDG_TIMEOUT,
+                    timeout=_ddg_timeout(),
                 )
                 if response.status_code in (202, 429):
                     logger.warning(
@@ -206,10 +269,21 @@ class SearXNGClient:
                     last_error = SearchProviderUnavailable(
                         f"DuckDuckGo returned HTTP {response.status_code}"
                     )
-                    time.sleep(0.5 * attempt)
+                    time.sleep(_ddg_backoff_seconds(attempt))
                     continue
 
                 response.raise_for_status()
+
+                if is_ddg_challenge_page(response.text):
+                    last_error = SearchProviderUnavailable("DuckDuckGo CAPTCHA/challenge page")
+                    logger.warning(
+                        "DUCKDUCKGO  STATUS=CHALLENGE  attempt=%d  endpoint=%s",
+                        attempt,
+                        endpoint,
+                    )
+                    time.sleep(_ddg_backoff_seconds(attempt))
+                    continue
+
                 results = self._parse_duckduckgo_html(response.text, endpoint)
                 if not results:
                     last_error = ValueError("DuckDuckGo returned no parseable results")
@@ -218,13 +292,14 @@ class SearXNGClient:
                         attempt,
                         endpoint,
                     )
-                    time.sleep(0.5 * attempt)
+                    time.sleep(_ddg_backoff_seconds(attempt))
                     continue
 
                 elapsed_ms = (time.perf_counter() - t0) * 1000
+                _health_router.record_result("duckduckgo", True)
                 logger.info(
                     "DUCKDUCKGO  STATUS=SUCCESS  query=%r  results=%d  "
-                    "endpoint=%s  attempt=%d  elapsed=%.2fms",
+                    "endpoint=%s  attempt=%d  elapsed=%.2fms  backend=html",
                     query[:60],
                     len(results),
                     endpoint,
@@ -241,19 +316,40 @@ class SearXNGClient:
                     endpoint,
                     exc,
                 )
-                time.sleep(0.5 * attempt)
+                time.sleep(_ddg_backoff_seconds(attempt))
 
-        elapsed_ms = (time.perf_counter() - t0) * 1000
-        logger.error(
-            "DUCKDUCKGO  STATUS=FAILED  query=%r  attempts=%d  elapsed=%.2fms  error=%r",
-            query[:60],
-            _DDG_MAX_ATTEMPTS,
-            elapsed_ms,
-            last_error,
-        )
         raise SearchProviderUnavailable(
-            "DuckDuckGo search unavailable after retries. Try again later."
+            "DuckDuckGo HTML search unavailable after retries."
         ) from last_error
+
+    def _search_duckduckgo(self, query: str, t0: float) -> Dict[str, Any]:
+        """Query DuckDuckGo via ddgs library first, then HTML fallback."""
+        ddgs_results = self._search_duckduckgo_ddgs(query)
+        if ddgs_results:
+            elapsed_ms = (time.perf_counter() - t0) * 1000
+            _health_router.record_result("duckduckgo", True)
+            logger.info(
+                "DUCKDUCKGO  STATUS=SUCCESS  query=%r  results=%d  elapsed=%.2fms  backend=ddgs",
+                query[:60],
+                len(ddgs_results),
+                elapsed_ms,
+            )
+            return {"query": query, "results": ddgs_results}
+
+        try:
+            return self._search_duckduckgo_html(query, t0)
+        except SearchProviderUnavailable as exc:
+            _health_router.record_result("duckduckgo", False)
+            elapsed_ms = (time.perf_counter() - t0) * 1000
+            logger.error(
+                "DUCKDUCKGO  STATUS=FAILED  query=%r  elapsed=%.2fms  error=%r",
+                query[:60],
+                elapsed_ms,
+                exc,
+            )
+            raise SearchProviderUnavailable(
+                "DuckDuckGo search unavailable after retries. Try again later."
+            ) from exc
 
     @staticmethod
     def _parse_duckduckgo_html(html: str, endpoint: str) -> list[Dict[str, Any]]:

@@ -12,11 +12,14 @@ Supports:
 """
 
 import os
+import asyncio
 import time
 import logging
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 import tiktoken
+
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +183,7 @@ class LLMClient:
                     f"Rate limit hit (attempt {attempt + 1}/{self.max_retries}), "
                     f"retrying in {wait_time}s"
                 )
-                time.sleep(wait_time)
+                await asyncio.sleep(wait_time)
                 
             except LLMTimeoutError as e:
                 last_error = e
@@ -192,7 +195,7 @@ class LLMClient:
                 last_error = e
                 logger.error(f"LLM call failed (attempt {attempt + 1}/{self.max_retries}): {e}")
                 if attempt < self.max_retries - 1:
-                    time.sleep(1)
+                    await asyncio.sleep(1)
         
         # All retries failed
         raise LLMError(f"LLM call failed after {self.max_retries} retries: {last_error}")
@@ -284,7 +287,10 @@ class LLMClient:
             except Exception as e:
                 if isinstance(e, (LLMRateLimitError, LLMTimeoutError, LLMError)):
                     raise e
-                logger.error(f"Real LLM call failed, falling back to mock: {e}")
+                logger.error(f"Real LLM call failed: {e}")
+                if settings.APP_ENV == "production" and not settings.MOCK_SERVICES:
+                    raise LLMError(f"OpenAI API call failed in production: {e}") from e
+                logger.warning("Falling back to mock LLM response (non-production or MOCK_SERVICES)")
 
         # Simulate API latency
         await self._async_sleep(0.5)

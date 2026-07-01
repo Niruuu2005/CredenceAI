@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # Source Adapter Configs
     SEARXNG_BASE_URL: str = Field(default="http://localhost:8080")
     SEARCH_PROVIDER: Literal["auto", "searxng", "duckduckgo"] = Field(default="auto")
+    DDG_MAX_ATTEMPTS: int = Field(default=6)
+    DDG_CONNECT_TIMEOUT: float = Field(default=5.0)
+    DDG_READ_TIMEOUT: float = Field(default=15.0)
     ENABLE_WIKIDATA: bool = Field(default=True)
     ENABLE_WIKIPEDIA: bool = Field(default=True)
     ENABLE_GDELT: bool = Field(default=True)

@@ -35,12 +35,15 @@ def test_health_router_degraded_routing():
     assert router.get_route("searxng") == "searxng"
 
 def test_api_health_endpoint(client):
-    """Test health check API contains provider health reports."""
-    response = client.get("/health")
+    """Test readiness endpoint contains provider health reports."""
+    response = client.get("/health/ready")
     assert response.status_code == 200
     data = response.json()
     assert "status" in data
     assert "components" in data
     assert "providers" in data
     assert "searxng" in data["providers"]
+    assert "duckduckgo" in data["providers"]
     assert data["providers"]["searxng"]["status"] in ["healthy", "degraded"]
+    assert "search_provider" in data
+    assert "openai_configured" in data

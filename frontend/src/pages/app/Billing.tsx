@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { withWakeupRetry } from "@/lib/retry";
 
 export function Billing() {
-  const [user, setUser] = useState<{ plan: string; search_quota_limit: number } | null>(null);
+  const [user, setUser] = useState<{ plan: string; search_quota_limit: number; search_used?: number } | null>(null);
   const [jobCount, setJobCount] = useState(0);
   const [monitorsCount, setMonitorsCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -14,11 +15,9 @@ export function Billing() {
 
   const fetchData = async () => {
     try {
-      const u = await api.getCurrentUser();
-      setUser(u as any);
-      
-      const jobs = await api.getJobs(100);
-      setJobCount(jobs.length);
+      const u = await withWakeupRetry(() => api.getCurrentUser());
+      setUser(u as { plan: string; search_quota_limit: number; search_used?: number });
+      setJobCount(u.search_used ?? 0);
 
       const monitors = await api.getMonitors();
       setMonitorsCount(monitors.length);
@@ -122,7 +121,7 @@ export function Billing() {
             <CardContent className="space-y-8">
                <div>
                   <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-text-subtle mb-3">
-                     <span>Deep Searches</span>
+                     <span>Research Jobs</span>
                      <span className="font-mono text-text-body">{jobCount} / {searchQuotaLimit}</span>
                   </div>
                   <div className="h-1 w-full bg-border-subtle overflow-hidden">
@@ -148,6 +147,19 @@ export function Billing() {
          </Card>
 
          {/* Upgrade Card */}
+         {user?.plan === "Free" && import.meta.env.PROD ? (
+           <Card className="border-border-subtle bg-bg-surface">
+            <CardHeader className="border-b border-border-subtle pb-6 mb-6">
+               <CardTitle className="text-xl font-serif italic text-text-title mb-2">Pro Plan</CardTitle>
+               <CardDescription className="text-sm tracking-wide text-text-subtle">Paid upgrades not configured on this deployment.</CardDescription>
+            </CardHeader>
+            <CardContent>
+               <p className="text-xs text-text-subtle leading-relaxed">
+                 The Free plan includes search and AI goal research. Stripe checkout can be enabled later for Pro features.
+               </p>
+            </CardContent>
+           </Card>
+         ) : (
          <Card className="border-border-accent bg-bg-deep relative shadow-2xl">
             <div className="absolute top-0 right-0 bg-accent text-accent-foreground border border-border-accent text-[9px] font-bold px-3 py-1 uppercase tracking-[0.2em] transform translate-x-2 -translate-y-2">
                Recommended
@@ -183,9 +195,11 @@ export function Billing() {
                </Button>
             </CardFooter>
          </Card>
+         )}
       </div>
 
       {/* Enterprise CTA */}
+      {!import.meta.env.PROD && (
       <div className="border border-border-subtle p-12 bg-bg-surface text-center">
          <h3 className="text-3xl font-serif italic text-text-title mb-4">Need team collaboration or API access?</h3>
          <p className="text-sm tracking-wide text-text-body leading-relaxed mb-8 max-w-xl mx-auto">Our Team and Enterprise tiers offer shared workspaces, advanced audit logs, SSO, and dedicated success managers.</p>
@@ -198,6 +212,7 @@ export function Billing() {
             {user?.plan === "Enterprise" ? "Active Enterprise Plan" : "Upgrade to Enterprise"}
          </Button>
       </div>
+      )}
     </div>
   );
 }

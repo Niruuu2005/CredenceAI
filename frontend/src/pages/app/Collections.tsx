@@ -96,11 +96,11 @@ export function Collections() {
                 </CardContent>
               </div>
               <div className="flex items-center justify-between p-6 border-t border-border-subtle mt-4">
-                <Button size="sm" variant="outline" className="border-border-subtle bg-bg-deep text-xs text-text-body hover:bg-bg-panel hover:text-text-title">
+                <Button size="sm" variant="outline" disabled title="Coming soon" className="border-border-subtle bg-bg-deep text-xs text-text-subtle opacity-60 cursor-not-allowed">
                   Open Workspace
                 </Button>
                 <div className="flex gap-2">
-                  <button className="p-2 border border-border-subtle hover:border-border-accent hover:text-text-title text-text-subtle transition-colors cursor-pointer">
+                  <button disabled title="Coming soon" className="p-2 border border-border-subtle text-text-subtle opacity-60 cursor-not-allowed">
                     <Download className="h-3.5 w-3.5" />
                   </button>
                   <button 

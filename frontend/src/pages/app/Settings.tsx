@@ -195,15 +195,6 @@ export function Settings() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyToClipboard(`cred_sk_... (Hashed in DB)`, k.id)}
-                          className="border-border-subtle bg-bg-surface px-2 hover:bg-bg-panel text-text-body h-7"
-                          title="Copy Key Reference ID"
-                        >
-                          {copiedId === k.id ? <Check className="h-3 w-3 text-highlight-color" /> : <Copy className="h-3 w-3" />}
-                        </Button>
                         <button
                           onClick={() => handleRevokeKey(k.id)}
                           className="p-1.5 border border-border-subtle hover:border-red-900 hover:text-red-500 text-text-subtle transition-colors cursor-pointer"

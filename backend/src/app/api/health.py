@@ -12,6 +12,7 @@ from app.schemas import SystemMetricsResponse
 from app.services.backend_selection import search_backend_label, storage_backend_label
 from app.services.search_index import SearchIndexClient
 from app.services.storage import StorageClient
+from app.services.searxng_client import resolve_search_provider
 from app.utils.redis_ssl import redis_client_kwargs
 
 logger = logging.getLogger(__name__)
@@ -82,7 +83,10 @@ def health_ready(db: Session = Depends(get_db)) -> Dict[str, Any]:
         "search": search_label,
         "storage": storage_label,
         "celery_mode": celery_mode,
+        "celery_eager": settings.CELERY_ALWAYS_EAGER,
         "worker_available": worker_available,
+        "search_provider": resolve_search_provider(),
+        "openai_configured": bool(settings.OPENAI_API_KEY),
         "version": settings.API_VERSION,
         "mock_mode": settings.MOCK_SERVICES,
         "components": {

@@ -29,6 +29,7 @@ from app.agents.base import BaseAgent, AgentInput, AgentOutput
 from app.services.llm_client import LLMClient
 from app.services.agent_output_parser import AgentOutputParser
 from app.services.agent_config_manager import get_config_manager
+from app.services.searxng_client import resolve_search_provider
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,12 @@ class PlannerAgent(BaseAgent):
         
         # Get system prompt from config
         self.system_prompt = self.config.get("system_prompt") or self._get_default_system_prompt()
+        provider = resolve_search_provider()
+        self.system_prompt += (
+            f"\n\nDeployment search provider: {provider}. "
+            "Prefer sources available without self-hosted infrastructure: "
+            "duckduckgo, wikipedia, wikidata."
+        )
         
         logger.info(f"Initialized {self.agent_name} with model {self.config.get('model')}")
     

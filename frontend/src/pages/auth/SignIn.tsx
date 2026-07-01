@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { withWakeupRetry } from "@/lib/retry";
 
 const isLocalDev =
   import.meta.env.DEV || import.meta.env.VITE_APP_ENV === "local";
@@ -50,7 +51,7 @@ export function SignIn() {
 
     if (provider === "Google") {
       try {
-        const { url, mock } = await api.getGoogleAuthUrl();
+        const { url, mock } = await withWakeupRetry(() => api.getGoogleAuthUrl());
         await completeGoogleAuth(mock, url);
       } catch (err) {
         console.error("Failed to resolve Google auth URL:", err);
@@ -59,7 +60,7 @@ export function SignIn() {
       }
     } else {
       try {
-        const { url, mock } = await api.getGitHubAuthUrl();
+        const { url, mock } = await withWakeupRetry(() => api.getGitHubAuthUrl());
         await completeGitHubAuth(mock, url);
       } catch (err) {
         console.error("Failed to resolve GitHub auth URL:", err);

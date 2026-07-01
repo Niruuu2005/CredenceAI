@@ -8,12 +8,14 @@ function isWakeupError(err: unknown): boolean {
   const statusCode = (err as { statusCode?: number }).statusCode;
   return (
     name === "NetworkError" ||
+    name === "TimeoutError" ||
     statusCode === 502 ||
     statusCode === 503 ||
     statusCode === 504 ||
     message.includes("Network connection failed") ||
     message.includes("Failed to fetch") ||
     message.includes("Load failed") ||
+    message.includes("timed out") ||
     message.includes("502") ||
     message.includes("503") ||
     message.includes("504")

@@ -133,6 +133,11 @@ def get_job_status(
     t0 = time.perf_counter()
     job = _get_user_job(db, job_id, current_user.id)
 
+    from app.services.job_dispatch import maybe_redispatch_stale_job
+
+    maybe_redispatch_stale_job(db, job_id)
+    db.refresh(job)
+
     results = get_job_normalized_results(db, job_id)
     results_count = len(results)
     elapsed_ms = (time.perf_counter() - t0) * 1000

@@ -7,7 +7,59 @@ from app.services.searxng_client import (
     SearXNGClient,
     SearchProviderUnavailable,
     resolve_search_provider,
+    is_ddg_challenge_page,
 )
+
+
+def test_is_ddg_challenge_page_detects_captcha():
+    assert is_ddg_challenge_page("<html><body>Verify you are human</body></html>")
+    assert not is_ddg_challenge_page("<html><tr class='result-link'>ok</tr></html>")
+
+
+def test_searxng_client_duckduckgo_uses_ddgs_when_available():
+    original = settings.SEARCH_PROVIDER
+    settings.SEARCH_PROVIDER = "duckduckgo"
+    client = SearXNGClient(base_url="http://localhost:8080")
+
+    ddgs_results = [
+        {
+            "title": "DDGS Result",
+            "url": "https://example.com/ddgs",
+            "content": "snippet",
+            "engine": "duckduckgo-ddgs",
+        }
+    ]
+
+    try:
+        with patch.object(client, "_search_duckduckgo_ddgs", return_value=ddgs_results):
+            with patch("requests.post") as mock_post:
+                res = client.search("test query")
+                assert len(res["results"]) == 1
+                assert res["results"][0]["engine"] == "duckduckgo-ddgs"
+                mock_post.assert_not_called()
+    finally:
+        settings.SEARCH_PROVIDER = original
+
+
+def test_searxng_client_duckduckgo_html_skips_challenge_page():
+    original = settings.SEARCH_PROVIDER
+    settings.SEARCH_PROVIDER = "duckduckgo"
+    settings.DDG_MAX_ATTEMPTS = 2
+    client = SearXNGClient(base_url="http://localhost:8080")
+
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.text = "<html>Verify you are human</html>"
+    mock_response.raise_for_status = Mock()
+
+    try:
+        with patch.object(client, "_search_duckduckgo_ddgs", return_value=[]):
+            with patch("requests.post", return_value=mock_response):
+                with pytest.raises(SearchProviderUnavailable):
+                    client.search("test query")
+    finally:
+        settings.SEARCH_PROVIDER = original
+        settings.DDG_MAX_ATTEMPTS = 6
 
 
 def test_resolve_search_provider_auto_localhost_uses_duckduckgo():

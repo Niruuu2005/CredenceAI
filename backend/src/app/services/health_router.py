@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 # Global state for provider health tracking
 _PROVIDER_HEALTH_REGISTRY: Dict[str, Dict[str, Any]] = {
     "searxng": {"failures": 0, "status": "healthy", "fallback": "duckduckgo"},
+    "duckduckgo": {"failures": 0, "status": "healthy", "fallback": None},
     "wikipedia": {"failures": 0, "status": "healthy", "fallback": "wikidata"},
     "wikidata": {"failures": 0, "status": "healthy", "fallback": None},
     "common_crawl": {"failures": 0, "status": "healthy", "fallback": "searxng"}

@@ -4,6 +4,7 @@ import { LayoutDashboard, Search, Database, Bell, Settings, CreditCard } from "l
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { api } from "@/lib/api";
+import { withWakeupRetry } from "@/lib/retry";
 
 type LayoutUser = {
   name: string;
@@ -23,7 +24,7 @@ export function AppLayout() {
 
   const fetchUser = async (): Promise<boolean> => {
     try {
-      const u = await api.getCurrentUser();
+      const u = await withWakeupRetry(() => api.getCurrentUser());
       setUser(u);
       setSearchUsed(u.search_used ?? 0);
       return true;
@@ -162,12 +163,6 @@ export function AppLayout() {
          <header className="h-16 border-b border-border-subtle bg-bg-deep flex items-center px-8 flex-shrink-0 justify-between">
             <h1 className="text-lg font-serif italic text-text-title capitalize">{path.split('/').pop() || 'Workspace'}</h1>
             <div className="flex items-center space-x-4">
-               {/* Search Palette Trigger Placeholder */}
-               <button className="text-[10px] uppercase tracking-widest text-text-subtle border border-border-subtle px-3 py-1.5 flex items-center space-x-2 hover:bg-bg-panel transition-colors">
-                  <Search className="h-3 w-3" />
-                  <span>Search commands...</span>
-                  <span className="font-mono text-[9px] border border-border-subtle px-1 tracking-tighter text-text-subtle">⌘K</span>
-               </button>
                <ThemeToggle />
             </div>
          </header>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { withWakeupRetry } from "@/lib/retry";
 
 const isLocalDev =
   import.meta.env.DEV || import.meta.env.VITE_APP_ENV === "local";
@@ -21,8 +22,8 @@ export function SignUp() {
     try {
       const { url, mock } =
         provider === "Google"
-          ? await api.getGoogleAuthUrl()
-          : await api.getGitHubAuthUrl();
+          ? await withWakeupRetry(() => api.getGoogleAuthUrl())
+          : await withWakeupRetry(() => api.getGitHubAuthUrl());
 
       if (mock) {
         if (!isLocalDev) {

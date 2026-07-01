@@ -2,14 +2,22 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api";
+import { withWakeupRetry } from "@/lib/retry";
 
 export function GitHubCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState("Exchanging verification code with authentication server...");
+  const [status, setStatus] = useState("Waking up authentication server...");
 
   useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (oauthError) {
+      const description = searchParams.get("error_description");
+      setError(description || `GitHub sign-in was denied (${oauthError}).`);
+      return;
+    }
+
     const code = searchParams.get("code");
     if (!code) {
       setError("Authorization code is missing from redirect URL.");
@@ -19,14 +27,18 @@ export function GitHubCallback() {
     const exchangeCode = async () => {
       try {
         setStatus("Securing token credentials...");
-        await api.loginWithGitHub(code);
+        await withWakeupRetry(() => api.loginWithGitHub(code));
         setStatus("Session authorized. Redirecting to workspace...");
         setTimeout(() => {
           navigate("/app/dashboard");
         }, 800);
       } catch (err: unknown) {
         console.error("GitHub auth callback failed:", err);
-        setError(err instanceof Error ? err.message : "Failed to authenticate your session via GitHub OAuth.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to authenticate your session via GitHub OAuth."
+        );
       }
     };
 

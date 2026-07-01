@@ -64,7 +64,7 @@ export function Monitors() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-serif italic text-text-title">Monitors</h2>
-          <p className="text-text-subtle mt-2 text-xs uppercase tracking-widest font-medium">Configure continuous background assertion checkers.</p>
+          <p className="text-text-subtle mt-2 text-xs uppercase tracking-widest font-medium">Manual topic checks — scheduled runs require a paid worker.</p>
         </div>
         <Button className="shrink-0" onClick={handleCreate}>
           <PlusCircle className="h-4 w-4 mr-2" /> Create Monitor
@@ -118,7 +118,7 @@ export function Monitors() {
                     disabled={syncingId === mon.id}
                     className="border-border-subtle bg-bg-deep text-xs h-9 px-4 py-2 hover:bg-bg-panel hover:text-text-title text-text-body"
                   >
-                    <RefreshCw className={`h-3 w-3 mr-2 ${syncingId === mon.id ? "animate-spin" : "animate-spin-slow"}`} /> Sync
+                    <RefreshCw className={`h-3 w-3 mr-2 ${syncingId === mon.id ? "animate-spin" : ""}`} /> Manual Check
                   </Button>
                   <button 
                     onClick={() => handleDelete(mon.id)}

@@ -113,7 +113,16 @@ def log_runtime_backends() -> None:
     )
     if not settings.OPENAI_API_KEY:
         logger.warning(
-            "STARTUP >> OPENAI_API_KEY not configured — planner will use search fallback"
+            "STARTUP >> OPENAI_API_KEY not configured — goals use direct search plan"
         )
     else:
         logger.info("STARTUP >> OPENAI_API_KEY configured=%s", openai)
+
+    if settings.SELF_KEEPALIVE_ENABLED:
+        import os
+
+        public_url = os.environ.get("RENDER_EXTERNAL_URL") or settings.API_PUBLIC_URL
+        if not public_url:
+            logger.warning(
+                "STARTUP >> SELF_KEEPALIVE_ENABLED but API_PUBLIC_URL/RENDER_EXTERNAL_URL unset"
+            )

@@ -56,6 +56,7 @@ export default function App() {
         {/* App Routes */}
         <Route path="/app" element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="search" element={<SearchApp />} />
             <Route path="collections" element={<Collections />} />

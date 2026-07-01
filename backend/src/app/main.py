@@ -39,6 +39,15 @@ async def lifespan(app: FastAPI):
     logger.info("STARTUP OK")
 
     try:
+        from app.services.job_dispatch import recover_stale_jobs
+        from app.database import SessionLocal
+
+        with SessionLocal() as recovery_db:
+            recover_stale_jobs(recovery_db)
+    except Exception as e:
+        logger.warning("STARTUP >> stale job recovery failed: %s", e)
+
+    try:
         from app.services.search_index import SearchIndexClient
         from app.services.storage import StorageClient
 

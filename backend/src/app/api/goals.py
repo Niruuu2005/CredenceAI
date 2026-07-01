@@ -1,6 +1,6 @@
 import uuid
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -14,12 +14,50 @@ from app.services.orchestrator import invoke_planner_agent
 from app.services.security import get_current_user
 from app.services.quota_service import check_job_quota
 from app.services.job_dispatch import dispatch_process_job, JobEnqueueError
+from app.limiter import limiter
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/goals", tags=["Goals"])
 
-# With CELERY_ALWAYS_EAGER, each process_job.delay() runs inline — cap to avoid proxy timeouts.
+# With CELERY_ALWAYS_EAGER, each process_job runs after response — cap to avoid proxy timeouts.
 MAX_EAGER_GOAL_JOBS = 1
+
+_FREE_TIER_SEARCH_JOB_TYPES = frozenset({"search_query"})
+
+
+def _build_direct_search_plan(goal: str) -> Dict[str, Any]:
+    """Instant plan when no LLM key — one search job for the full goal."""
+    return {
+        "jobs": [
+            {
+                "job_type": "search_query",
+                "description": goal,
+                "parameters": {"query": goal},
+                "priority": 1,
+            }
+        ]
+    }
+
+
+def _normalize_job_type(job_type: str | None) -> str:
+    normalized = (job_type or "search_query").strip().lower()
+    if normalized in ("search", "search_query"):
+        return "search_query"
+    if settings.CELERY_ALWAYS_EAGER or normalized not in _FREE_TIER_SEARCH_JOB_TYPES:
+        return "search_query"
+    return normalized
+
+
+def _resolve_job_input(job_def: Dict[str, Any], fallback_goal: str) -> str:
+    params = job_def.get("parameters") or {}
+    for key in ("query", "entity", "topic"):
+        val = params.get(key)
+        if val and str(val).strip():
+            return str(val).strip()
+    description = job_def.get("description")
+    if description and str(description).strip():
+        return str(description).strip()
+    return fallback_goal
 
 
 def _map_db_status(db_status: str) -> str:
@@ -88,6 +126,7 @@ class GoalResponse(BaseModel):
     jobs: List[JobStatusResponse]
 
 @router.post("", response_model=GoalResponse, status_code=200)
+@limiter.limit("10/minute")
 async def submit_goal(
     goal_in: GoalCreate,
     request: Request,
@@ -113,7 +152,14 @@ async def submit_goal(
                 detail="Goal must be a non-empty string with at least 3 characters",
             )
 
-        plan = await invoke_planner_agent(db, plan_id, goal_in.goal)
+        if settings.OPENAI_API_KEY:
+            plan = await invoke_planner_agent(db, plan_id, goal_in.goal)
+        else:
+            logger.info(
+                "API GOAL_PLAN plan_id=%s using_direct_search_plan (no OPENAI_API_KEY)",
+                plan_id,
+            )
+            plan = _build_direct_search_plan(goal_in.goal.strip())
 
         job_defs = plan.get("jobs", []) if plan else []
         if settings.CELERY_ALWAYS_EAGER and len(job_defs) > MAX_EAGER_GOAL_JOBS:
@@ -135,22 +181,9 @@ async def submit_goal(
             for job_def in job_defs:
                 job_id = f"job_{uuid.uuid4().hex[:12]}"
 
-                input_val = None
                 params = job_def.get("parameters") or {}
-                if "query" in params:
-                    input_val = params["query"]
-                elif "entity" in params:
-                    input_val = params["entity"]
-                elif "topic" in params:
-                    input_val = params["topic"]
-
-                if not input_val:
-                    input_val = job_def.get("description", goal_in.goal)
-
-                job_type = job_def.get("job_type") or "search_query"
-                if job_type == "search":
-                    job_type = "search_query"
-
+                input_val = _resolve_job_input(job_def, goal_in.goal)
+                job_type = _normalize_job_type(job_def.get("job_type"))
                 vertical = params.get("vertical") or goal_in.vertical or "general"
                 priority = "high" if job_def.get("priority", 1) == 1 else "normal"
 
