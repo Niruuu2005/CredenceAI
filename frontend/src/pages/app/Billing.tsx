@@ -105,7 +105,7 @@ export function Billing() {
   }
 
   return (
-    <div className="h-full overflow-y-auto pr-2 max-w-4xl space-y-10 pb-12 bg-bg-deep text-text-body font-sans select-none">
+    <div className="max-w-4xl space-y-10 pb-12 bg-bg-deep text-text-body font-sans select-none">
       <div>
         <h2 className="text-3xl font-serif italic text-text-title mb-2">Billing & Plans</h2>
         <p className="text-[10px] uppercase tracking-widest font-extrabold text-text-subtle">Manage your subscription, usage, and payments.</p>

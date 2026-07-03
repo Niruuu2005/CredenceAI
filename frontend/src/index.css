@@ -506,3 +506,32 @@
   box-shadow: inset var(--shadow-offset-inset) var(--shadow-offset-inset) var(--shadow-blur-inset) var(--shadow-dark),
               inset calc(var(--shadow-offset-inset) * -1) calc(var(--shadow-offset-inset) * -1) var(--shadow-blur-inset) var(--shadow-light);
 }
+
+/* ---------------------------------
+   CUSTOM PREMIUM SCROLLBARS
+   --------------------------------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border: 2px solid var(--background-deep);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Firefox scrollbar compatibility */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
+}
+

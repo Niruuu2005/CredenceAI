@@ -88,7 +88,7 @@ export function Settings() {
   };
 
   return (
-    <div className="h-full overflow-y-auto pr-2 max-w-4xl space-y-10 pb-12 bg-bg-deep text-text-body select-none">
+    <div className="max-w-4xl space-y-10 pb-12 bg-bg-deep text-text-body select-none">
       <div>
         <h2 className="text-3xl font-serif italic text-text-title mb-2">Workspace Settings</h2>
         <p className="text-[10px] uppercase tracking-widest font-bold text-text-subtle">Configure parameters, access credentials, and security defaults.</p>

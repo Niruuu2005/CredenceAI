@@ -75,7 +75,7 @@ export function Monitors() {
   };
 
   return (
-    <div className="h-full overflow-y-auto pr-2 space-y-8 bg-bg-deep text-text-body select-none">
+    <div className="space-y-8 bg-bg-deep text-text-body select-none">
       {/* Create Modal Overlay */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">

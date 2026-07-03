@@ -78,7 +78,7 @@ export function Dashboard() {
   const planName = user?.plan ?? "Free";
 
   return (
-    <div className="h-full overflow-y-auto pr-2 space-y-8 bg-bg-deep text-text-body select-none">
+    <div className="space-y-8 bg-bg-deep text-text-body select-none">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-serif italic text-text-title font-medium">Overview</h2>
