@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import React, { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
 import { api } from "@/lib/api";
 import { withWakeupRetry } from "@/lib/retry";
 
@@ -99,47 +100,47 @@ export function SignIn() {
     }
   };
 
-
   return (
-    <div className="space-y-6 bg-bg-deep text-text-body">
+    <div className="p-6 md:p-8 rounded-2xl bg-bg-deep neu-outset text-text-body space-y-6">
       {isAuthenticating && (
-         <div className="fixed inset-0 z-50 bg-bg-deep/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fade-in text-text-body">
-           <div className="p-8 border border-border-subtle bg-bg-surface max-w-sm w-full space-y-6">
-             <div className="flex items-center justify-center">
-               <Loader2 className="h-8 w-8 text-text-title animate-spin" />
-             </div>
-             <div>
-               <h3 className="font-serif italic text-2xl text-text-title mb-2">Connecting to Account</h3>
-               <p className="text-xs text-text-subtle uppercase tracking-widest leading-relaxed">
-                 Authenticating your credentials securely via {authProvider}...
-               </p>
-             </div>
-             <div className="text-[10px] uppercase tracking-widest font-mono text-text-subtle border border-border-subtle py-2">
-               TLS 1.3 • AES-256 ENCRYPTED
-             </div>
-           </div>
+         <div className="fixed inset-0 z-50 bg-bg-deep/80 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center animate-fade-in text-text-body">
+            <div className="p-8 rounded-2xl bg-bg-deep neu-outset max-w-sm w-full space-y-6 border-none">
+              <div className="flex items-center justify-center">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              </div>
+              <div>
+                <h3 className="font-serif italic text-2xl text-text-title mb-2">Connecting to Account</h3>
+                <p className="text-xs text-text-subtle uppercase tracking-widest leading-relaxed">
+                  Authenticating your credentials securely via {authProvider}...
+                </p>
+              </div>
+              <div className="text-[10px] uppercase tracking-widest font-mono text-text-subtle rounded-xl bg-bg-panel/40 py-2.5 mx-auto w-fit px-4 neu-inset-sm">
+                TLS 1.3 • AES-256 ENCRYPTED
+              </div>
+            </div>
          </div>
       )}
 
       <div>
         <h1 className="text-3xl font-serif italic tracking-tight text-text-title">Welcome back</h1>
-        <p className="text-[10px] uppercase tracking-widest text-text-subtle mt-2 font-medium">
+        <p className="text-[10px] uppercase tracking-widest text-text-subtle mt-2 font-bold">
           Enter your email/username to sign in to your workspace.
         </p>
       </div>
+
       <form onSubmit={handleEmailSignIn} className="space-y-4">
         {errorMessage && (
-          <div className="p-3 border border-red-500 bg-red-500/10 text-red-500 text-xs font-mono rounded">
-            {errorMessage}
+          <div className="p-3 bg-red-500/10 border-l-4 border-red-500 text-red-500 text-xs font-mono rounded-xl flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 shrink-0" />
+            <span>{errorMessage}</span>
           </div>
         )}
         <div className="space-y-2">
-          <label className="text-[10px] uppercase tracking-widest font-bold leading-none text-text-subtle" htmlFor="email">
+          <label className="text-[10px] uppercase tracking-widest font-extrabold leading-none text-text-subtle ml-1" htmlFor="email">
             Email or Username
           </label>
-          <input
+          <Input
             id="email"
-            className="flex h-12 w-full border border-border-subtle bg-bg-surface px-4 py-2 text-sm transition-colors placeholder:text-text-subtle focus-visible:outline-none focus-visible:border-border-accent text-text-body"
             placeholder="m@example.com or username"
             type="text"
             value={email}
@@ -152,12 +153,11 @@ export function SignIn() {
         </div>
         {isLocalDev && (
           <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-widest font-bold leading-none text-text-subtle" htmlFor="password">
+            <label className="text-[10px] uppercase tracking-widest font-extrabold leading-none text-text-subtle ml-1" htmlFor="password">
               Password (developer login)
             </label>
-            <input
+            <Input
               id="password"
-              className="flex h-12 w-full border border-border-subtle bg-bg-surface px-4 py-2 text-sm transition-colors placeholder:text-text-subtle focus-visible:outline-none focus-visible:border-border-accent text-text-body"
               placeholder="••••••••"
               type="password"
               value={password}
@@ -167,36 +167,39 @@ export function SignIn() {
             />
           </div>
         )}
-        <Button type="submit" className="w-full">Sign In</Button>
+        <Button type="submit" className="w-full mt-2">Sign In</Button>
       </form>
+
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border-subtle" />
+          <span className="w-full border-t border-border-subtle/10" />
         </div>
         <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold">
-          <span className="bg-bg-deep px-4 text-text-subtle border border-border-subtle">Or continue with</span>
+          <span className="bg-bg-deep px-4 text-text-subtle rounded-full py-0.5 neu-inset-sm">Or continue with</span>
         </div>
       </div>
+
       <div className="grid grid-cols-2 gap-4">
         <Button 
           variant="outline" 
           onClick={() => handleOAuth("GitHub")}
-          className="border-border-subtle bg-bg-surface text-[10px] uppercase tracking-[0.2em] font-medium h-12 text-text-body hover:bg-bg-panel hover:text-text-title"
+          className="h-11"
         >
           GitHub
         </Button>
         <Button 
           variant="outline" 
           onClick={() => handleOAuth("Google")}
-          className="border-border-subtle bg-bg-surface text-[10px] uppercase tracking-[0.2em] font-medium h-12 text-text-body hover:border-border-accent flex items-center gap-2 justify-center"
+          className="flex items-center gap-2 justify-center h-11"
         >
           <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" className="h-4 w-4 shrink-0" alt="Google" referrerPolicy="no-referrer" />
           Google
         </Button>
       </div>
-      <p className="px-8 text-center text-[10px] uppercase tracking-widest text-text-subtle font-medium">
+
+      <p className="px-8 text-center text-[10px] uppercase tracking-widest text-text-subtle font-bold">
         Don&apos;t have an account?{" "}
-        <Link to="/auth/sign-up" className="text-text-body hover:text-text-title transition-colors underline underline-offset-4">
+        <Link to="/auth/sign-up" className="text-primary hover:opacity-80 transition-colors underline underline-offset-4 font-extrabold">
           Sign up
         </Link>
       </p>

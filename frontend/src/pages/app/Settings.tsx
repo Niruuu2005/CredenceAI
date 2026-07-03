@@ -1,8 +1,10 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Key, Sliders, Copy, Trash2, Check, Plus, Loader2 } from "lucide-react";
 import { api, ApiKey } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export function Settings() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
@@ -11,6 +13,30 @@ export function Settings() {
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  // Stateful, persisted preferences
+  const [minCitations, setMinCitations] = useState(() => localStorage.getItem("setting_min_citations") || "2 Sources");
+  const [scholarlyFocus, setScholarlyFocus] = useState(() => localStorage.getItem("setting_scholarly_focus") || "None (Balanced)");
+  const [apiLogging, setApiLogging] = useState(() => {
+    const val = localStorage.getItem("setting_api_logging");
+    return val === null ? true : val === "true";
+  });
+
+  const handleMinCitationsChange = (val: string) => {
+    setMinCitations(val);
+    localStorage.setItem("setting_min_citations", val);
+  };
+
+  const handleScholarlyFocusChange = (val: string) => {
+    setScholarlyFocus(val);
+    localStorage.setItem("setting_scholarly_focus", val);
+  };
+
+  const toggleApiLogging = () => {
+    const newVal = !apiLogging;
+    setApiLogging(newVal);
+    localStorage.setItem("setting_api_logging", String(newVal));
+  };
 
   useEffect(() => {
     fetchKeys();
@@ -62,43 +88,51 @@ export function Settings() {
   };
 
   return (
-    <div className="h-full overflow-y-auto pr-2 max-w-4xl space-y-10 pb-12 bg-bg-deep text-text-body">
+    <div className="h-full overflow-y-auto pr-2 max-w-4xl space-y-10 pb-12 bg-bg-deep text-text-body select-none">
       <div>
         <h2 className="text-3xl font-serif italic text-text-title mb-2">Workspace Settings</h2>
-        <p className="text-[10px] uppercase tracking-widest font-medium text-text-subtle">Configure parameters, access credentials, and security defaults.</p>
+        <p className="text-[10px] uppercase tracking-widest font-bold text-text-subtle">Configure parameters, access credentials, and security defaults.</p>
       </div>
 
       <div className="space-y-8">
         {/* Intelligence Preferences */}
-        <Card className="bg-bg-surface border-border-subtle">
-          <CardHeader className="border-b border-border-subtle pb-6 mb-6">
+        <Card>
+          <CardHeader className="border-b border-border-subtle/10 pb-6 mb-6">
             <CardTitle className="text-xl font-serif italic text-text-title flex items-center gap-2">
-              <Sliders className="h-5 w-5 text-text-subtle" />
+              <Sliders className="h-5 w-5 text-primary" />
               Intelligence Preferences
             </CardTitle>
-            <CardDescription className="text-[10px] text-text-subtle tracking-wider">Tweak reasoning filters and citation thresholds.</CardDescription>
+            <CardDescription className="text-[10px] text-text-subtle tracking-wider">Adjust intelligence criteria and source constraints.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h5 className="text-sm font-medium text-text-title">Minimum Citation Count</h5>
+                <h5 className="text-sm font-semibold text-text-title">Minimum Citation Count</h5>
                 <p className="text-xs text-text-subtle mt-1 leading-normal">Require a minimum number of self-corroborating sources before asserting high-confidence convergence.</p>
               </div>
-              <select className="bg-bg-deep border border-border-subtle text-text-body px-4 py-2 text-xs focus:outline-none focus:border-border-accent uppercase tracking-widest min-w-[150px]">
+              <select 
+                value={minCitations}
+                onChange={(e) => handleMinCitationsChange(e.target.value)}
+                className="bg-bg-deep text-text-body px-4 py-2.5 text-xs rounded-xl neu-inset-sm focus:outline-none focus:ring-2 focus:ring-primary/40 uppercase tracking-wider font-semibold min-w-[170px] border-none"
+              >
                 <option>2 Sources</option>
                 <option>3 Sources</option>
                 <option>5 Sources (Strict)</option>
               </select>
             </div>
 
-            <div className="h-px bg-border-subtle"></div>
+            <div className="h-px bg-border-subtle/10"></div>
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h5 className="text-sm font-medium text-text-title">Scholarly Focus Biasing</h5>
+                <h5 className="text-sm font-semibold text-text-title">Scholarly Focus Biasing</h5>
                 <p className="text-xs text-text-subtle mt-1 leading-normal">Prioritize peer-reviewed scientific journals and patent offices above mainstream journalism indexes.</p>
               </div>
-              <select className="bg-bg-deep border border-border-subtle text-text-body px-4 py-2 text-xs focus:outline-none focus:border-border-accent uppercase tracking-widest min-w-[150px]">
+              <select 
+                value={scholarlyFocus}
+                onChange={(e) => handleScholarlyFocusChange(e.target.value)}
+                className="bg-bg-deep text-text-body px-4 py-2.5 text-xs rounded-xl neu-inset-sm focus:outline-none focus:ring-2 focus:ring-primary/40 uppercase tracking-wider font-semibold min-w-[170px] border-none"
+              >
                 <option>None (Balanced)</option>
                 <option>Academic High</option>
                 <option>Exclusive Patents</option>
@@ -108,10 +142,10 @@ export function Settings() {
         </Card>
 
         {/* API Credentials */}
-        <Card className="bg-bg-surface border-border-subtle">
-          <CardHeader className="border-b border-border-subtle pb-6 mb-6">
+        <Card>
+          <CardHeader className="border-b border-border-subtle/10 pb-6 mb-6">
             <CardTitle className="text-xl font-serif italic text-text-title flex items-center gap-2">
-              <Key className="h-5 w-5 text-text-subtle" />
+              <Key className="h-5 w-5 text-primary" />
               API Credentials
             </CardTitle>
             <CardDescription className="text-[10px] text-text-subtle tracking-wider">Access the raw Credence intelligence graph programmatically.</CardDescription>
@@ -120,41 +154,40 @@ export function Settings() {
             
             {/* Generate Key Panel */}
             <form onSubmit={handleCreateKey} className="space-y-4">
-              <span className="text-[10px] uppercase tracking-widest font-bold text-text-subtle block">Generate API Key</span>
+              <span className="text-[10px] uppercase tracking-widest font-extrabold text-text-subtle block">Generate API Key</span>
               <div className="space-y-1">
-                <label className="text-[10px] text-text-subtle uppercase">Key Label (Optional)</label>
-                <input
+                <label className="text-[10px] text-text-subtle uppercase font-semibold">Key Label (Optional)</label>
+                <Input
                   type="text"
                   value={labelInput}
                   onChange={(e) => setLabelInput(e.target.value)}
                   placeholder="e.g. Production server key"
-                  className="w-full bg-bg-deep border border-border-subtle text-text-body px-3 py-1.5 text-xs focus:outline-none focus:border-border-accent"
+                  className="w-full"
                 />
               </div>
-              <Button type="submit" size="sm" className="bg-highlight-color text-highlight-foreground px-4 py-2 hover:bg-highlight-color/90 text-xs">
+              <Button type="submit" size="sm" className="bg-primary text-primary-foreground">
                 <Plus className="h-3.5 w-3.5 mr-1" /> Generate New Key
               </Button>
             </form>
 
             {/* Display newly created key */}
             {newKey && (
-              <div className="p-4 border border-amber-900/30 bg-amber-950/10 space-y-3">
+              <div className="p-4 rounded-2xl bg-bg-panel/20 neu-inset-sm space-y-3">
                 <h6 className="text-xs font-semibold text-amber-500 uppercase tracking-wider">Save Your Key</h6>
                 <p className="text-xs text-text-subtle leading-normal">
                   Make sure to copy your API key now. You won't be able to see it again!
                 </p>
                 <div className="flex gap-2">
-                  <input
+                  <Input
                     type="text"
                     value={newKey}
                     readOnly
-                    className="flex-1 bg-bg-deep border border-border-subtle text-text-body px-3 py-1 text-xs font-mono select-all focus:outline-none"
+                    className="flex-1 font-mono text-xs select-all focus:outline-none"
                   />
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => copyToClipboard(newKey)}
-                    className="border-border-subtle bg-bg-deep px-3 hover:bg-bg-panel hover:text-text-title text-text-body text-xs"
                   >
                     {copiedKey ? <Check className="h-3.5 w-3.5 text-highlight-color" /> : <Copy className="h-3.5 w-3.5" />}
                   </Button>
@@ -162,29 +195,29 @@ export function Settings() {
               </div>
             )}
 
-            <div className="h-px bg-border-subtle"></div>
+            <div className="h-px bg-border-subtle/10"></div>
 
             {/* Keys List */}
             <div className="space-y-3">
-              <span className="text-[10px] uppercase tracking-widest font-bold text-text-subtle block">Active API Keys</span>
+              <span className="text-[10px] uppercase tracking-widest font-extrabold text-text-subtle block">Active API Keys</span>
               
               {loading ? (
                 <div className="flex items-center gap-2 text-xs text-text-subtle py-4">
-                  <Loader2 className="h-4 w-4 animate-spin text-highlight-color" />
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   <span>Loading workspace keys...</span>
                 </div>
               ) : keys.length === 0 ? (
-                <div className="text-center py-6 border border-dashed border-border-subtle text-xs text-text-subtle">
+                <div className="text-center py-6 border border-dashed border-border-subtle/20 rounded-2xl text-xs text-text-subtle bg-bg-deep/40">
                   No active keys found. Generate a key above to get started.
                 </div>
               ) : (
-                <div className="border border-border-subtle divide-y divide-border-subtle bg-bg-deep">
+                <div className="rounded-2xl overflow-hidden bg-bg-panel/20 neu-inset-sm divide-y divide-border-subtle/10">
                   {keys.map((k) => (
-                    <div key={k.id} className="flex items-center justify-between p-3 text-xs gap-4">
+                    <div key={k.id} className="flex items-center justify-between p-4 text-xs gap-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-text-title">{k.label || "No Label"}</span>
-                          <span className="text-[10px] text-text-subtle border border-border-subtle px-1.5 py-0.2 bg-bg-surface font-mono">
+                          <span className="text-[10px] text-text-subtle border border-border-subtle/20 rounded-lg px-2 py-0.5 bg-bg-deep font-mono">
                             ID: {k.id}
                           </span>
                         </div>
@@ -197,7 +230,7 @@ export function Settings() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleRevokeKey(k.id)}
-                          className="p-1.5 border border-border-subtle hover:border-red-900 hover:text-red-500 text-text-subtle transition-colors cursor-pointer"
+                          className="h-8 w-8 rounded-xl flex items-center justify-center border-none text-text-subtle hover:text-red-500 bg-bg-deep hover:bg-bg-panel cursor-pointer active:scale-95 transition-all neu-outset-sm"
                           title="Revoke Key"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -209,16 +242,28 @@ export function Settings() {
               )}
             </div>
 
-            <div className="h-px bg-border-subtle"></div>
+            <div className="h-px bg-border-subtle/10"></div>
 
             <div className="flex items-center justify-between gap-4 pt-2">
               <div>
-                <h5 className="text-sm font-medium text-text-title">API Access Logging</h5>
+                <h5 className="text-sm font-semibold text-text-title">API Access Logging</h5>
                 <p className="text-xs text-text-subtle mt-1 leading-normal">Require signed keys and register structural audit records on all outbound IP data streams.</p>
               </div>
-              <div className="w-12 h-6 bg-accent border border-border-subtle relative cursor-pointer flex items-center p-0.5">
-                <div className="w-4.5 h-4.5 bg-accent-foreground transform translate-x-6 transition-transform"></div>
-              </div>
+              <button 
+                type="button"
+                onClick={toggleApiLogging}
+                className={cn(
+                  "w-12 h-6 rounded-full relative transition-all duration-300 p-0.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40",
+                  apiLogging ? "bg-primary neu-inset-sm" : "bg-bg-panel/40 neu-inset-sm"
+                )}
+                role="switch"
+                aria-checked={apiLogging}
+              >
+                <div className={cn(
+                  "w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-300",
+                  apiLogging ? "translate-x-6" : "translate-x-0"
+                )} />
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -226,4 +271,3 @@ export function Settings() {
     </div>
   );
 }
-

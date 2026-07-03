@@ -83,28 +83,28 @@ export function Billing() {
       </div>
 
       {message && (
-        <div className="bg-emerald-950/20 border border-emerald-500/30 p-4 text-emerald-500 text-xs font-semibold uppercase tracking-wider rounded">
+        <div className="p-3 bg-teal-500/10 border-l-4 border-teal-500 text-teal-600 dark:text-teal-400 text-xs font-semibold rounded-xl flex items-center gap-2">
           {message}
         </div>
       )}
 
       {/* Current Plan Alert */}
       {user?.plan === "Free" ? (
-        <div className="bg-bg-surface border border-border-subtle p-6 flex items-start gap-5">
-           <AlertCircle className="h-5 w-5 text-text-subtle shrink-0 mt-0.5" />
+        <div className="rounded-2xl bg-bg-deep neu-outset p-6 flex items-start gap-5 border-none">
+           <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
            <div>
-              <h4 className="font-serif italic text-xl text-text-title mb-2">You are currently on the Free plan.</h4>
-              <p className="text-sm tracking-wide text-text-body leading-relaxed border-l-2 border-border-subtle pl-4">
+              <h4 className="font-serif italic text-xl text-text-title mb-2 font-medium">You are currently on the Free plan.</h4>
+              <p className="text-sm tracking-wide text-text-body leading-relaxed border-l-2 border-primary pl-4">
                  You have used {Math.round((jobCount / searchQuotaLimit) * 100)}% of your daily search quota. Upgrade to Pro for full evidence panels and higher limits.
               </p>
            </div>
         </div>
       ) : (
-        <div className="bg-bg-surface border border-emerald-500/30 p-6 flex items-start gap-5">
-           <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+        <div className="rounded-2xl bg-bg-deep neu-outset p-6 flex items-start gap-5 border-none">
+           <CheckCircle2 className="h-5 w-5 text-highlight-color shrink-0 mt-0.5" />
            <div>
-              <h4 className="font-serif italic text-xl text-text-title mb-2">You are currently on the {user?.plan} plan!</h4>
-              <p className="text-sm tracking-wide text-text-body leading-relaxed border-l-2 border-emerald-500/30 pl-4">
+              <h4 className="font-serif italic text-xl text-text-title mb-2 font-medium">You are currently on the {user?.plan} plan!</h4>
+              <p className="text-sm tracking-wide text-text-body leading-relaxed border-l-2 border-highlight-color pl-4">
                  Thank you for supporting our workspace. You have access to {searchQuotaLimit} searches per day and {monitorLimit} active monitors.
               </p>
            </div>
@@ -113,8 +113,8 @@ export function Billing() {
 
       <div className="grid md:grid-cols-2 gap-8">
          {/* Usage Card */}
-         <Card className="bg-bg-surface border-border-subtle">
-            <CardHeader className="border-b border-border-subtle pb-6 mb-6">
+         <Card className="p-6">
+            <CardHeader className="border-b border-border-subtle/10 pb-6 mb-6">
                <CardTitle className="text-xl font-serif italic text-text-title mb-2">Usage Summary</CardTitle>
                <CardDescription className="text-[10px] font-bold text-text-subtle">Resets daily</CardDescription>
             </CardHeader>
@@ -122,11 +122,11 @@ export function Billing() {
                <div>
                   <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-text-subtle mb-3">
                      <span>Research Jobs</span>
-                     <span className="font-mono text-text-body">{jobCount} / {searchQuotaLimit}</span>
+                     <span className="font-mono text-text-body font-bold">{jobCount} / {searchQuotaLimit}</span>
                   </div>
-                  <div className="h-1 w-full bg-border-subtle overflow-hidden">
+                  <div className="h-2.5 w-full bg-bg-deep rounded-full overflow-hidden neu-inset-sm">
                      <div 
-                       className="h-full bg-amber-600 transition-all duration-500" 
+                       className="h-full bg-primary rounded-full transition-all duration-500" 
                        style={{ width: `${Math.min(100, (jobCount / searchQuotaLimit) * 100)}%` }}
                      />
                   </div>
@@ -134,11 +134,11 @@ export function Billing() {
                <div>
                   <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-text-subtle mb-3">
                      <span>Active Monitors</span>
-                     <span className="font-mono text-text-body">{monitorsCount} / {monitorLimit}</span>
+                     <span className="font-mono text-text-body font-bold">{monitorsCount} / {monitorLimit}</span>
                   </div>
-                  <div className="h-1 w-full bg-border-subtle overflow-hidden">
+                  <div className="h-2.5 w-full bg-bg-deep rounded-full overflow-hidden neu-inset-sm">
                      <div 
-                       className="h-full bg-border-accent transition-all duration-500" 
+                       className="h-full bg-primary rounded-full transition-all duration-500" 
                        style={{ width: `${Math.min(100, (monitorsCount / monitorLimit) * 100)}%` }}
                      />
                   </div>
@@ -148,8 +148,8 @@ export function Billing() {
 
          {/* Upgrade Card */}
          {user?.plan === "Free" && import.meta.env.PROD ? (
-           <Card className="border-border-subtle bg-bg-surface">
-            <CardHeader className="border-b border-border-subtle pb-6 mb-6">
+           <Card className="p-6">
+            <CardHeader className="border-b border-border-subtle/10 pb-6 mb-6">
                <CardTitle className="text-xl font-serif italic text-text-title mb-2">Pro Plan</CardTitle>
                <CardDescription className="text-sm tracking-wide text-text-subtle">Paid upgrades not configured on this deployment.</CardDescription>
             </CardHeader>
@@ -160,41 +160,41 @@ export function Billing() {
             </CardContent>
            </Card>
          ) : (
-         <Card className="border-border-accent bg-bg-deep relative shadow-2xl">
-            <div className="absolute top-0 right-0 bg-accent text-accent-foreground border border-border-accent text-[9px] font-bold px-3 py-1 uppercase tracking-[0.2em] transform translate-x-2 -translate-y-2">
-               Recommended
-            </div>
-            <CardHeader className="border-b border-border-subtle pb-6 mb-6 pt-8">
-               <CardTitle className="text-3xl font-serif italic text-text-title mb-4">Pro Plan</CardTitle>
-               <CardDescription className="text-sm tracking-wide text-text-subtle">$49/month &bull; Billed monthly</CardDescription>
-            </CardHeader>
-            <CardContent>
-               <ul className="space-y-5">
-                  <li className="flex items-start text-xs text-text-body">
-                     <CheckCircle2 className="h-4 w-4 text-text-subtle shrink-0 mr-4 mt-0.5" />
-                     <span>500 searches/day</span>
-                  </li>
-                  <li className="flex items-start text-xs text-text-body">
-                     <CheckCircle2 className="h-4 w-4 text-text-subtle shrink-0 mr-4 mt-0.5" />
-                     <span className="leading-relaxed">10 Active Continuous Monitors</span>
-                  </li>
-                  <li className="flex items-start text-xs text-text-body">
-                     <CheckCircle2 className="h-4 w-4 text-text-subtle shrink-0 mr-4 mt-0.5" />
-                     <span>Up to 20 collections</span>
-                  </li>
-               </ul>
-            </CardContent>
-            <CardFooter className="pt-8">
-               <Button 
-                 className="w-full"
-                 disabled={user?.plan === "Pro" || upgrading}
-                 onClick={() => handleUpgrade("Pro")}
-               >
-                  {upgrading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  {user?.plan === "Pro" ? "Current Plan" : "Upgrade to Pro"}
-               </Button>
-            </CardFooter>
-         </Card>
+          <Card className="relative p-6 border-2 border-primary rounded-2xl">
+             <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-extrabold px-3 py-1 uppercase tracking-widest transform translate-x-2 -translate-y-2 rounded-lg shadow-sm">
+                Recommended
+             </div>
+             <CardHeader className="border-b border-border-subtle/10 pb-6 mb-6 pt-2">
+                <CardTitle className="text-3xl font-serif italic text-text-title mb-4">Pro Plan</CardTitle>
+                <CardDescription className="text-sm tracking-wide text-text-subtle font-semibold">$49/month &bull; Billed monthly</CardDescription>
+             </CardHeader>
+             <CardContent>
+                <ul className="space-y-5">
+                   <li className="flex items-start text-xs text-text-body">
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mr-4 mt-0.5" />
+                      <span className="font-semibold">500 searches/day</span>
+                   </li>
+                   <li className="flex items-start text-xs text-text-body">
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mr-4 mt-0.5" />
+                      <span className="leading-relaxed font-semibold">10 Active Continuous Monitors</span>
+                   </li>
+                   <li className="flex items-start text-xs text-text-body">
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mr-4 mt-0.5" />
+                      <span className="font-semibold">Up to 20 collections</span>
+                   </li>
+                </ul>
+             </CardContent>
+             <CardFooter className="pt-8">
+                <Button 
+                  className="w-full"
+                  disabled={user?.plan === "Pro" || upgrading}
+                  onClick={() => handleUpgrade("Pro")}
+                >
+                   {upgrading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                   {user?.plan === "Pro" ? "Current Plan" : "Upgrade to Pro"}
+                </Button>
+             </CardFooter>
+          </Card>
          )}
       </div>
 

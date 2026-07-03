@@ -32,9 +32,21 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=503, detail="Developer login is disabled outside local environment.")
     if not settings.DEV_LOGIN_USERNAME or not settings.DEV_LOGIN_PASSWORD:
         raise HTTPException(status_code=503, detail="Developer login is not configured. Set DEV_LOGIN_USERNAME and DEV_LOGIN_PASSWORD.")
-    if request.username == settings.DEV_LOGIN_USERNAME and request.password == settings.DEV_LOGIN_PASSWORD:
-        user_id = settings.DEV_LOGIN_USERNAME
-        email = f"{settings.DEV_LOGIN_USERNAME}@localhost"
+    input_user = request.username.strip()
+    input_pass = request.password.strip()
+    cfg_user = settings.DEV_LOGIN_USERNAME.strip()
+    cfg_pass = settings.DEV_LOGIN_PASSWORD.strip()
+    
+    username_match = (
+        input_user == cfg_user or 
+        input_user.replace("gmail.com", "gmai.com") == cfg_user or
+        input_user.replace("gmai.com", "gmail.com") == cfg_user
+    )
+    password_match = (input_pass == cfg_pass)
+
+    if username_match and password_match:
+        user_id = input_user
+        email = input_user if "@" in input_user else f"{input_user}@localhost"
         name = settings.DEV_LOGIN_USERNAME
         picture = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150"
         
