@@ -15,7 +15,7 @@ def upgrade():
         sa.Column("user_id", sa.String(50), sa.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
         sa.Column("min_citations", sa.Integer(), server_default="2"),
         sa.Column("scholarly_focus", sa.String(50), server_default="balanced"),
-        sa.Column("api_logging_enabled", sa.Boolean(), server_default="1"),
+        sa.Column("api_logging_enabled", sa.Boolean(), server_default=sa.text("true")),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
     )
     op.create_table(
