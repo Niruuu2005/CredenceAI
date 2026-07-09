@@ -8,8 +8,10 @@ from app.main import app as fastapi_app
 from unittest.mock import patch
 from app.config import settings
 
-# Force MOCK_SERVICES to False during pytest execution
+# Force test-friendly settings during pytest execution
 settings.MOCK_SERVICES = False
+settings.APP_ENV = "local"
+settings.ENABLE_API_KEY_AUTH = False
 
 # Use in-memory SQLite for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"

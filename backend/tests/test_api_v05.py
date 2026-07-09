@@ -262,10 +262,11 @@ def test_api_keys_monitors_collections(client, db_session):
     assert res_mon_list.status_code == 200
     assert any(m["id"] == mon_id for m in res_mon_list.json())
 
-    # Sync monitor
+    # Sync monitor (enqueues real search job)
     res_mon_sync = client.post(f"/api/monitors/{mon_id}/sync")
     assert res_mon_sync.status_code == 200
-    assert res_mon_sync.json()["last_check"] == "Just now"
+    assert res_mon_sync.json()["last_check"] != "Just created"
+    assert res_mon_sync.json()["health"] in ("Syncing", "Green")
 
     # Delete monitor
     res_mon_del = client.delete(f"/api/monitors/{mon_id}")

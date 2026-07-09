@@ -1,6 +1,7 @@
 import datetime
 import logging
 import time
+import uuid
 from celery import Celery
 from kombu import Queue, Exchange
 from app.config import settings
@@ -98,6 +99,51 @@ def process_job(job_id: str):
     finally:
         db.close()
         logger.debug(f"WORKER  STATUS=DB_SESSION_CLOSED  job_id={job_id}")
+
+
+@celery_app.task(name="app.worker.sync_monitors")
+def sync_monitors():
+    """Periodic task: enqueue search jobs for all active monitors."""
+    from app.models import Monitor
+    from app.models import MonitorJob
+    from app.services.repository import create_job
+
+    db = get_db_session()
+    try:
+        monitors = db.query(Monitor).filter(Monitor.status == "Active").all()
+        for mon in monitors:
+            job_id = f"job_{uuid.uuid4().hex[:12]}"
+            create_job(
+                db=db,
+                job_id=job_id,
+                trace_id=f"beat_{mon.id}",
+                job_type="search_query",
+                input_val=mon.topic,
+                vertical="news",
+                user_id=mon.user_id,
+            )
+            db.add(MonitorJob(
+                id=f"mj_{uuid.uuid4().hex[:10]}",
+                monitor_id=mon.id,
+                job_id=job_id,
+            ))
+            mon.last_check = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M UTC")
+            process_job.delay(job_id)
+        db.commit()
+        logger.info("WORKER  MONITOR_SYNC  count=%d", len(monitors))
+    except Exception as exc:
+        logger.exception("WORKER  MONITOR_SYNC_FAILED  error=%s", exc)
+        db.rollback()
+    finally:
+        db.close()
+
+
+celery_app.conf.beat_schedule = {
+    "sync-monitors-daily": {
+        "task": "app.worker.sync_monitors",
+        "schedule": 86400.0,
+    },
+}
 
 # Import other task modules to ensure registration
 import app.services.crawler_task

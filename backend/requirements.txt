@@ -5,7 +5,7 @@ pydantic-settings
 sqlalchemy
 psycopg2-binary>=2.9.12
 alembic
-redis
+redis>=5.0.0,<7.0.0
 celery
 opensearch-py
 boto3

@@ -28,8 +28,8 @@ class LoginRequest(BaseModel):
 @router.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
     """Validates developer admin credentials and issues a JWT token (local dev only)."""
-    if settings.APP_ENV != "local":
-        raise HTTPException(status_code=503, detail="Developer login is disabled outside local environment.")
+    if not settings.is_development:
+        raise HTTPException(status_code=503, detail="Developer login is disabled outside development environment.")
     if not settings.DEV_LOGIN_USERNAME or not settings.DEV_LOGIN_PASSWORD:
         raise HTTPException(status_code=503, detail="Developer login is not configured. Set DEV_LOGIN_USERNAME and DEV_LOGIN_PASSWORD.")
     input_user = request.username.strip()
@@ -159,7 +159,7 @@ def get_google_auth_url():
             f"prompt=consent"
         )
         return {"url": url, "mock": False}
-    elif settings.APP_ENV == "local":
+    elif settings.is_development:
         logger.info("Auth settings for Google are missing. Activating offline development mock login.")
         return {"url": "/auth/google/callback?code=mock_dev_code", "mock": True}
     else:
@@ -221,7 +221,12 @@ async def google_callback(request: GoogleCallbackRequest, db: Session = Depends(
     name = ""
     picture = None
 
-    if settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET and settings.GOOGLE_REDIRECT_URI:
+    if settings.is_development and request.code == "mock_dev_code":
+        user_id = "mock_jane_doe"
+        email = "jane.doe@example.com"
+        name = "Jane Doe"
+        picture = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150"
+    elif settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET and settings.GOOGLE_REDIRECT_URI:
         # Perform real Google OAuth2 code exchange
         try:
             async with httpx.AsyncClient() as client:
@@ -262,14 +267,8 @@ async def google_callback(request: GoogleCallbackRequest, db: Session = Depends(
         except Exception:
             logger.exception("Unexpected error in real Google OAuth exchange")
             raise HTTPException(status_code=500, detail="Authentication server error during Google OAuth.")
-    elif settings.APP_ENV == "local":
-        if request.code == "mock_dev_code":
-            user_id = "mock_jane_doe"
-            email = "jane.doe@example.com"
-            name = "Jane Doe"
-            picture = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150"
-        else:
-            raise HTTPException(status_code=400, detail="Invalid code supplied in offline testing mode.")
+    elif settings.is_development:
+        raise HTTPException(status_code=400, detail="Invalid code supplied in offline testing mode.")
     else:
         raise HTTPException(
             status_code=503,
@@ -296,7 +295,7 @@ def get_github_auth_url():
         })
         url = f"https://github.com/login/oauth/authorize?{params}"
         return {"url": url, "mock": False}
-    elif settings.APP_ENV == "local":
+    elif settings.is_development:
         logger.info("GitHub auth settings missing. Activating offline development mock login.")
         return {"url": "/auth/github/callback?code=mock_github_code", "mock": True}
     else:
@@ -314,7 +313,12 @@ async def github_callback(request: GitHubCallbackRequest, db: Session = Depends(
     name = ""
     picture = None
 
-    if settings.GITHUB_CLIENT_ID and settings.GITHUB_CLIENT_SECRET and settings.GITHUB_REDIRECT_URI:
+    if settings.is_development and request.code == "mock_github_code":
+        user_id = "gh_mock_dev"
+        email = "dev@github.local"
+        name = "GitHub Dev User"
+        picture = "https://avatars.githubusercontent.com/u/0?v=4"
+    elif settings.GITHUB_CLIENT_ID and settings.GITHUB_CLIENT_SECRET and settings.GITHUB_REDIRECT_URI:
         try:
             async with httpx.AsyncClient() as client:
                 token_res = await client.post(
@@ -378,14 +382,8 @@ async def github_callback(request: GitHubCallbackRequest, db: Session = Depends(
         except Exception:
             logger.exception("Unexpected error in GitHub OAuth exchange")
             raise HTTPException(status_code=500, detail="Authentication server error during GitHub OAuth.")
-    elif settings.APP_ENV == "local":
-        if request.code == "mock_github_code":
-            user_id = "gh_mock_dev"
-            email = "dev@github.local"
-            name = "GitHub Dev User"
-            picture = "https://avatars.githubusercontent.com/u/0?v=4"
-        else:
-            raise HTTPException(status_code=400, detail="Invalid code supplied in offline testing mode.")
+    elif settings.is_development:
+        raise HTTPException(status_code=400, detail="Invalid code supplied in offline testing mode.")
     else:
         raise HTTPException(
             status_code=503,

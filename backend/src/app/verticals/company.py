@@ -50,19 +50,9 @@ class CompanyVerticalPack(BaseVerticalPack):
             )
             graph.add_claim(claim)
             
-            # Simple heuristic contradiction detection
+            # Simple heuristic — flag potential contradictions without synthetic claims
             if "not" in snippet.lower() or "deny" in snippet.lower() or "against" in snippet.lower():
-                # Register a mock contradiction for demonstration/test
-                deny_text = f"Alternative view of {company_name}: " + snippet[:40]
-                deny_claim = Claim(
-                    claim_id=f"c_alt_{r.get('id', 'gen')[:6]}",
-                    text=deny_text,
-                    entity=company_name,
-                    source_url=url,
-                    source_reliability=0.5
-                )
-                graph.add_claim(deny_claim)
-                graph.add_contradiction(claim_text, deny_text, url)
+                logger.debug("Potential contradiction signal in snippet for %s", company_name)
 
         # 3. Generate Intelligence Card
         generator = IntelligenceCardGenerator()

@@ -77,6 +77,10 @@ frontend/node_modules/
 sdk/node_modules/
 frontend/dist/
 sdk/dist/
-npm-debug.log*
+# ── AgentGate / hackathon artifacts ───────────────────────────────────────────
+agentgate/.pytest_cache/
+agentgate/**/pytest-cache-files*/
 
+# ── Env profiles (committed templates — do not commit real .env) ─────────────
 .vercel
+npm-debug.log*

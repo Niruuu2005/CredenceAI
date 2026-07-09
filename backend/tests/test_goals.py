@@ -40,7 +40,8 @@ async def test_submit_goal_skips_planner_without_openai_key():
     mock_user.id = "user_1"
 
     goal_in = goals_module.GoalCreate(goal="Research Taiwan chips", vertical="general")
-    request = MagicMock()
+    from starlette.requests import Request
+    request = Request({"type": "http", "method": "POST", "path": "/api/goals", "headers": []})
     background_tasks = MagicMock()
 
     with patch("app.api.goals.check_job_quota"):

@@ -281,5 +281,57 @@ class User(Base):
     usage_period_start = Column(DateTime, nullable=True)
 
 
+class UserPreferences(Base):
+    __tablename__ = "user_preferences"
 
+    user_id = Column(String(50), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    min_citations = Column(Integer, default=2)
+    scholarly_focus = Column(String(50), default="balanced")
+    api_logging_enabled = Column(Boolean, default=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+
+class CollectionItem(Base):
+    __tablename__ = "collection_items"
+
+    id = Column(String(50), primary_key=True)
+    collection_id = Column(String(50), ForeignKey("collections.id", ondelete="CASCADE"), nullable=False, index=True)
+    result_id = Column(String(50), nullable=True)
+    title = Column(String(255), nullable=False)
+    url = Column(Text, nullable=True)
+    snippet = Column(Text, nullable=True)
+    source = Column(String(50), nullable=True)
+    job_id = Column(String(50), nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+
+class EnterpriseContact(Base):
+    __tablename__ = "enterprise_contacts"
+
+    id = Column(String(50), primary_key=True)
+    email = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(String(20), default="new")
+    created_at = Column(DateTime, default=utc_now)
+
+
+class MonitorJob(Base):
+    __tablename__ = "monitor_jobs"
+
+    id = Column(String(50), primary_key=True)
+    monitor_id = Column(String(50), ForeignKey("monitors.id", ondelete="CASCADE"), nullable=False, index=True)
+    job_id = Column(String(50), ForeignKey("jobs.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+
+class AgentMemoryRecord(Base):
+    __tablename__ = "agent_memory_records"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    job_id = Column(String(50), index=True, nullable=False)
+    agent_name = Column(String(100), nullable=False)
+    step_index = Column(Integer, default=0)
+    decision_json = Column(Text, nullable=True)
+    reasoning = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now)
 

@@ -90,6 +90,7 @@ export function SearchApp() {
   // Goal Plan State
   const [activeGoal, setActiveGoal] = useState<{ planId: string; goal: string } | null>(null);
   const [pollingJobs, setPollingJobs] = useState<JobResponse[]>([]);
+  const [agentDecisions, setAgentDecisions] = useState<Array<{ agent_name: string; reasoning: string; success: boolean }>>([]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,6 +152,15 @@ export function SearchApp() {
         setSearchResults(docs);
         setTotalResults(docs.length);
         setExtractedEntities(collectEntities(allResults));
+        const firstJobId = completed[0]?.job_id;
+        if (firstJobId) {
+          try {
+            const decisions = await api.getAgentDecisions(firstJobId);
+            setAgentDecisions(decisions);
+          } catch {
+            setAgentDecisions([]);
+          }
+        }
         return;
       }
 
@@ -601,7 +611,24 @@ export function SearchApp() {
               </div>
               
               <div className="h-px bg-border-subtle"></div>
-              
+
+              {agentDecisions.length > 0 && (
+                <>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-text-title mb-3 font-semibold">Agent Trail</div>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {agentDecisions.map((d, i) => (
+                        <div key={i} className="text-[9px] border-l-2 border-primary pl-2 py-1">
+                          <span className="font-bold text-text-title uppercase">{d.agent_name}</span>
+                          <p className="text-text-subtle mt-0.5 line-clamp-2">{d.reasoning}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="h-px bg-border-subtle"></div>
+                </>
+              )}
+
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-text-title mb-4 font-semibold">Claim Convergence</div>
                 <div className="space-y-5">

@@ -59,7 +59,7 @@ def get_current_user(
                 raise HTTPException(status_code=403, detail="Account suspended.")
             return user
 
-    if settings.APP_ENV == "local":
+    if settings.is_development:
         user = db.query(User).filter(User.id == "mock_jane_doe").first()
         if not user:
             user = User(

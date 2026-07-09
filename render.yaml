@@ -42,6 +42,15 @@ services:
       - key: ENABLE_API_KEY_AUTH
         value: "true"
 
+      - key: ENABLE_AGENTIC_PIPELINE
+        value: "true"
+      - key: AGENT_MAX_ITERATIONS
+        value: "3"
+      - key: MAX_GOAL_JOBS_EAGER
+        value: "1"
+      - key: MAX_GOAL_JOBS_WORKER
+        value: "10"
+
       # --- Secrets (set in Render dashboard; sync: false) ---
       - key: DATABASE_URL
         sync: false
@@ -81,3 +90,29 @@ services:
         value: "30"
       - key: API_PUBLIC_URL
         value: https://credenceai-api.onrender.com
+
+  # Optional paid worker — set CELERY_ALWAYS_EAGER=false on API when enabled
+  - type: worker
+    name: credenceai-worker
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    dockerCommand: celery -A app.worker.celery_app worker --loglevel=info -B
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: MOCK_SERVICES
+        value: "false"
+      - key: CELERY_ALWAYS_EAGER
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: REDIS_SSL_CERT_REQS
+        value: CERT_REQUIRED
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ENABLE_AGENTIC_PIPELINE
+        value: "true"

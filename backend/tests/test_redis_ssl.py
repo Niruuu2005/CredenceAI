@@ -36,8 +36,13 @@ def test_redis_client_kwargs_for_plain_redis():
 
 def test_redis_client_kwargs_for_rediss():
     kwargs = redis_client_kwargs("rediss://host/0", "CERT_REQUIRED")
-    assert kwargs["ssl"] is True
+    assert "ssl" not in kwargs
     assert kwargs["ssl_cert_reqs"] == ssl.CERT_REQUIRED
+
+
+def test_redis_client_kwargs_rediss_url_already_has_ssl_param():
+    url = "rediss://host/0?ssl_cert_reqs=required"
+    assert redis_client_kwargs(url, "CERT_REQUIRED") == {}
 
 
 def test_ensure_rediss_ssl_query_param_appends_when_missing():

@@ -24,6 +24,7 @@ jobs:
       - run: pytest -q
         env:
           APP_ENV: local
+          ENABLE_API_KEY_AUTH: "false"
           CELERY_ALWAYS_EAGER: "true"
           DATABASE_URL: "sqlite:///:memory:"
           PYTHONPATH: src

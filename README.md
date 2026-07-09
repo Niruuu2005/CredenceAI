@@ -13,7 +13,13 @@ CredenceAI turns natural-language questions into multi-source evidence: it class
 
 ## Quick start
 
-**Prerequisites:** Python 3.11+, Node 20+, Git
+**Developer mode** (recommended):
+
+```powershell
+.\scripts\dev.ps1
+```
+
+Or manually:
 
 ```bash
 git clone https://github.com/Niruuu2005/CredenceAI.git
@@ -24,31 +30,27 @@ cd CredenceAI
 
 ```bash
 cd backend
+cp .env.development .env    # or .env.example on older setups
 python -m venv .venv
 .venv\Scripts\activate          # Windows
-# source .venv/bin/activate   # macOS/Linux
 pip install -r requirements.txt
-cp .env.example .env            # or copy on Windows
-set PYTHONPATH=src                # export PYTHONPATH=src on Unix
-set APP_ENV=local
-set CELERY_ALWAYS_EAGER=true
+set PYTHONPATH=src
 alembic upgrade head
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-
-- API docs: http://localhost:8000/docs  
-- Health: http://localhost:8000/api/health  
 
 ### Frontend
 
 ```bash
 cd frontend
+cp .env.development .env
 npm install
-cp .env.example .env
 npm run dev
 ```
 
 Open http://localhost:3000 → sign in → run a search from the app.
+
+**Production mode:** Frontend on Vercel proxies `/api` to Render. See [docs/deployment.md](docs/deployment.md) and run `.\scripts\prod-check.ps1` before deploy.
 
 ### Tests
 
@@ -64,13 +66,18 @@ cd ../frontend && npm run lint && npm run build
 
 ```
 /
-├── backend/     FastAPI API, Celery workers, Alembic migrations
-├── frontend/    React + Vite SPA
-├── sdk/         @credenceai/sdk TypeScript client
-├── docs/        Architecture, API, deployment, operations
-├── .github/     CI workflows
-└── README.md
+├── backend/       FastAPI API, Celery workers, Alembic migrations
+├── frontend/      React + Vite SPA (Vercel)
+├── sdk/           @credenceai/sdk TypeScript client
+├── agentgate/     NANDAHack Phase 2 microservice (separate Render deploy)
+├── scripts/       dev.ps1, prod-check.ps1, e2e tests
+├── Submission/    Hackathon deliverables
+├── docs/          Architecture, API, deployment (see docs/REPO_LAYOUT.md)
+├── .github/       CI workflows
+└── render.yaml    CredenceAI API Render blueprint
 ```
+
+Full map: [docs/REPO_LAYOUT.md](docs/REPO_LAYOUT.md)
 
 ---
 
@@ -131,6 +138,7 @@ Overview: [docs/deployment.md](docs/deployment.md)
 | Doc | Description |
 |-----|-------------|
 | [docs/manual-setup.md](docs/manual-setup.md) | **Complete production deploy checklist** |
+| [docs/REPO_LAYOUT.md](docs/REPO_LAYOUT.md) | Monorepo structure and deploy map |
 | [docs/architecture.md](docs/architecture.md) | System design |
 | [docs/api.md](docs/api.md) | REST API reference |
 | [docs/deployment.md](docs/deployment.md) | Deployment architecture and Compose |

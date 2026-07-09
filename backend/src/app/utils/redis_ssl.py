@@ -36,12 +36,16 @@ def celery_ssl_options(url: str, default_cert_reqs: str = "CERT_REQUIRED") -> di
 
 
 def redis_client_kwargs(url: str, default_cert_reqs: str = "CERT_REQUIRED") -> dict[str, object]:
+    """Extra kwargs for redis.from_url (redis-py 5+).
+
+    rediss:// enables TLS via the URL scheme; do not pass ssl=True (removed in redis-py 6).
+    """
     if not is_rediss_url(url):
         return {}
-    return {
-        "ssl": True,
-        "ssl_cert_reqs": resolve_ssl_cert_reqs(url, default_cert_reqs),
-    }
+    parsed = urlparse(url)
+    if parse_qs(parsed.query).get("ssl_cert_reqs"):
+        return {}
+    return {"ssl_cert_reqs": resolve_ssl_cert_reqs(url, default_cert_reqs)}
 
 
 def ensure_rediss_ssl_query_param(

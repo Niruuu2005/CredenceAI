@@ -66,6 +66,12 @@ def validate_production_config() -> None:
             "CORS_ALLOWED_ORIGINS must include at least one https:// frontend origin "
             "in production (not localhost-only)."
         )
+    if settings.MOCK_SERVICES:
+        errors.append("MOCK_SERVICES must be false in production.")
+    if not settings.OPENAI_API_KEY and settings.ENABLE_AGENTIC_PIPELINE:
+        logger.warning(
+            "PRODUCTION CONFIG: OPENAI_API_KEY not set — agentic replanning will use rule-based fallbacks"
+        )
     if (
         settings.SEARCH_PROVIDER == "searxng"
         and not settings.MOCK_SERVICES

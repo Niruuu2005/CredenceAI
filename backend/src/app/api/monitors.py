@@ -1,11 +1,15 @@
 import uuid
 from typing import List
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone
+
 from app.database import get_db
-from app.models import Monitor, User
+from app.models import Monitor, User, MonitorJob, Job
 from app.services.security import get_current_user
 from app.services.quota_service import check_monitor_quota
+from app.services.repository import create_job
+from app.services.job_dispatch import dispatch_process_job, JobEnqueueError
 from app.schemas import MonitorCreate, MonitorResponse
 
 router = APIRouter(prefix="/monitors", tags=["Monitors"])
@@ -75,12 +79,40 @@ def delete_monitor(
 @router.post("/{monitor_id}/sync", response_model=MonitorResponse)
 def sync_monitor(
     monitor_id: str,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     db_monitor = _get_user_monitor(db, monitor_id, current_user.id)
-    db_monitor.last_check = "Just now"
-    db_monitor.health = "Green"
+
+    job_id = f"job_{uuid.uuid4().hex[:12]}"
+    trace_id = f"mon_sync_{monitor_id}"
+
+    create_job(
+        db=db,
+        job_id=job_id,
+        trace_id=trace_id,
+        job_type="search_query",
+        input_val=db_monitor.topic,
+        vertical="news",
+        priority="normal",
+        user_id=current_user.id,
+    )
+
+    try:
+        dispatch_process_job(job_id, background_tasks)
+    except JobEnqueueError as exc:
+        raise HTTPException(status_code=503, detail="Failed to enqueue monitor sync job") from exc
+
+    monitor_job = MonitorJob(
+        id=f"mj_{uuid.uuid4().hex[:10]}",
+        monitor_id=monitor_id,
+        job_id=job_id,
+    )
+    db.add(monitor_job)
+
+    db_monitor.last_check = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    db_monitor.health = "Syncing"
     db.commit()
     db.refresh(db_monitor)
     return db_monitor

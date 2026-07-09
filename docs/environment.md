@@ -1,10 +1,33 @@
 # Environment Variables
 
+## Mode Profiles
+
+CredenceAI supports two primary runtime modes:
+
+| Profile | `APP_ENV` | Backend | Frontend API |
+|---------|-----------|---------|--------------|
+| **Developer** | `development` or `local` | `localhost:8000` | Vite proxy `/api` → backend |
+| **Production** | `production` | Render or Docker | Vercel `/api` rewrite → Render |
+
+**Quick start (developer mode):**
+```powershell
+.\scripts\dev.ps1
+```
+
+**Pre-deploy validation:**
+```powershell
+.\scripts\prod-check.ps1
+```
+
+Env templates: `backend/.env.development`, `backend/.env.production`, `frontend/.env.development`, `frontend/.env.production`
+
+---
+
 ## Backend (`backend/.env`)
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `APP_ENV` | No | `local` | `local` or `production` |
+| `APP_ENV` | No | `local` | `development`, `local`, or `production` |
 | `DATABASE_URL` | Yes | postgres URL | SQLAlchemy DSN |
 | `REDIS_URL` | Yes | `redis://localhost:6379/0` | Celery broker |
 | `MOCK_SERVICES` | No | `false` | Use fallbacks when services down |
@@ -35,6 +58,10 @@
 | `DEV_LOGIN_PASSWORD` | Local dev | — | Developer login password |
 | `RATE_LIMIT_ENABLED` | No | `false` | Enable rate limiting |
 | `LOG_LEVEL` | No | `INFO` | Logging level |
+| `ENABLE_AGENTIC_PIPELINE` | No | `true` | Enable multi-agent orchestration |
+| `AGENT_MAX_ITERATIONS` | No | `3` | Max replanning iterations per job |
+| `MAX_GOAL_JOBS_EAGER` | No | `1` | Max goal jobs when Celery eager |
+| `MAX_GOAL_JOBS_WORKER` | No | `10` | Max goal jobs with dedicated worker |
 
 **Production:** at least one OAuth provider (Google or GitHub) plus strong `JWT_SECRET`. See [`backend/.env.production.example`](../backend/.env.production.example) and [oauth-setup.md](oauth-setup.md).
 

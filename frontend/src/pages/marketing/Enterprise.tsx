@@ -2,21 +2,28 @@ import React, { useState } from "react";
 import { Server, Eye, FileSpreadsheet, Mail, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 
 export function Enterprise() {
   const [email, setEmail] = useState("");
   const [requirements, setRequirements] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    setIsSubmitted(true);
-    setEmail("");
-    setRequirements("");
-    setTimeout(() => {
-      setIsSubmitted(false);
-    }, 5000);
+    if (!email || requirements.length < 10) return;
+    setError(null);
+    try {
+      const res = await api.submitEnterpriseContact(email, requirements);
+      setIsSubmitted(true);
+      setEmail("");
+      setRequirements("");
+      setTimeout(() => setIsSubmitted(false), 8000);
+      console.info("Enterprise contact submitted:", res.id);
+    } catch {
+      setError("Failed to submit request. Please try again.");
+    }
   };
 
   return (
@@ -61,6 +68,12 @@ export function Enterprise() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <span className="text-[10px] uppercase tracking-widest text-text-title font-extrabold block mb-2">Submit Inbound Request</span>
               
+              {error && (
+                <div className="p-3 bg-red-500/10 border-l-4 border-red-500 text-red-600 text-xs font-semibold rounded-xl">
+                  {error}
+                </div>
+              )}
+
               {isSubmitted && (
                 <div className="p-3 bg-teal-500/10 border-l-4 border-teal-500 text-teal-600 dark:text-teal-400 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in">
                   <ShieldCheck className="h-4 w-4 shrink-0" />

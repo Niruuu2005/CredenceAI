@@ -34,6 +34,33 @@
 
 ---
 
+## [0.6.0] — 2026-07-09 — Platform completion & repo cleanup
+
+### Added
+
+- Agent orchestrator, agent runner, working memory, and new agents (crawl strategy, experiment, ops recovery).
+- User preferences API, enterprise contact API, collection items, monitor sync via job enqueue.
+- Dev/prod env profiles (`backend/.env.development`, `.env.production`), `scripts/dev.ps1`, `scripts/prod-check.ps1`.
+- E2E scripts moved to `scripts/e2e/`.
+- `IMPROVEMENTS.md` platform tracker, `docs/REPO_LAYOUT.md`.
+- AgentGate hackathon microservice under `agentgate/` (separate Render service).
+- Optional Celery worker in `render.yaml`; agentic pipeline env vars.
+
+### Fixed
+
+- Redis SSL for Upstash on redis-py 6 (`ssl=True` removed; use `rediss://` + `ssl_cert_reqs` only).
+- pytest auth failures: `ENABLE_API_KEY_AUTH=false` in test config and CI.
+- Monitor sync, goals API tests, Google OAuth mock ordering in development.
+- Frontend nginx `/api` proxy; agent trail and settings preferences in UI.
+
+### Changed
+
+- README and docs updated for monorepo layout (backend, frontend, sdk, agentgate, scripts).
+- Legacy `/dashboard` route removed from production API.
+- Mock OAuth and dev-only features gated to `APP_ENV=development`.
+
+---
+
 ## [Unreleased] — Monorepo restructure
 
 ### Changed

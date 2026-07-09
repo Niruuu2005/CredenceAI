@@ -1,9 +1,8 @@
-import os
 import logging
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -12,7 +11,7 @@ from app.logging_config import setup_logging
 from app.api.middleware import TraceIdMiddleware
 from app.middleware.api_key_auth import ApiKeyMiddleware
 from app.middleware.cors_guard import CorsGuardMiddleware
-from app.api import jobs, search, health, agents, evidence, intelligence, verticals, goals, auth, monitors, collections, billing, admin
+from app.api import jobs, search, health, agents, evidence, intelligence, verticals, goals, auth, monitors, collections, billing, admin, preferences, enterprise
 from slowapi.errors import RateLimitExceeded
 from app.limiter import limiter
 
@@ -28,7 +27,7 @@ async def lifespan(app: FastAPI):
     from app.startup_validation import validate_production_config
     validate_production_config()
 
-    if settings.APP_ENV in ("local", "test"):
+    if settings.APP_ENV in ("local", "development", "test"):
         from app.models import Base
         from app.database import engine
         logger.info("STARTUP >> creating database tables (dev/test only)")
@@ -204,6 +203,8 @@ app.include_router(monitors.router)
 app.include_router(collections.router)
 app.include_router(billing.router)
 app.include_router(admin.router)
+app.include_router(preferences.router)
+app.include_router(enterprise.router)
 
 app.include_router(jobs.router, prefix="/api")
 app.include_router(goals.router, prefix="/api")
@@ -217,22 +218,14 @@ app.include_router(monitors.router, prefix="/api")
 app.include_router(collections.router, prefix="/api")
 app.include_router(billing.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
+app.include_router(preferences.router, prefix="/api")
+app.include_router(enterprise.router, prefix="/api")
 
 
 @app.get("/")
 def read_root():
     return {
         "message": "Welcome to CredenceAI API.",
-        "docs": "/docs",
-        "dashboard": "/dashboard",
+        "docs": "/docs" if not settings.is_production else None,
         "health": "/api/health",
     }
-
-
-@app.get("/dashboard", response_class=HTMLResponse)
-def get_dashboard():
-    template_path = os.path.join(
-        os.path.dirname(__file__), "templates", "dashboard.html"
-    )
-    with open(template_path, "r", encoding="utf-8") as f:
-        return f.read()

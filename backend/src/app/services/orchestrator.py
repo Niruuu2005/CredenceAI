@@ -11,6 +11,8 @@ from app.services.normalizer import normalize_searxng_payload
 from app.agents.planner_agent import PlannerAgent
 from app.agents.base import AgentInput
 from app.services.agent_decision_logger import AgentDecisionLogger
+from app.services.agent_runner import run_agent
+from app.services.agent_orchestrator import AgentOrchestrator
 from app.services.cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
@@ -69,14 +71,11 @@ async def invoke_planner_agent(db: Session, job_id: str, query: str) -> dict:
             user_request=query
         )
         
-        decision = await planner.execute(agent_input)
+        decision = await run_agent(db, planner, agent_input, estimated_tokens=800)
         plan_ms = (time.perf_counter() - t_plan) * 1000
         
         if decision.success:
-            decision_logger = AgentDecisionLogger(db)
-            decision_logger.log_decision(decision)
-            
-            plan = decision.output_data.get("decision", {})
+            plan = decision.output_data.get("decision", {}) if decision.output_data else {}
             
             logger.info(
                 f"ORCHESTRATOR  STEP=PLANNING  STATUS=SUCCESS  "
@@ -362,16 +361,41 @@ def route_and_execute_job(db: Session, job_id: str) -> None:
     # ── Deep Mode Crawl & Agent Validation ────────────────────────────────
     if mode == "deep":
         logger.info(f"ORCHESTRATOR  DEEP_MODE_PROCESSING  job_id={job_id}")
-        # Run background crawl tasks for top 3 accepted results
         from app.services.crawler_task import crawl_web_page
         
         top_urls = [res["url"] for res in unique_results if res["quality_scores"]["decision"] == "accept"][:3]
         for url in top_urls:
             try:
-                # Synchronous trigger in worker pipeline for deep analysis
                 crawl_web_page(job_id=job_id, url=url)
             except Exception as exc:
                 logger.warning(f"ORCHESTRATOR  DEEP_CRAWL_FAIL  url={url}  error={exc}")
+
+    # ── Agentic pipeline (multi-agent loop) ───────────────────────────────
+    try:
+        agent_orch = AgentOrchestrator(db)
+        agent_result = asyncio.run(
+            agent_orch.run_pipeline(
+                job_id=job_id,
+                query=job.input,
+                vertical=job.vertical or "general",
+                mode=mode,
+                normalized_results=unique_results,
+            )
+        )
+        if agent_result.get("crawl_strategies") and mode == "deep":
+            strategies = agent_result.get("crawl_strategies", {})
+            decision_data = strategies.get("decision", strategies) if isinstance(strategies, dict) else {}
+            strat_list = decision_data if isinstance(decision_data, list) else decision_data.get("strategies", [])
+            from app.services.crawler_task import crawl_web_page
+            for item in strat_list:
+                if isinstance(item, dict) and item.get("strategy") in ("playwright", "scrapy"):
+                    try:
+                        crawl_web_page(job_id=job_id, url=item["url"])
+                    except Exception as exc:
+                        logger.warning(f"ORCHESTRATOR  AGENT_CRAWL_FAIL  error={exc}")
+        logger.info(f"ORCHESTRATOR  AGENT_PIPELINE_DONE  job_id={job_id}")
+    except Exception as exc:
+        logger.warning(f"ORCHESTRATOR  AGENT_PIPELINE_SKIP  error={exc}")
 
     # Cache successful results
     try:

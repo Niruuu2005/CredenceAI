@@ -14,32 +14,51 @@ export function Settings() {
   const [copiedKey, setCopiedKey] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
-  // Stateful, persisted preferences
-  const [minCitations, setMinCitations] = useState(() => localStorage.getItem("setting_min_citations") || "2 Sources");
-  const [scholarlyFocus, setScholarlyFocus] = useState(() => localStorage.getItem("setting_scholarly_focus") || "None (Balanced)");
-  const [apiLogging, setApiLogging] = useState(() => {
-    const val = localStorage.getItem("setting_api_logging");
-    return val === null ? true : val === "true";
-  });
+  // Stateful preferences synced with backend
+  const [minCitations, setMinCitations] = useState(2);
+  const [scholarlyFocus, setScholarlyFocus] = useState("balanced");
+  const [apiLogging, setApiLogging] = useState(true);
 
-  const handleMinCitationsChange = (val: string) => {
-    setMinCitations(val);
-    localStorage.setItem("setting_min_citations", val);
+  const handleMinCitationsChange = async (val: string) => {
+    const num = parseInt(val, 10) || 2;
+    setMinCitations(num);
+    try {
+      await api.updatePreferences({ min_citations: num });
+    } catch (err) {
+      console.error("Failed to save min citations:", err);
+    }
   };
 
-  const handleScholarlyFocusChange = (val: string) => {
+  const handleScholarlyFocusChange = async (val: string) => {
     setScholarlyFocus(val);
-    localStorage.setItem("setting_scholarly_focus", val);
+    try {
+      await api.updatePreferences({ scholarly_focus: val });
+    } catch (err) {
+      console.error("Failed to save scholarly focus:", err);
+    }
   };
 
-  const toggleApiLogging = () => {
+  const toggleApiLogging = async () => {
     const newVal = !apiLogging;
     setApiLogging(newVal);
-    localStorage.setItem("setting_api_logging", String(newVal));
+    try {
+      await api.updatePreferences({ api_logging_enabled: newVal });
+    } catch (err) {
+      console.error("Failed to save API logging pref:", err);
+    }
   };
 
   useEffect(() => {
     fetchKeys();
+    api.getPreferences().then((prefs) => {
+      setMinCitations(prefs.min_citations);
+      setScholarlyFocus(prefs.scholarly_focus);
+      setApiLogging(prefs.api_logging_enabled);
+    }).catch(() => {
+      // Fallback to localStorage for offline dev
+      const stored = localStorage.getItem("setting_min_citations");
+      if (stored) setMinCitations(parseInt(stored, 10) || 2);
+    });
   }, []);
 
   const fetchKeys = async () => {
@@ -111,13 +130,13 @@ export function Settings() {
                 <p className="text-xs text-text-subtle mt-1 leading-normal">Require a minimum number of self-corroborating sources before asserting high-confidence convergence.</p>
               </div>
               <select 
-                value={minCitations}
+                value={String(minCitations)}
                 onChange={(e) => handleMinCitationsChange(e.target.value)}
                 className="bg-bg-deep text-text-body px-4 py-2.5 text-xs rounded-xl neu-inset-sm focus:outline-none focus:ring-2 focus:ring-primary/40 uppercase tracking-wider font-semibold min-w-[170px] border-none"
               >
-                <option>2 Sources</option>
-                <option>3 Sources</option>
-                <option>5 Sources (Strict)</option>
+                <option value="2">2 Sources</option>
+                <option value="3">3 Sources</option>
+                <option value="5">5 Sources (Strict)</option>
               </select>
             </div>
 
@@ -133,9 +152,9 @@ export function Settings() {
                 onChange={(e) => handleScholarlyFocusChange(e.target.value)}
                 className="bg-bg-deep text-text-body px-4 py-2.5 text-xs rounded-xl neu-inset-sm focus:outline-none focus:ring-2 focus:ring-primary/40 uppercase tracking-wider font-semibold min-w-[170px] border-none"
               >
-                <option>None (Balanced)</option>
-                <option>Academic High</option>
-                <option>Exclusive Patents</option>
+                <option value="balanced">None (Balanced)</option>
+                <option value="academic">Academic High</option>
+                <option value="patents">Exclusive Patents</option>
               </select>
             </div>
           </CardContent>

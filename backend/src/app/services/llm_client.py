@@ -23,6 +23,100 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# OpenAI function/tool schemas for agent orchestration
+AGENT_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_source",
+            "description": "Search a specific data source",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "source": {"type": "string", "description": "Source name e.g. openalex, gdelt"},
+                    "query": {"type": "string"},
+                },
+                "required": ["source", "query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "crawl_url",
+            "description": "Crawl a URL with specified strategy",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string"},
+                    "strategy": {"type": "string", "enum": ["metadata_only", "scrapy", "playwright"]},
+                },
+                "required": ["url"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "resolve_entity",
+            "description": "Resolve an ambiguous entity mention",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "mention": {"type": "string"},
+                    "context": {"type": "string"},
+                },
+                "required": ["mention"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "validate_extraction",
+            "description": "Validate extracted page content",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string"},
+                    "text_preview": {"type": "string"},
+                },
+                "required": ["url"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "synthesize",
+            "description": "Generate cited synthesis from results",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string"},
+                    "result_ids": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "replan",
+            "description": "Replan the research goal with a new strategy",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "reason": {"type": "string"},
+                    "new_vertical": {"type": "string"},
+                },
+                "required": ["reason"],
+            },
+        },
+    },
+]
+
 
 @dataclass
 class LLMResponse:
@@ -199,7 +293,25 @@ class LLMClient:
         
         # All retries failed
         raise LLMError(f"LLM call failed after {self.max_retries} retries: {last_error}")
-    
+
+    async def call_llm_with_tools(
+        self,
+        prompt: str,
+        tools: List[Dict[str, Any]],
+        system_prompt: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+    ) -> LLMResponse:
+        """Call LLM with function/tool definitions for agent routing."""
+        return await self.call_llm(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            max_tokens=max_tokens or self.DEFAULT_MAX_TOKENS,
+            temperature=temperature if temperature is not None else 0.3,
+            tools=tools,
+            tool_choice="auto",
+        )
+
     async def _make_api_call(
         self,
         prompt: str,
@@ -267,14 +379,19 @@ class LLMClient:
                         raise LLMError("OpenAI API returned no choices in response")
                     
                     message = choices[0].get("message", {})
-                    content = message.get("content", "")
+                    content = message.get("content", "") or ""
                     finish_reason = choices[0].get("finish_reason", "stop")
                     usage = res_data.get("usage", {})
-                    
+                    tool_calls = message.get("tool_calls")
+
                     prompt_tokens_used = usage.get("prompt_tokens", 0)
                     completion_tokens_used = usage.get("completion_tokens", 0)
                     total_tokens_used = usage.get("total_tokens", prompt_tokens_used + completion_tokens_used)
-                    
+
+                    raw = dict(res_data)
+                    if tool_calls:
+                        raw["tool_calls"] = tool_calls
+
                     return LLMResponse(
                         content=content.strip(),
                         model=self.model,
@@ -282,7 +399,7 @@ class LLMClient:
                         prompt_tokens=prompt_tokens_used,
                         completion_tokens=completion_tokens_used,
                         finish_reason=finish_reason,
-                        raw_response=res_data
+                        raw_response=raw,
                     )
             except Exception as e:
                 if isinstance(e, (LLMRateLimitError, LLMTimeoutError, LLMError)):

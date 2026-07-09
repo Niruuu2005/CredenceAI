@@ -142,6 +142,20 @@ class Settings(BaseSettings):
     STRIPE_SUCCESS_URL: str | None = Field(default=None)
     STRIPE_CANCEL_URL: str | None = Field(default=None)
 
+    # Agentic pipeline
+    ENABLE_AGENTIC_PIPELINE: bool = Field(default=True)
+    AGENT_MAX_ITERATIONS: int = Field(default=3)
+    MAX_GOAL_JOBS_EAGER: int = Field(default=1)
+    MAX_GOAL_JOBS_WORKER: int = Field(default=10)
+
+    @property
+    def is_development(self) -> bool:
+        return self.APP_ENV in ("local", "development", "test")
+
+    @property
+    def is_production(self) -> bool:
+        return self.APP_ENV == "production"
+
     @property
     def redis_url(self) -> str:
         return ensure_rediss_ssl_query_param(self.REDIS_URL, self.REDIS_SSL_CERT_REQS)

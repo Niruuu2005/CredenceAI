@@ -361,6 +361,89 @@ export const api = {
     return withWakeupRetry(() => getClient().auth.getCurrentUser());
   },
 
+  async getPreferences() {
+    const res = await fetch(`${getApiBaseUrl()}/api/preferences`, {
+      headers: { Authorization: `Bearer ${getStoredToken()}` },
+    });
+    if (!res.ok) throw new Error('Failed to load preferences');
+    return res.json() as Promise<{
+      min_citations: number;
+      scholarly_focus: string;
+      api_logging_enabled: boolean;
+    }>;
+  },
+
+  async updatePreferences(prefs: {
+    min_citations?: number;
+    scholarly_focus?: string;
+    api_logging_enabled?: boolean;
+  }) {
+    const res = await fetch(`${getApiBaseUrl()}/api/preferences`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getStoredToken()}`,
+      },
+      body: JSON.stringify(prefs),
+    });
+    if (!res.ok) throw new Error('Failed to update preferences');
+    return res.json();
+  },
+
+  async getAgentDecisions(jobId: string) {
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/agent/decisions?job_id=${encodeURIComponent(jobId)}`,
+      { headers: { Authorization: `Bearer ${getStoredToken()}` } }
+    );
+    if (!res.ok) return [];
+    return res.json();
+  },
+
+  async getEvidenceGraph(entityId: string) {
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/evidence/entity/${encodeURIComponent(entityId)}/claims`,
+      { headers: { Authorization: `Bearer ${getStoredToken()}` } }
+    );
+    if (!res.ok) return null;
+    return res.json();
+  },
+
+  async addCollectionItem(
+    collectionId: string,
+    item: {
+      title: string;
+      url?: string;
+      snippet?: string;
+      source?: string;
+      result_id?: string;
+      job_id?: string;
+    }
+  ) {
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/collections/${encodeURIComponent(collectionId)}/items`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getStoredToken()}`,
+        },
+        body: JSON.stringify(item),
+      }
+    );
+    if (!res.ok) throw new Error('Failed to add item to collection');
+    return res.json();
+  },
+
+  async submitEnterpriseContact(email: string, message: string) {
+    const res = await fetch(`${getApiBaseUrl()}/api/enterprise/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, message }),
+    });
+    if (!res.ok) throw new Error('Failed to submit contact form');
+    return res.json() as Promise<{ id: string; message: string }>;
+  },
+
   logout() {
     localStorage.removeItem(TOKEN_KEY);
   },

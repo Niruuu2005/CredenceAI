@@ -62,3 +62,10 @@ class HealthRouter:
     def get_status_report(self) -> Dict[str, Dict[str, Any]]:
         """Return status of all providers."""
         return _PROVIDER_HEALTH_REGISTRY
+
+    def get_provider_health(self) -> Dict[str, str]:
+        """Simplified health map for OpsRecoveryAgent."""
+        return {
+            name: reg.get("status", "healthy")
+            for name, reg in _PROVIDER_HEALTH_REGISTRY.items()
+        }

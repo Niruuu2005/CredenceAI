@@ -42,12 +42,8 @@ class RAGDatasetBuilderPack(BaseVerticalPack):
                 
             accepted_count += 1
             
-            # Optional Embeddings (Generate a lightweight mock embedding representation)
-            # Create a deterministic mock vector based on the document ID hash
-            mock_embedding = [
-                round(float((hash(r.get("id", "")) + i * 37) % 1000) / 1000.0, 4)
-                for i in range(16)
-            ]
+            # Embeddings disabled until a real embedding provider is configured
+            embedding = None
             
             filtered_docs.append({
                 "id": r.get("id"),
@@ -55,7 +51,7 @@ class RAGDatasetBuilderPack(BaseVerticalPack):
                 "url": r.get("url", ""),
                 "snippet": r.get("snippet", ""),
                 "quality_score": quality_score,
-                "embedding": mock_embedding
+                "embedding": embedding,
             })
 
         # 3. Generate a synthesized summary to serve as the reference response

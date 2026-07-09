@@ -78,7 +78,9 @@ class AgentBudgetController:
         "SourceSelectionAgent": 1000,
         "QualityCriticAgent": 1500,
         "EntityResolutionAgent": 1500,
-        "ExtractionValidationAgent": 1000,
+        "CrawlStrategyAgent": 1000,
+        "ExperimentAgent": 800,
+        "OpsRecoveryAgent": 500,
     }
     
     def __init__(self, db_session: Session, config: Optional[Dict] = None):

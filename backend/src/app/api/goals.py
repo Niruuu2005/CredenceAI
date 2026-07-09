@@ -20,7 +20,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/goals", tags=["Goals"])
 
 # With CELERY_ALWAYS_EAGER, each process_job runs after response — cap to avoid proxy timeouts.
-MAX_EAGER_GOAL_JOBS = 1
+def _max_goal_jobs() -> int:
+    if settings.CELERY_ALWAYS_EAGER:
+        return settings.MAX_GOAL_JOBS_EAGER
+    return settings.MAX_GOAL_JOBS_WORKER
 
 _FREE_TIER_SEARCH_JOB_TYPES = frozenset({"search_query"})
 
@@ -162,14 +165,16 @@ async def submit_goal(
             plan = _build_direct_search_plan(goal_in.goal.strip())
 
         job_defs = plan.get("jobs", []) if plan else []
-        if settings.CELERY_ALWAYS_EAGER and len(job_defs) > MAX_EAGER_GOAL_JOBS:
+        max_jobs = _max_goal_jobs()
+        if len(job_defs) > max_jobs:
             logger.warning(
-                "API GOAL_PLAN plan_id=%s capping jobs %d -> %d (CELERY_ALWAYS_EAGER)",
+                "API GOAL_PLAN plan_id=%s capping jobs %d -> %d (celery_eager=%s)",
                 plan_id,
                 len(job_defs),
-                MAX_EAGER_GOAL_JOBS,
+                max_jobs,
+                settings.CELERY_ALWAYS_EAGER,
             )
-            job_defs = job_defs[:MAX_EAGER_GOAL_JOBS]
+            job_defs = job_defs[:max_jobs]
 
         jobs_out = []
         if plan and job_defs:
