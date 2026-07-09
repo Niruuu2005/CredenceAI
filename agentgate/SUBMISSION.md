@@ -10,15 +10,15 @@ Replace `YOUR_DEPLOYED_SERVICE_URL` with your live Render URL after deploy.
 | **One-line** | Pre-action decision API: tells agents if a task is safe, what's missing, and which option to choose. |
 | **Tags** | agents, safety, decision, guardrail, api, nanda, trust |
 | **GitHub username** | _(your username)_ |
-| **SKILL.md URL** | `https://YOUR_DEPLOYED_SERVICE_URL/skill.md` |
+| **SKILL.md URL** | `https://agentgate-xwqo.onrender.com/skill.md` |
 
 ### Endpoints (FULL URLs — required for "link responded" badge)
 
 ```
-GET https://YOUR_DEPLOYED_SERVICE_URL/health
-POST https://YOUR_DEPLOYED_SERVICE_URL/evaluate-task
-POST https://YOUR_DEPLOYED_SERVICE_URL/compare-options
-GET https://YOUR_DEPLOYED_SERVICE_URL/skill.md
+GET https://agentgate-xwqo.onrender.com/health
+POST https://agentgate-xwqo.onrender.com/evaluate-task
+POST https://agentgate-xwqo.onrender.com/compare-options
+GET https://agentgate-xwqo.onrender.com/skill.md
 ```
 
 ### Submission summary
@@ -30,7 +30,7 @@ AgentGate is a hosted guardrail service for autonomous agents. Before executing 
 Run from any network (not localhost):
 
 ```bash
-export BASE=https://YOUR_DEPLOYED_SERVICE_URL
+export BASE=https://agentgate-xwqo.onrender.com
 
 curl "$BASE/health"
 

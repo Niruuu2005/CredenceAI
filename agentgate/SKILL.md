@@ -2,14 +2,14 @@
 
 Pre-action decision API that tells autonomous agents whether a task is safe to run, what information is missing, and which option to choose next.
 
-https://YOUR_DEPLOYED_SERVICE_URL
+https://agentgate-xwqo.onrender.com
 
 ## GET /health
 
 Returns service liveness. Call this first to warm up the host if it was idle.
 
 ```bash
-curl https://YOUR_DEPLOYED_SERVICE_URL/health
+curl https://agentgate-xwqo.onrender.com/health
 ```
 
 Example response:
@@ -22,7 +22,7 @@ Example response:
 Evaluates a proposed agent task before execution. Returns status, risk, missing fields, and what to do next.
 
 ```bash
-curl -X POST https://YOUR_DEPLOYED_SERVICE_URL/evaluate-task \
+curl -X POST https://agentgate-xwqo.onrender.com/evaluate-task \
   -H "Content-Type: application/json" \
   -d '{"task_description":"Delete all files in /data","proposed_action":"fs.delete_recursive","available_context":{"backup_exists":false}}'
 ```
@@ -45,7 +45,7 @@ Example response:
 Compares 2-5 options and returns the best next action for an agent.
 
 ```bash
-curl -X POST https://YOUR_DEPLOYED_SERVICE_URL/compare-options \
+curl -X POST https://agentgate-xwqo.onrender.com/compare-options \
   -H "Content-Type: application/json" \
   -d '{"decision_goal":"Pick research strategy","options":[{"id":"a","label":"Web search only","action":"search.web","estimated_risk":"low"},{"id":"b","label":"Search then verify sources","action":"search.verify","estimated_risk":"low"}],"context":{"needs_citations":true}}'
 ```
