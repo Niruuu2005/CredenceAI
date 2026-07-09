@@ -116,7 +116,7 @@ class Settings(BaseSettings):
     API_PUBLIC_URL: str | None = Field(default=None)
 
     # SDK Metadata
-    API_VERSION: str = Field(default="0.1.0")
+    API_VERSION: str = Field(default="0.6.1")
 
     # Google OAuth & User Auth Settings
     GOOGLE_CLIENT_ID: str | None = Field(default=None)

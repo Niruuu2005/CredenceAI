@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.1] — 2026-07-09 — Deploy hotfix
+
+### Fixed
+
+- Add missing `email-validator` dependency required by enterprise contact API (`EmailStr`).
+- Idempotent platform completion migration for partial deploy recovery on PostgreSQL.
+- Test `conftest` resets CORS origins so local production `.env` does not break CORS tests.
+
+---
+
 ## [Unreleased] — Production readiness
 
 ### Security & multi-tenant

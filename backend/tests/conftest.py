@@ -12,6 +12,13 @@ from app.config import settings
 settings.MOCK_SERVICES = False
 settings.APP_ENV = "local"
 settings.ENABLE_API_KEY_AUTH = False
+settings.CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://credence-ai-patilniraj413-5474s-projects.vercel.app",
+]
 
 # Use in-memory SQLite for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"
