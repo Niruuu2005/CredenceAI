@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 from app.config import settings
 from app.services.api_key_service import create_api_key
 
@@ -60,7 +61,8 @@ def test_middleware_blocking_and_allowing(client, db_session):
         db_session.commit()
         key_info = create_api_key(db_session, owner="test_dev_2", label="Active Key", user_id="test_dev_2")
         headers = {"X-API-Key": key_info["key"]}
-        response = client.post("/jobs", json={"job_type": "search_query", "input": "test"}, headers=headers)
+        with patch("app.api.jobs.dispatch_process_job"):
+            response = client.post("/jobs", json={"job_type": "search_query", "input": "test"}, headers=headers)
         assert response.status_code == 202
         
         # 5. Access health endpoint without key -> 200 (exempt)

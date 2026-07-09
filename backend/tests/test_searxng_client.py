@@ -115,14 +115,15 @@ def test_searxng_client_duckduckgo_provider_skips_searxng():
     mock_response.raise_for_status = Mock()
 
     try:
-        with patch("requests.get") as mock_get:
-            with patch("requests.post", return_value=mock_response) as mock_post:
-                res = client.search("test query")
-                assert len(res["results"]) == 1
-                assert res["results"][0]["title"] == "Example Title"
-                assert res["results"][0]["url"] == "https://example.com"
-                mock_get.assert_not_called()
-                mock_post.assert_called()
+        with patch.object(client, "_search_duckduckgo_ddgs", return_value=[]):
+            with patch("requests.get") as mock_get:
+                with patch("requests.post", return_value=mock_response) as mock_post:
+                    res = client.search("test query")
+                    assert len(res["results"]) == 1
+                    assert res["results"][0]["title"] == "Example Title"
+                    assert res["results"][0]["url"] == "https://example.com"
+                    mock_get.assert_not_called()
+                    mock_post.assert_called()
     finally:
         settings.SEARCH_PROVIDER = original
 
