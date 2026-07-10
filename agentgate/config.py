@@ -14,6 +14,7 @@ LLM_TIMEOUT_SEC = float(os.getenv("LLM_TIMEOUT_SEC", "8"))
 
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
 SELF_KEEPALIVE_ENABLED = os.getenv("SELF_KEEPALIVE_ENABLED", "true").lower() == "true"
-SELF_KEEPALIVE_INTERVAL_SEC = int(os.getenv("SELF_KEEPALIVE_INTERVAL_SEC", "25"))
+# Render free tier can idle quickly; ping well under 50s (default 30s).
+SELF_KEEPALIVE_INTERVAL_SEC = int(os.getenv("SELF_KEEPALIVE_INTERVAL_SEC", "30"))
 
 RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "").strip().rstrip("/")

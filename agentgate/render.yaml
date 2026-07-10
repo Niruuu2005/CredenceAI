@@ -10,12 +10,12 @@ services:
       - key: SELF_KEEPALIVE_ENABLED
         value: "true"
       - key: SELF_KEEPALIVE_INTERVAL_SEC
-        value: "25"
+        value: "30"
+      - key: PUBLIC_BASE_URL
+        value: https://agentgate-xwqo.onrender.com
       - key: LLM_ENABLED
         value: "true"
       - key: OPENROUTER_MODEL
         value: google/gemini-2.0-flash-exp:free
       - key: OPENROUTER_API_KEY
-        sync: false
-      - key: PUBLIC_BASE_URL
         sync: false
