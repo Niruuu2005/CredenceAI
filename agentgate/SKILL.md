@@ -7,7 +7,7 @@ Before executing a tool or irreversible action, call AgentGate to learn whether 
 **Base URL:** https://agentgate-xwqo.onrender.com  
 **Auth:** None (public service; no API key required)  
 **Content-Type:** `application/json` for all `POST` requests  
-**Warm-up:** Call `GET /health` first if the host may have been idle (Render free tier).
+**Warm-up:** Call `GET /health` first if the host may have been idle (Render free tier). The server also self-pings `POST /demo/hello` every 30s when `SELF_KEEPALIVE_ENABLED=true` to avoid idle spin-down.
 
 ---
 
@@ -16,6 +16,7 @@ Before executing a tool or irreversible action, call AgentGate to learn whether 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | GET | `/health` | Liveness check and warm-up |
+| POST | `/demo/hello` | Demo echo + keepalive ping (`{"message":"hello"}`) |
 | POST | `/evaluate-task` | Pre-action readiness, risk, and next step |
 | POST | `/compare-options` | Rank 2–5 candidate strategies |
 | GET | `/skill.md` | This documentation (agent-readable) |
@@ -24,6 +25,7 @@ Before executing a tool or irreversible action, call AgentGate to learn whether 
 
 ```
 GET  https://agentgate-xwqo.onrender.com/health
+POST https://agentgate-xwqo.onrender.com/demo/hello
 POST https://agentgate-xwqo.onrender.com/evaluate-task
 POST https://agentgate-xwqo.onrender.com/compare-options
 GET  https://agentgate-xwqo.onrender.com/skill.md
@@ -56,6 +58,29 @@ curl https://agentgate-xwqo.onrender.com/health
 | `service` | string | Always `"agentgate"` |
 | `version` | string | API version |
 | `llm_mode` | string | `"rules_only"` or `"rules_with_openrouter_fallback"` |
+
+---
+
+## POST /demo/hello
+
+**Purpose:** Lightweight demo echo. Used by the server's self-keepalive loop on Render free tier (posts `{"message":"hello"}` every 30s to prevent idle spin-down).
+
+```bash
+curl -X POST https://agentgate-xwqo.onrender.com/demo/hello \
+  -H "Content-Type: application/json" \
+  -d '{"message":"hello"}'
+```
+
+**Response (200):**
+
+```json
+{
+  "status": "ok",
+  "service": "agentgate",
+  "message": "hello",
+  "echo": "AgentGate received: hello"
+}
+```
 
 ---
 

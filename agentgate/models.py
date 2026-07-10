@@ -56,3 +56,14 @@ class HealthResponse(BaseModel):
     service: str
     version: str
     llm_mode: str
+
+
+class DemoHelloRequest(BaseModel):
+    message: str = "hello"
+
+
+class DemoHelloResponse(BaseModel):
+    status: str = "ok"
+    service: str
+    message: str
+    echo: str

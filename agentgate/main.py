@@ -23,6 +23,8 @@ from llm_client import compare_options, evaluate_task
 from models import (
     CompareOptionsRequest,
     CompareOptionsResponse,
+    DemoHelloRequest,
+    DemoHelloResponse,
     EvaluateTaskRequest,
     EvaluateTaskResponse,
     HealthResponse,
@@ -66,6 +68,17 @@ app = FastAPI(
     version=SERVICE_VERSION,
     lifespan=lifespan,
 )
+
+
+@app.post("/demo/hello", response_model=DemoHelloResponse)
+async def demo_hello(body: DemoHelloRequest) -> DemoHelloResponse:
+    """Lightweight demo endpoint; also used by self-keepalive to prevent Render idle spin-down."""
+    msg = body.message.strip() or "hello"
+    return DemoHelloResponse(
+        service=SERVICE_NAME,
+        message=msg,
+        echo=f"AgentGate received: {msg}",
+    )
 
 
 @app.get("/health", response_model=HealthResponse)

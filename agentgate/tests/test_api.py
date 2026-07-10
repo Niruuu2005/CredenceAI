@@ -64,3 +64,19 @@ def test_skill_md(client):
     assert res.status_code == 200
     assert "AgentGate" in res.text
     assert "/evaluate-task" in res.text
+
+
+def test_demo_hello(client):
+    res = client.post("/demo/hello", json={"message": "hello"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert data["service"] == "agentgate"
+    assert data["message"] == "hello"
+    assert "hello" in data["echo"]
+
+
+def test_demo_hello_default_message(client):
+    res = client.post("/demo/hello", json={})
+    assert res.status_code == 200
+    assert res.json()["message"] == "hello"
