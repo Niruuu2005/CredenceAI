@@ -19,3 +19,12 @@ def test_openapi_docs_routes_exist():
     assert client.get("/docs").status_code == 200
     assert client.get("/openapi.json").status_code == 200
     assert client.get("/redoc").status_code == 200
+
+
+def test_docs_csp_allows_swagger_cdn():
+    """Blank Swagger page is caused by CSP blocking cdn.jsdelivr.net."""
+    client = TestClient(app)
+    res = client.get("/docs")
+    csp = res.headers.get("content-security-policy", "")
+    assert "cdn.jsdelivr.net" in csp
+    assert "script-src" in csp
