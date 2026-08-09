@@ -99,14 +99,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+_docs_enabled = settings.ENABLE_API_DOCS
 app = FastAPI(
     title="CredenceAI",
     description="AI-assisted search intelligence platform",
     version="0.6.1",
     lifespan=lifespan,
-    docs_url=None if settings.APP_ENV == "production" else "/docs",
-    redoc_url=None if settings.APP_ENV == "production" else "/redoc",
-    openapi_url=None if settings.APP_ENV == "production" else "/openapi.json",
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
 )
 
 app.state.limiter = limiter
@@ -226,6 +227,6 @@ app.include_router(enterprise.router, prefix="/api")
 def read_root():
     return {
         "message": "Welcome to CredenceAI API.",
-        "docs": "/docs" if not settings.is_production else None,
+        "docs": "/docs" if settings.ENABLE_API_DOCS else None,
         "health": "/api/health",
     }

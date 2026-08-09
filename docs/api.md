@@ -114,7 +114,7 @@ Decomposes a goal into planner jobs.
 
 ## Agents, evidence, intelligence, verticals
 
-See OpenAPI docs at `/docs` when the backend is running.
+See OpenAPI docs at `/docs` when the backend is running (`ENABLE_API_DOCS=true`, default). Production serves the same UI at `https://credenceai-api.onrender.com/docs` after deploy.
 
 ## Backward compatibility
 

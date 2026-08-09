@@ -37,6 +37,7 @@ Env templates: `backend/.env.development`, `backend/.env.production`, `frontend/
 | `MINIO_ENDPOINT` | No | `http://localhost:9000` | Object storage |
 | `SEARXNG_BASE_URL` | No | `http://localhost:8080` | Meta-search |
 | `ENABLE_API_KEY_AUTH` | Prod | `false` | Require `X-API-Key` on protected routes |
+| `ENABLE_API_DOCS` | No | `true` | Serve `/docs`, `/redoc`, `/openapi.json` (public API UI) |
 | `CORS_ALLOWED_ORIGINS` | Prod | localhost:3000 | JSON array of origins |
 | `JWT_SECRET` | Prod | change-me | JWT signing secret |
 | `DB_POOL_SIZE` | No | `5` | PostgreSQL connection pool size |
@@ -62,10 +63,15 @@ Env templates: `backend/.env.development`, `backend/.env.production`, `frontend/
 | `AGENT_MAX_ITERATIONS` | No | `3` | Max replanning iterations per job |
 | `MAX_GOAL_JOBS_EAGER` | No | `1` | Max goal jobs when Celery eager |
 | `MAX_GOAL_JOBS_WORKER` | No | `10` | Max goal jobs with dedicated worker |
+| `SEARCH_PROVIDER` | No | `auto` | `auto` / `searxng` / `duckduckgo` |
+| `ENABLE_WIKIPEDIA` / `ENABLE_WIKIDATA` | No | `true` | Wiki search adapters |
+| `ENABLE_GDELT` / `ENABLE_OPENALEX` / `ENABLE_CROSSREF` / `ENABLE_ARXIV` | No | `true` | News + scholarly adapters |
+| `ENABLE_COMMONCRAWL` | No | `true` | Crawl fallback to Common Crawl |
+| `SCHOLARLY_MAILTO` | No | `contact@credenceai.org` | Polite pool contact for OpenAlex/Crossref |
 
 **Production:** at least one OAuth provider (Google or GitHub) plus strong `JWT_SECRET`. See [`backend/.env.production.example`](../backend/.env.production.example) and [oauth-setup.md](oauth-setup.md).
 
-See `backend/.env.example` for source adapters and budget settings.
+Source selection only uses executable free adapters; paid SERP/NewsAPI/Crunchbase are not selected. See `backend/.env.example` for full adapter and budget settings.
 
 ## Frontend (`frontend/.env`)
 

@@ -44,9 +44,11 @@ class Settings(BaseSettings):
     ENABLE_GDELT: bool = Field(default=True)
     ENABLE_COMMONCRAWL: bool = Field(default=True)
     ENABLE_OPENALEX: bool = Field(default=True)
-    ENABLE_CROSSREF: bool = Field(default=False)
-    ENABLE_ARXIV: bool = Field(default=False)
+    ENABLE_CROSSREF: bool = Field(default=True)
+    ENABLE_ARXIV: bool = Field(default=True)
     ENABLE_PAID_SERP: bool = Field(default=False)
+    # Polite pool contact for OpenAlex / Crossref (recommended)
+    SCHOLARLY_MAILTO: str = Field(default="contact@credenceai.org")
 
     # Budgets & Defaults
     DEFAULT_MAX_SOURCES: int = Field(default=4)
@@ -65,6 +67,9 @@ class Settings(BaseSettings):
     # SDK / API Key Auth
     ENABLE_API_KEY_AUTH: bool = Field(default=False)
     API_KEY_HEADER_NAME: str = Field(default="X-API-Key")
+
+    # Public OpenAPI UI (/docs, /redoc, /openapi.json). On for this product API; set false to hide.
+    ENABLE_API_DOCS: bool = Field(default=True)
 
     # CORS (split frontend deploy — set to your SPA origin in production)
     CORS_ALLOWED_ORIGINS: list[str] = Field(
