@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
   Sparkles,
@@ -21,6 +21,7 @@ import {
   Download,
   Share2,
   Info,
+  Lock,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -117,10 +118,38 @@ export function ResearchWorkspace() {
   const [reviewRelation, setReviewRelation] = useState("supports");
   const [reviewNotes, setReviewNotes] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const prevStatusRef = useRef<string | null>(null);
+
+  const scrollToResults = () => {
+    // Timeout gives React a render frame to populate findings and claims DOM
+    setTimeout(() => {
+      if (resultsRef.current) {
+        resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        const el = document.getElementById("research-results-panel");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    }, 150);
+  };
 
   useEffect(() => {
     loadRecentRuns();
   }, []);
+
+  // Smoothly scroll down to results panel whenever a run transitions to completed
+  useEffect(() => {
+    if (
+      activeRun?.status === "completed" &&
+      prevStatusRef.current !== "completed" &&
+      prevStatusRef.current !== null
+    ) {
+      scrollToResults();
+    }
+    prevStatusRef.current = activeRun?.status ?? null;
+  }, [activeRun?.status]);
 
   const loadRecentRuns = async () => {
     try {
@@ -179,6 +208,7 @@ export function ResearchWorkspace() {
       setActiveRun(completedRun);
       await selectRun(completedRun);
       setQuestion("");
+      scrollToResults();
     } catch (err) {
       console.error("Failed to execute research run:", err);
       setErrorMsg(
@@ -443,7 +473,7 @@ export function ResearchWorkspace() {
 
           <div className="glass-card p-4 space-y-1">
             <div className="flex items-center gap-2 text-primary text-xs font-bold">
-              <LockIcon className="w-4 h-4" />
+              <Lock className="w-4 h-4" />
               <span>Tenant Security Gated</span>
             </div>
             <p className="text-xs text-text-subtle leading-relaxed">
@@ -454,7 +484,11 @@ export function ResearchWorkspace() {
 
         {/* Active Investigation Findings & Evidence Inspector */}
         {activeRun ? (
-          <section className="space-y-6">
+          <section
+            id="research-results-panel"
+            ref={resultsRef}
+            className="space-y-6 scroll-mt-20 animate-fade-in"
+          >
             {/* Live Pipeline Stepper */}
             <div className="glass-card p-4 flex flex-wrap items-center justify-between gap-4 border border-border-subtle/50">
               <div className="flex items-center gap-2 overflow-x-auto py-1">
@@ -495,7 +529,10 @@ export function ResearchWorkspace() {
                     value={activeRun.id}
                     onChange={(e) => {
                       const found = runs.find((r) => r.id === e.target.value);
-                      if (found) selectRun(found);
+                      if (found) {
+                        selectRun(found);
+                        scrollToResults();
+                      }
                     }}
                     className="px-2.5 py-1 rounded-lg bg-background border border-border-subtle text-xs text-text-title focus:outline-none"
                   >
