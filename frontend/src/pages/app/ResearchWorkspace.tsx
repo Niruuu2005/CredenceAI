@@ -315,6 +315,7 @@ export function ResearchWorkspace() {
           <form onSubmit={handleStartRun} className="space-y-4">
             <div className="relative rounded-2xl bg-background-deep/80 border border-border-subtle focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10 transition-all shadow-inner p-2">
               <textarea
+                id="research-inquiry-input"
                 rows={2}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
@@ -353,6 +354,7 @@ export function ResearchWorkspace() {
 
                 {/* Submit Button */}
                 <button
+                  id="run-audit-button"
                   type="submit"
                   disabled={isLoading || !question.trim()}
                   className="px-6 py-2 rounded-xl bg-primary hover:opacity-95 text-primary-foreground font-semibold text-sm flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
@@ -384,6 +386,7 @@ export function ResearchWorkspace() {
                 const IconComponent = preset.icon;
                 return (
                   <button
+                    id={`preset-btn-${idx}`}
                     key={idx}
                     type="button"
                     onClick={() => {
