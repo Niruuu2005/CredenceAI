@@ -107,8 +107,8 @@ export function Billing() {
   return (
     <div className="max-w-4xl space-y-10 pb-12 bg-bg-deep text-text-body font-sans select-none">
       <div>
-        <h2 className="text-3xl font-serif italic text-text-title mb-2">Billing & Plans</h2>
-        <p className="text-[10px] uppercase tracking-widest font-extrabold text-text-subtle">Manage your subscription, usage, and payments.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-text-title mb-2">Billing & Plans</h2>
+        <p className="text-xs text-text-subtle font-medium">Manage your subscription, usage, and payments.</p>
       </div>
 
       {message && (
@@ -120,7 +120,7 @@ export function Billing() {
 
       {/* Stripe Sandbox indicator */}
       {billingStatus?.stripe_configured === false && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold rounded-2xl flex items-start gap-3 neu-inset-sm select-none">
+        <div className="p-4 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold rounded-2xl flex items-start gap-3 select-none">
           <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-amber-500" />
           <div>
             <p className="font-extrabold text-text-title">Billing Sandbox Mode</p>
@@ -133,7 +133,7 @@ export function Billing() {
 
       {/* Active Plan Detail Box */}
       <div className={cn(
-        "rounded-2xl bg-bg-deep p-6 border-l-4 flex flex-col md:flex-row md:items-center justify-between gap-6 neu-outset select-none",
+        "rounded-2xl bg-background-surface border border-border-subtle p-6 border-l-4 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-card select-none",
         user?.plan === "Free" ? "border-primary" : "border-highlight-color"
       )}>
         <div className="flex items-start gap-4">
@@ -144,11 +144,11 @@ export function Billing() {
           )}
           <div>
             <div className="flex items-center gap-2.5">
-              <h4 className="font-serif italic text-2xl text-text-title font-semibold">
+              <h4 className="text-2xl font-bold tracking-tight text-text-title">
                 {user?.plan || "Free"} Plan
               </h4>
               <span className={cn(
-                "text-[9px] uppercase tracking-widest px-2.5 py-0.5 rounded-full font-bold border",
+                "text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full font-bold border",
                 user?.plan === "Free" 
                   ? "bg-primary/10 text-primary border-primary/20" 
                   : "bg-highlight-color/10 text-highlight-color border-highlight-color/20"
@@ -192,37 +192,37 @@ export function Billing() {
         {/* Usage Card */}
         <Card className="p-6">
           <CardHeader className="border-b border-border-subtle/10 pb-5 mb-5">
-            <CardTitle className="text-xl font-serif italic text-text-title mb-1.5">Usage Summary</CardTitle>
-            <CardDescription className="text-[10px] font-bold text-text-subtle">Resets daily at 00:00 UTC</CardDescription>
+            <CardTitle className="text-lg font-bold tracking-tight text-text-title mb-1">Usage Summary</CardTitle>
+            <CardDescription className="text-xs text-text-subtle">Resets daily at 00:00 UTC</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <div className="flex justify-between text-[10px] uppercase tracking-widest font-extrabold text-text-subtle mb-3">
+              <div className="flex justify-between text-xs font-semibold text-text-subtle mb-3">
                 <span>Daily Search Jobs</span>
                 <span className="font-mono text-text-title">{jobCount} / {searchQuotaLimit}</span>
               </div>
-              <div className="h-4 w-full bg-bg-panel/40 rounded-full overflow-hidden neu-inset-sm border border-border-subtle/5 p-0.5">
+              <div className="h-2.5 w-full bg-background-deep rounded-full overflow-hidden border border-border-subtle p-0.5">
                 <div 
-                  className="h-full bg-primary rounded-full transition-all duration-500 shadow-md" 
+                  className="h-full bg-primary rounded-full transition-all duration-500 shadow-sm" 
                   style={{ width: `${Math.min(100, (jobCount / searchQuotaLimit) * 100)}%` }}
                 />
               </div>
-              <span className="text-[8px] text-text-subtle block mt-1.5 font-bold uppercase tracking-wider">
+              <span className="text-[11px] text-text-subtle block mt-1.5 font-medium">
                 {searchQuotaLimit - jobCount} searches remaining today
               </span>
             </div>
             <div>
-              <div className="flex justify-between text-[10px] uppercase tracking-widest font-extrabold text-text-subtle mb-3">
+              <div className="flex justify-between text-xs font-semibold text-text-subtle mb-3">
                 <span>Active Continuous Monitors</span>
                 <span className="font-mono text-text-title">{monitorsCount} / {monitorLimit}</span>
               </div>
-              <div className="h-4 w-full bg-bg-panel/40 rounded-full overflow-hidden neu-inset-sm border border-border-subtle/5 p-0.5">
+              <div className="h-2.5 w-full bg-background-deep rounded-full overflow-hidden border border-border-subtle p-0.5">
                 <div 
-                  className="h-full bg-primary rounded-full transition-all duration-500 shadow-md" 
+                  className="h-full bg-primary rounded-full transition-all duration-500 shadow-sm" 
                   style={{ width: `${Math.min(100, (monitorsCount / monitorLimit) * 100)}%` }}
                 />
               </div>
-              <span className="text-[8px] text-text-subtle block mt-1.5 font-bold uppercase tracking-wider">
+              <span className="text-[11px] text-text-subtle block mt-1.5 font-medium">
                 {monitorLimit - monitorsCount} monitor slots available
               </span>
             </div>
@@ -232,8 +232,8 @@ export function Billing() {
         {/* Dynamic Billing Portal Action */}
         <Card className="p-6 flex flex-col justify-between">
           <CardHeader className="border-b border-border-subtle/10 pb-5 mb-5">
-            <CardTitle className="text-xl font-serif italic text-text-title mb-1.5">Manage Payments</CardTitle>
-            <CardDescription className="text-[10px] font-bold text-text-subtle">Stripe Integration Services</CardDescription>
+            <CardTitle className="text-lg font-bold tracking-tight text-text-title mb-1">Manage Payments</CardTitle>
+            <CardDescription className="text-xs text-text-subtle">Stripe Integration Services</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-xs text-text-body leading-relaxed font-semibold">
@@ -282,8 +282,8 @@ export function Billing() {
 
       {/* Available plans comparing grid */}
       <div>
-        <h3 className="text-2xl font-serif italic text-text-title mb-2">Available Workspace Tiers</h3>
-        <p className="text-[10px] uppercase tracking-widest font-extrabold text-text-subtle mb-6">Select a plan to unlock additional scale, limits, and capabilities.</p>
+        <h3 className="text-2xl font-bold tracking-tight text-text-title mb-2">Available Workspace Tiers</h3>
+        <p className="text-xs text-text-subtle font-medium mb-6">Select a plan to unlock additional scale, limits, and capabilities.</p>
         
         <div className="grid md:grid-cols-3 gap-8">
           {/* Free Card */}
@@ -292,18 +292,18 @@ export function Billing() {
             user?.plan === "Free" ? "border border-primary" : "opacity-95"
           )}>
             {user?.plan === "Free" && (
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[8px] font-extrabold px-2.5 py-0.5 uppercase tracking-widest transform translate-x-2 -translate-y-2 rounded-md shadow-sm">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2.5 py-0.5 uppercase tracking-wider transform translate-x-2 -translate-y-2 rounded-md shadow-sm">
                 Current Plan
               </div>
             )}
             <div className="space-y-6">
               <div className="border-b border-border-subtle/10 pb-5">
-                <span className="text-[9px] uppercase tracking-widest font-extrabold text-text-subtle">Individual Tier</span>
-                <h4 className="text-2xl font-serif italic text-text-title mt-1">Free Tier</h4>
+                <span className="text-[10px] font-semibold text-text-subtle">Individual Tier</span>
+                <h4 className="text-xl font-bold tracking-tight text-text-title mt-1">Free Tier</h4>
                 <p className="text-xs text-text-subtle mt-1.5 leading-relaxed">Basic search & validation features.</p>
               </div>
               <div className="space-y-4">
-                <div className="text-4xl font-serif italic text-text-title font-medium">$0 <span className="text-xs text-text-subtle font-sans tracking-wide uppercase font-semibold">/ month</span></div>
+                <div className="text-3xl font-bold tracking-tight text-text-title font-sans">$0 <span className="text-xs text-text-subtle font-sans tracking-wide uppercase font-semibold">/ month</span></div>
                 <ul className="space-y-3.5 pt-2">
                   <li className="flex items-center text-xs text-text-body">
                     <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mr-3" />
@@ -336,17 +336,17 @@ export function Billing() {
             "p-6 flex flex-col justify-between transition-all duration-300 relative",
             user?.plan === "Pro" ? "border border-highlight-color shadow-[0_0_15px_rgba(16,185,129,0.15)]" : "border border-primary/20"
           )}>
-            <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[8px] font-extrabold px-2.5 py-0.5 uppercase tracking-widest transform translate-x-2 -translate-y-2 rounded-md shadow-sm">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2.5 py-0.5 uppercase tracking-wider transform translate-x-2 -translate-y-2 rounded-md shadow-sm">
               {user?.plan === "Pro" ? "Current Plan" : "Recommended"}
             </div>
             <div className="space-y-6">
               <div className="border-b border-border-subtle/10 pb-5">
-                <span className="text-[9px] uppercase tracking-widest font-extrabold text-primary">Intelligence Tier</span>
-                <h4 className="text-2xl font-serif italic text-text-title mt-1">Pro Plan</h4>
+                <span className="text-[10px] font-semibold text-primary">Intelligence Tier</span>
+                <h4 className="text-xl font-bold tracking-tight text-text-title mt-1">Pro Plan</h4>
                 <p className="text-xs text-text-subtle mt-1.5 leading-relaxed">Continuous monitoring & deeper graphs.</p>
               </div>
               <div className="space-y-4">
-                <div className="text-4xl font-serif italic text-text-title font-medium">$49 <span className="text-xs text-text-subtle font-sans tracking-wide uppercase font-semibold">/ month</span></div>
+                <div className="text-3xl font-bold tracking-tight text-text-title font-sans">$49 <span className="text-xs text-text-subtle font-sans tracking-wide uppercase font-semibold">/ month</span></div>
                 <ul className="space-y-3.5 pt-2">
                   <li className="flex items-center text-xs text-text-body">
                     <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mr-3" />
@@ -381,18 +381,18 @@ export function Billing() {
             user?.plan === "Enterprise" ? "border border-highlight-color" : "border border-border-subtle/40"
           )}>
             {user?.plan === "Enterprise" && (
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[8px] font-extrabold px-2.5 py-0.5 uppercase tracking-widest transform translate-x-2 -translate-y-2 rounded-md shadow-sm">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2.5 py-0.5 uppercase tracking-wider transform translate-x-2 -translate-y-2 rounded-md shadow-sm">
                 Current Plan
               </div>
             )}
             <div className="space-y-6">
               <div className="border-b border-border-subtle/10 pb-5">
-                <span className="text-[9px] uppercase tracking-widest font-extrabold text-text-subtle">Corporate Tier</span>
-                <h4 className="text-2xl font-serif italic text-text-title mt-1">Enterprise</h4>
+                <span className="text-[10px] font-semibold text-text-subtle">Corporate Tier</span>
+                <h4 className="text-xl font-bold tracking-tight text-text-title mt-1">Enterprise</h4>
                 <p className="text-xs text-text-subtle mt-1.5 leading-relaxed">Dedicated infrastructure & scale.</p>
               </div>
               <div className="space-y-4">
-                <div className="text-4xl font-serif italic text-text-title font-medium">Custom <span className="text-xs text-text-subtle font-sans tracking-wide uppercase font-semibold">/ pricing</span></div>
+                <div className="text-3xl font-bold tracking-tight text-text-title font-sans">Custom <span className="text-xs text-text-subtle font-sans tracking-wide uppercase font-semibold">/ pricing</span></div>
                 <ul className="space-y-3.5 pt-2">
                   <li className="flex items-center text-xs text-text-body">
                     <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mr-3" />

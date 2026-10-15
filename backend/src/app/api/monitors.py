@@ -64,6 +64,15 @@ def create_monitor(
     return db_monitor
 
 
+@router.get("/{monitor_id}", response_model=MonitorResponse)
+def get_monitor(
+    monitor_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return _get_user_monitor(db, monitor_id, current_user.id)
+
+
 @router.delete("/{monitor_id}")
 def delete_monitor(
     monitor_id: str,

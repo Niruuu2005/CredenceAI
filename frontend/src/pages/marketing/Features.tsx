@@ -182,10 +182,10 @@ export function Features() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl md:text-[76px] font-serif italic text-text-title tracking-tight leading-[0.9] mb-8"
+            className="text-4xl md:text-6xl font-bold tracking-tight text-text-title leading-tight mb-8"
           >
             Core Capabilities &amp;<br />
-            <span className="text-text-subtle">Engine Specifications</span>
+            <span className="gradient-text-emerald">Engine Specifications</span>
           </motion.h1>
           
           <motion.p 
@@ -225,7 +225,7 @@ export function Features() {
                   <div className="h-12 w-12 border border-border-subtle flex items-center justify-center bg-bg-deep group-hover:bg-bg-panel transition-colors duration-300 text-text-title mb-6 rounded-none">
                     <cap.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="text-xl font-serif italic text-text-title mb-3">{cap.title}</h3>
+                  <h3 className="text-xl font-bold tracking-tight text-text-title mb-2">{cap.title}</h3>
                   <p className="text-xs text-text-subtle leading-relaxed font-sans">{cap.description}</p>
                 </div>
                 <div className="mt-8 pt-4 border-t border-border-subtle/40 flex items-center text-[10px] uppercase font-bold tracking-widest text-[#10b981] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -242,7 +242,7 @@ export function Features() {
         <div className="container mx-auto px-12 max-w-6xl">
           <div className="text-center mb-16">
             <span className="text-[10px] uppercase tracking-widest text-text-subtle font-bold bg-bg-deep px-3 py-1 border border-border-subtle inline-block mb-3">Operating Sequence</span>
-            <h2 className="text-3xl md:text-4xl font-serif italic text-text-title">How CredenceAI processes a query</h2>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-title">How CredenceAI processes a query</h2>
             <p className="text-xs text-text-subtle uppercase tracking-widest font-mono mt-3">From raw unstructured web data to clean cryptographically grounded intelligence</p>
           </div>
 
@@ -303,7 +303,7 @@ export function Features() {
                     <span className="text-[9px] font-mono text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 uppercase font-bold tracking-widest">
                       Step 0{activeStep + 1} Active
                     </span>
-                    <h3 className="text-2xl font-serif italic text-text-title mt-3 font-semibold">
+                    <h3 className="text-2xl font-bold tracking-tight text-text-title mt-3 font-semibold">
                       {pipelineSteps[activeStep].title}
                     </h3>
                     <p className="text-xs text-text-subtle uppercase tracking-widest font-mono mt-1">
@@ -343,7 +343,7 @@ export function Features() {
         <div className="container mx-auto px-12 max-w-6xl">
           <div className="max-w-3xl mb-16">
             <span className="text-[10px] uppercase tracking-widest text-text-subtle font-bold block mb-3">Enterprise Audience Tuning</span>
-            <h2 className="text-4xl font-serif italic tracking-tight text-text-title mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-title mb-4">
               Spec-Tuned For High-Stakes Investigators
             </h2>
             <p className="text-xs uppercase tracking-widest text-text-subtle font-medium border-l border-border-subtle pl-4 leading-relaxed mt-2">
@@ -390,7 +390,7 @@ export function Features() {
               >
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-2xl font-serif italic text-text-title font-semibold flex items-center gap-2">
+                    <h3 className="text-2xl font-bold tracking-tight text-text-title font-semibold flex items-center gap-2">
                       {communities[activeCommunity as keyof typeof communities].title}
                     </h3>
                   </div>
@@ -427,7 +427,7 @@ export function Features() {
 
                   <div className="mt-8">
                     <span className="text-[9px] uppercase tracking-[0.2em] font-medium text-text-subtle block">Core Practical Importance</span>
-                    <p className="text-xs text-text-title italic font-serif leading-relaxed mt-2 pl-4 border-l border-border-accent">
+                    <p className="text-xs text-text-title font-medium leading-relaxed mt-2 pl-4 border-l-2 border-primary">
                       "{communities[activeCommunity as keyof typeof communities].whyItMatters}"
                     </p>
                   </div>
@@ -443,7 +443,7 @@ export function Features() {
         <div className="container mx-auto px-12 max-w-6xl">
           <div className="text-center mb-16">
             <span className="text-[10px] uppercase tracking-widest text-text-subtle font-bold bg-bg-deep px-3 py-1 border border-border-subtle inline-block mb-3">Evolution Timeline</span>
-            <h2 className="text-3xl md:text-4xl font-serif italic text-text-title">Interactive Engine Roadmap</h2>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-title">Interactive Engine Roadmap</h2>
             <p className="text-xs text-text-subtle uppercase tracking-widest font-mono mt-3">The five continuous evolution milestones of the CredenceAI grounding pipeline</p>
           </div>
 
@@ -504,7 +504,7 @@ export function Features() {
                   <div className="text-[9px] uppercase tracking-widest font-mono font-bold text-text-subtle mb-1">
                     {stage.phase}
                   </div>
-                  <h4 className="text-sm font-serif italic text-text-title font-bold mb-2 leading-tight">
+                  <h4 className="text-sm font-bold tracking-tight text-text-title mb-2 leading-tight">
                     {stage.focus}
                   </h4>
                   <div className="text-[10px] text-text-subtle uppercase tracking-wider mb-4 font-sans leading-normal">
@@ -541,7 +541,7 @@ export function Features() {
             className="p-12 border border-border-subtle bg-bg-surface flex flex-col md:flex-row md:items-center justify-between gap-8"
           >
             <div>
-              <h3 className="text-3xl font-serif italic text-text-title mb-2">Ready to explore the intelligence engine?</h3>
+              <h3 className="text-3xl font-bold tracking-tight text-text-title mb-2">Ready to explore the intelligence engine?</h3>
               <p className="text-xs text-text-subtle font-mono uppercase tracking-widest leading-relaxed mt-1">Join forward-thinking enterprise research teams worldwide.</p>
             </div>
             <Button asChild size="lg" className="shrink-0 relative group">

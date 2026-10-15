@@ -6,3 +6,4 @@ export * from "./health.js";
 export * from "./auth.js";
 export * from "./monitors.js";
 export * from "./collections.js";
+export * from "./research.js";

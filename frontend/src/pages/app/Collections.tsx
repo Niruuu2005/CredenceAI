@@ -65,15 +65,15 @@ export function Collections() {
   };
 
   return (
-    <div className="space-y-8 bg-bg-deep text-text-body select-none">
+    <div className="space-y-8 text-text-body select-none">
       {/* Create Modal Overlay */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-bg-deep rounded-2xl p-6 w-full max-w-md neu-outset space-y-6 border-none">
-            <h3 className="text-xl font-serif italic text-text-title font-medium">Create New Collection</h3>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background-surface rounded-2xl p-6 w-full max-w-md border border-border-subtle shadow-2xl space-y-6">
+            <h3 className="text-xl font-bold tracking-tight text-text-title">Create New Collection</h3>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-extrabold text-text-subtle ml-1">Name</label>
+                <label className="text-xs font-semibold text-text-subtle ml-1">Name</label>
                 <Input 
                   value={createName} 
                   onChange={(e) => setCreateName(e.target.value)} 
@@ -82,12 +82,12 @@ export function Collections() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-extrabold text-text-subtle ml-1">Description (Optional)</label>
+                <label className="text-xs font-semibold text-text-subtle ml-1">Description (Optional)</label>
                 <textarea 
                   value={createDesc} 
                   onChange={(e) => setCreateDesc(e.target.value)} 
                   placeholder="Collection Description" 
-                  className="w-full rounded-xl border-none bg-bg-deep neu-inset px-4 py-3 text-sm text-text-body placeholder:text-text-subtle/50 h-24 focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                  className="w-full rounded-xl border border-border-subtle bg-background-panel px-4 py-3 text-sm text-text-body placeholder:text-text-subtle/50 h-24 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-border-accent resize-none shadow-xs"
                 />
               </div>
             </div>
@@ -101,9 +101,9 @@ export function Collections() {
 
       {/* Delete Modal Overlay */}
       {isDeleteOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-bg-deep rounded-2xl p-6 w-full max-w-sm neu-outset space-y-6 text-center border-none">
-            <h3 className="text-xl font-serif italic text-text-title font-medium">Delete Collection</h3>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background-surface rounded-2xl p-6 w-full max-w-sm border border-border-subtle shadow-2xl space-y-6 text-center">
+            <h3 className="text-xl font-bold tracking-tight text-text-title">Delete Collection</h3>
             <p className="text-xs text-text-subtle leading-relaxed">
               Are you sure you want to delete this collection? This action is permanent and cannot be undone.
             </p>
@@ -117,8 +117,8 @@ export function Collections() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-serif italic text-text-title">Collections</h2>
-          <p className="text-text-subtle mt-2 text-xs uppercase tracking-widest font-bold">Coordinate and package verified evidence domains.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-text-title">Collections</h2>
+          <p className="text-text-subtle mt-1 text-xs font-medium">Coordinate and package verified evidence domains.</p>
         </div>
         <Button className="shrink-0" onClick={() => setIsCreateOpen(true)}>
           <FolderPlus className="h-4 w-4 mr-2" /> New Collection
@@ -129,11 +129,11 @@ export function Collections() {
         {loading ? (
           <div className="col-span-full text-center py-12 p-6 rounded-2xl bg-bg-panel/20 neu-inset-sm flex flex-col items-center gap-3">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <p className="text-xs text-text-subtle uppercase tracking-widest font-bold">Loading collections...</p>
+            <p className="text-xs text-text-subtle font-medium">Loading collections...</p>
           </div>
         ) : collections.length === 0 ? (
           <div className="col-span-full text-center py-12 p-6 rounded-2xl bg-bg-panel/20 neu-inset-sm">
-            <p className="text-xs text-text-subtle uppercase tracking-widest font-bold">No collections found. Click "New Collection" to add one.</p>
+            <p className="text-xs text-text-subtle font-medium">No collections found. Click "New Collection" to add one.</p>
           </div>
         ) : (
           collections.map((col) => (
@@ -141,11 +141,11 @@ export function Collections() {
               <div>
                 <CardHeader className="border-b border-border-subtle/10 pb-5 mb-5 flex flex-row items-start justify-between">
                   <div>
-                    <CardTitle className="text-xl font-serif italic text-text-title flex items-center gap-2">
+                    <CardTitle className="text-lg font-bold tracking-tight text-text-title flex items-center gap-2">
                       <Folder className="h-4 w-4 text-primary shrink-0" />
                       {col.name}
                     </CardTitle>
-                    <CardDescription className="text-text-subtle text-[10px] mt-2 tracking-wider font-bold">
+                    <CardDescription className="text-text-subtle text-[11px] mt-1 font-mono">
                       ID: {col.id}
                     </CardDescription>
                   </div>
@@ -168,13 +168,13 @@ export function Collections() {
                   <button 
                     disabled 
                     title="Coming soon" 
-                    className="h-9 w-9 rounded-xl flex items-center justify-center border-none text-text-subtle opacity-45 cursor-not-allowed bg-bg-deep neu-outset-sm"
+                    className="h-9 w-9 rounded-xl flex items-center justify-center border border-border-subtle text-text-subtle opacity-40 cursor-not-allowed bg-background-panel"
                   >
                     <Download className="h-3.5 w-3.5" />
                   </button>
                   <button 
                     onClick={() => openDeleteConfirm(col.id)}
-                    className="h-9 w-9 rounded-xl flex items-center justify-center border-none text-text-subtle hover:text-red-500 bg-bg-deep hover:bg-bg-panel cursor-pointer active:scale-95 transition-all neu-outset-sm"
+                    className="h-9 w-9 rounded-xl flex items-center justify-center border border-border-subtle text-text-subtle hover:text-red-500 bg-background-surface hover:bg-red-500/10 hover:border-red-500/30 cursor-pointer active:scale-95 transition-all"
                     title="Delete Collection"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

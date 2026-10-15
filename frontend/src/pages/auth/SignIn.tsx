@@ -101,20 +101,20 @@ export function SignIn() {
   };
 
   return (
-    <div className="p-6 md:p-8 rounded-2xl bg-bg-deep neu-outset text-text-body space-y-6">
+    <div className="p-6 md:p-8 rounded-2xl bg-background-surface border border-border-subtle shadow-card text-text-body space-y-6">
       {isAuthenticating && (
-         <div className="fixed inset-0 z-50 bg-bg-deep/80 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center animate-fade-in text-text-body">
-            <div className="p-8 rounded-2xl bg-bg-deep neu-outset max-w-sm w-full space-y-6 border-none">
+         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fade-in text-text-body">
+            <div className="p-8 rounded-2xl bg-background-surface border border-border-subtle shadow-2xl max-w-sm w-full space-y-6">
               <div className="flex items-center justify-center">
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
               <div>
-                <h3 className="font-serif italic text-2xl text-text-title mb-2">Connecting to Account</h3>
-                <p className="text-xs text-text-subtle uppercase tracking-widest leading-relaxed">
+                <h3 className="text-xl font-bold tracking-tight text-text-title mb-2">Connecting to Account</h3>
+                <p className="text-xs text-text-subtle leading-relaxed font-medium">
                   Authenticating your credentials securely via {authProvider}...
                 </p>
               </div>
-              <div className="text-[10px] uppercase tracking-widest font-mono text-text-subtle rounded-xl bg-bg-panel/40 py-2.5 mx-auto w-fit px-4 neu-inset-sm">
+              <div className="text-[10px] uppercase tracking-wider font-mono text-text-subtle rounded-xl bg-background-deep border border-border-subtle py-2 mx-auto w-fit px-4">
                 TLS 1.3 • AES-256 ENCRYPTED
               </div>
             </div>
@@ -122,8 +122,8 @@ export function SignIn() {
       )}
 
       <div>
-        <h1 className="text-3xl font-serif italic tracking-tight text-text-title">Welcome back</h1>
-        <p className="text-[10px] uppercase tracking-widest text-text-subtle mt-2 font-bold">
+        <h1 className="text-3xl font-bold tracking-tight text-text-title">Welcome back</h1>
+        <p className="text-xs text-text-subtle mt-1.5 font-medium">
           Enter your email/username to sign in to your workspace.
         </p>
       </div>
@@ -172,10 +172,10 @@ export function SignIn() {
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border-subtle/10" />
+          <span className="w-full border-t border-border-subtle" />
         </div>
         <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold">
-          <span className="bg-bg-deep px-4 text-text-subtle rounded-full py-0.5 neu-inset-sm">Or continue with</span>
+          <span className="bg-background-surface border border-border-subtle px-4 text-text-subtle rounded-full py-0.5 shadow-xs">Or continue with</span>
         </div>
       </div>
 

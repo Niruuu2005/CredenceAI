@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { api } from "@/lib/api";
 
-const MIN_INTERVAL_MS = 30_000;
+const MIN_INTERVAL_MS = 40_000;
 const MAX_INTERVAL_MS = 45_000;
 
 function randomIntervalMs(): number {
@@ -12,8 +12,8 @@ function randomIntervalMs(): number {
 }
 
 /**
- * Pings /api/health on a random 30–45s interval while the tab is open
- * so the Render free-tier API stays warm during active sessions.
+ * Pings /api/health every 40–45s of inactivity while the application is active
+ * to ensure Render's free tier server stays alive and warm at all times.
  */
 export function ApiKeepAlive() {
   useEffect(() => {

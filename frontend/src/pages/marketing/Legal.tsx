@@ -14,8 +14,8 @@ export function Legal() {
   return (
     <div className="bg-bg-deep pb-32 min-h-screen text-text-body">
       <div className="pt-32 pb-16 text-center px-12 max-w-3xl mx-auto">
-        <h1 className="text-5xl md:text-6xl font-serif italic mb-6 text-text-title tracking-tight">Legal & Trust</h1>
-        <p className="text-xs uppercase tracking-[0.2em] text-text-subtle font-bold mb-8">Credence Security and Compliance Core</p>
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 text-text-title">Legal & Trust</h1>
+        <p className="text-xs uppercase tracking-wider text-text-subtle font-semibold mb-8">Credence Security and Compliance Core</p>
       </div>
 
       <div className="container mx-auto px-12 max-w-5xl">
@@ -23,19 +23,19 @@ export function Legal() {
         <div className="flex border-b border-border-subtle mb-12">
           <button 
             onClick={() => handleTabChange("terms")}
-            className={`px-6 py-3 text-xs uppercase tracking-widest font-bold border-b-2 transition-all cursor-pointer ${currentTab === "terms" ? "border-text-title text-text-title font-semibold" : "border-transparent text-text-subtle hover:text-text-title"}`}
+            className={`px-6 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${currentTab === "terms" ? "border-primary text-primary" : "border-transparent text-text-subtle hover:text-text-title"}`}
           >
             Terms of Service
           </button>
           <button 
             onClick={() => handleTabChange("privacy")}
-            className={`px-6 py-3 text-xs uppercase tracking-widest font-bold border-b-2 transition-all cursor-pointer ${currentTab === "privacy" ? "border-text-title text-text-title font-semibold" : "border-transparent text-text-subtle hover:text-text-title"}`}
+            className={`px-6 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${currentTab === "privacy" ? "border-primary text-primary" : "border-transparent text-text-subtle hover:text-text-title"}`}
           >
             Privacy Policy
           </button>
           <button 
             onClick={() => handleTabChange("security")}
-            className={`px-6 py-3 text-xs uppercase tracking-widest font-bold border-b-2 transition-all cursor-pointer ${currentTab === "security" ? "border-text-title text-text-title font-semibold" : "border-transparent text-text-subtle hover:text-text-title"}`}
+            className={`px-6 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${currentTab === "security" ? "border-primary text-primary" : "border-transparent text-text-subtle hover:text-text-title"}`}
           >
             Security Controls
           </button>
@@ -46,16 +46,16 @@ export function Legal() {
           <div className="md:col-span-8 text-text-body text-xs leading-relaxed space-y-6">
             {currentTab === "terms" && (
               <div className="space-y-6">
-                <h3 className="text-2xl font-serif italic text-text-title mb-4">Terms of Service</h3>
+                <h3 className="text-2xl font-bold tracking-tight text-text-title mb-4">Terms of Service</h3>
                 <p className="font-semibold text-text-title">Last updated: June 18, 2026</p>
                 <p>
                   Welcome to CredenceAI. These Terms of Service ("Terms") govern your access to and use of our research intelligence platform, including any website content, API integrations, and applications.
                 </p>
-                <h4 className="text-sm font-semibold text-text-title uppercase tracking-wider mt-6">1. Access and License Clauses</h4>
+                <h4 className="text-sm font-semibold text-text-title mt-6">1. Access and License Clauses</h4>
                 <p>
                   We grant you a non-transferable, non-exclusive, revocable license to access our platform solely for professional research and intelligence-gathering purposes.
                 </p>
-                <h4 className="text-sm font-semibold text-text-title uppercase tracking-wider mt-6">2. Permitted Use Only</h4>
+                <h4 className="text-sm font-semibold text-text-title mt-6">2. Permitted Use Only</h4>
                 <p>
                   You agree to use our platform only in accordance with all applicable international, local laws and regulatory export frameworks. Reverse engineering our claim scoring models or using web-scraping to replicate our indexes is strictly prohibited.
                 </p>
@@ -64,16 +64,16 @@ export function Legal() {
 
             {currentTab === "privacy" && (
               <div className="space-y-6">
-                <h3 className="text-2xl font-serif italic text-text-title mb-4">Privacy Policy</h3>
+                <h3 className="text-2xl font-bold tracking-tight text-text-title mb-4">Privacy Policy</h3>
                 <p className="font-semibold text-text-title">Last updated: June 18, 2026</p>
                 <p>
                   At Credence, trust-first research implies that your intelligence queries are entirely secure. This Privacy Policy details our isolation standards of analytical tasks.
                 </p>
-                <h4 className="text-sm font-semibold text-text-title uppercase tracking-wider mt-6">1. Zero Query Retention Options</h4>
+                <h4 className="text-sm font-semibold text-text-title mt-6">1. Zero Query Retention Options</h4>
                 <p>
                   For qualifying tiers, we operate on a strict zero-retention foundation. Search queries represent trade secrets or classified research pipelines; therefore, we neither train downstream models on your queries nor write raw string text into persistent logs.
                 </p>
-                <h4 className="text-sm font-semibold text-text-title uppercase tracking-wider mt-6">2. Third-Party Interfaces</h4>
+                <h4 className="text-sm font-semibold text-text-title mt-6">2. Third-Party Interfaces</h4>
                 <p>
                   When fetching real-time search data or scientific publications, all queries are routed through corporate proxies scrubbing any metadata identifying your account.
                 </p>
@@ -82,7 +82,7 @@ export function Legal() {
 
             {currentTab === "security" && (
               <div className="space-y-6">
-                <h3 className="text-2xl font-serif italic text-text-title mb-4">Security Controls</h3>
+                <h3 className="text-2xl font-bold tracking-tight text-text-title mb-4">Security Controls</h3>
                 <p className="font-semibold text-text-title">Last updated: June 18, 2026</p>
                 <p>
                   Every request, document upload, and dynamic monitor matches maximum security paradigms. Learn about the physical, network, and application defenses safeguarding your research.

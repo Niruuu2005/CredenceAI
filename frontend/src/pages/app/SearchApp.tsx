@@ -304,21 +304,21 @@ export function SearchApp() {
     : 0;
 
   return (
-    <div className="h-full flex flex-col bg-bg-deep text-text-body">
+    <div className="h-full flex flex-col text-text-body">
       <div className="mb-8 max-w-3xl">
-        <h2 className="text-3xl font-serif italic text-text-title mb-2">Deep Search & Intelligence</h2>
-        <p className="text-xs text-text-subtle uppercase tracking-wider mb-6">
+        <h2 className="text-3xl font-bold tracking-tight text-text-title mb-2">Deep Search & Intelligence</h2>
+        <p className="text-xs text-text-subtle font-medium mb-6">
           Query standard indexes or launch automated AI research goals.
         </p>
 
         {/* Mode Selector Tabs */}
-        <div className="inline-flex p-1.5 rounded-2xl bg-bg-panel/40 neu-inset-sm mb-8">
+        <div className="inline-flex p-1 rounded-xl bg-background-panel border border-border-subtle mb-8 shadow-xs">
           <button 
             type="button"
             className={cn(
-              "px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider font-bold transition-all cursor-pointer",
+              "px-5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer",
               mode === "search" 
-                ? "bg-primary text-primary-foreground shadow-sm" 
+                ? "bg-primary text-primary-foreground shadow-xs" 
                 : "text-text-subtle hover:text-text-title"
             )}
             onClick={() => {
@@ -332,7 +332,7 @@ export function SearchApp() {
           <button 
             type="button"
             className={cn(
-              "px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider font-bold transition-all cursor-pointer",
+              "px-5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer",
               mode === "goal" 
                 ? "bg-primary text-primary-foreground shadow-sm" 
                 : "text-text-subtle hover:text-text-title"
@@ -383,8 +383,8 @@ export function SearchApp() {
       {!hasSearched ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center pb-20 opacity-70">
           <Database className="h-10 w-10 text-text-subtle mb-6" />
-          <h3 className="text-xl font-serif italic text-text-title">Ready for your query</h3>
-          <p className="text-xs text-text-subtle max-w-sm mt-3 uppercase tracking-wide leading-relaxed">
+          <h3 className="text-xl font-bold tracking-tight text-text-title">Ready for your query</h3>
+          <p className="text-xs text-text-subtle max-w-sm mt-3 leading-relaxed font-medium">
             {mode === "search" 
               ? "Search indexed semiconductor metrics, public policies, arXiv papers, and corporate registries."
               : "AI agent will review inputs, design a crawl/research plan, schedule jobs, and compile intelligence reports."}
@@ -398,20 +398,20 @@ export function SearchApp() {
             
             {/* Goal Progress Sub-panel */}
             {activeGoal && pollingJobs.length > 0 && (
-              <div className="p-6 bg-bg-panel/20 neu-inset-sm mb-6 rounded-2xl border-none">
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-border-subtle/10">
+              <div className="p-6 bg-background-deep border border-border-subtle mb-6 rounded-2xl shadow-card">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-border-subtle/20">
                   <div>
-                    <span className="text-[9px] uppercase tracking-widest font-bold text-highlight-color">Active Research Goal Plan</span>
-                    <h3 className="text-lg font-serif italic text-text-title mt-1">"{activeGoal.goal}"</h3>
+                    <span className="text-[10px] font-semibold text-highlight-color">Active Research Goal Plan</span>
+                    <h3 className="text-lg font-bold tracking-tight text-text-title mt-1">"{activeGoal.goal}"</h3>
                   </div>
-                  <span className="text-[10px] font-mono uppercase bg-bg-deep px-2.5 py-1 text-text-subtle border border-border-subtle/20 rounded-xl">
+                  <span className="text-[10px] font-mono uppercase bg-background-surface px-2.5 py-1 text-text-subtle border border-border-subtle rounded-lg">
                     Plan ID: {activeGoal.planId.slice(0, 8)}...
                   </span>
                 </div>
 
                 <div className="space-y-3">
                   {pollingJobs.map((job, idx) => (
-                    <div key={job.job_id} className="flex items-center justify-between p-3.5 bg-bg-deep neu-outset-sm rounded-xl text-xs border-none">
+                    <div key={job.job_id} className="flex items-center justify-between p-3.5 bg-background-surface border border-border-subtle hover:border-border-accent/40 rounded-xl text-xs transition-colors">
                       <div className="flex items-center gap-3">
                         <span className="font-mono text-text-subtle text-[10px] w-4">{idx + 1}.</span>
                         <div className="flex flex-col">
@@ -467,10 +467,10 @@ export function SearchApp() {
 
             {/* Results List */}
             {searchResults.length === 0 ? (
-              <div className="text-center py-12 p-8 rounded-2xl bg-bg-panel/20 neu-inset-sm max-w-lg mx-auto">
+              <div className="text-center py-12 p-8 rounded-2xl bg-background-surface border border-dashed border-border-subtle max-w-lg mx-auto shadow-xs">
                 <Database className="h-8 w-8 text-primary mx-auto mb-4" />
-                <h4 className="text-md font-serif italic text-text-title font-bold">No documents indexed yet</h4>
-                <p className="text-xs text-text-subtle uppercase tracking-wider mt-3 max-w-md mx-auto leading-relaxed font-bold">
+                <h4 className="text-md font-bold tracking-tight text-text-title">No documents indexed yet</h4>
+                <p className="text-xs text-text-subtle mt-3 max-w-md mx-auto leading-relaxed font-medium">
                   {activeGoal
                     ? "Jobs finished but returned no crawl results. Try a simpler query or check the error above."
                     : "Use AI Agent Goal Plan first to crawl and analyze the web — then standard search will query your index."}
@@ -487,26 +487,26 @@ export function SearchApp() {
               </div>
             ) : (
               searchResults.map((result) => (
-                <div key={result.document_id || result.url} className="p-6 bg-bg-deep neu-outset transition-all hover:translate-y-[-2px] duration-300 cursor-pointer group rounded-2xl border-none space-y-4 mb-4 select-none">
+                <div key={result.document_id || result.url} className="p-6 bg-background-surface border border-border-subtle hover:border-border-accent/40 shadow-card hover:shadow-soft transition-all duration-200 cursor-pointer group rounded-2xl space-y-4 mb-4 select-none">
                   <div className="flex gap-4 items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-bg-panel/40 text-text-body border border-border-subtle/10 rounded-md">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 bg-background-deep text-text-body border border-border-subtle rounded-md">
                           {result.content_type || "web"}
                         </span>
-                        <span className="text-[10px] uppercase tracking-widest text-text-subtle flex items-center gap-1 font-bold">
+                        <span className="text-xs text-text-subtle flex items-center gap-1 font-medium">
                           <FileText className="h-3.5 w-3.5 text-primary"/> {result.source || "searxng"}
                         </span>
                         {result.indexed_at && (
-                          <span className="text-[10px] uppercase tracking-widest text-text-subtle font-bold">
+                          <span className="text-xs text-text-subtle font-medium">
                             &bull; {new Date(result.indexed_at).toLocaleDateString()}
                           </span>
                         )}
                       </div>
-                      <h4 className="text-lg font-serif italic text-text-title mb-2 group-hover:text-primary transition-colors">
+                      <h4 className="text-lg font-semibold tracking-tight text-text-title mb-2 group-hover:text-primary transition-colors">
                         {result.title}
                       </h4>
-                      <p className="text-sm text-text-body line-clamp-2 leading-relaxed border-l-2 border-primary pl-4 bg-bg-panel/10 py-1 font-sans rounded-r-lg">
+                      <p className="text-sm text-text-body line-clamp-2 leading-relaxed border-l-2 border-primary pl-4 bg-background-deep/60 py-1.5 font-sans rounded-r-lg">
                         {result.main_text}
                       </p>
                       <a href={result.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center mt-3 text-[10px] font-bold text-primary hover:opacity-85 uppercase tracking-wider">
@@ -514,7 +514,7 @@ export function SearchApp() {
                       </a>
                     </div>
                     
-                    <div className="shrink-0 flex flex-col items-end pl-6 border-l border-border-subtle/10 relative group/tooltip">
+                    <div className="shrink-0 flex flex-col items-end pl-6 border-l border-border-subtle relative group/tooltip">
                       <div className="text-[9px] font-bold tracking-widest text-text-subtle uppercase mb-2 flex items-center gap-1 cursor-pointer">
                         Trust Score <span className="text-[10px]">ⓘ</span>
                       </div>
@@ -531,7 +531,7 @@ export function SearchApp() {
                       
                       {/* Tooltip Content */}
                       {result.ranking_details && (
-                        <div className="absolute right-0 bottom-full mb-2 hidden group-hover/tooltip:block w-72 bg-bg-deep neu-outset p-4 z-50 text-xs font-sans text-left normal-case tracking-normal border-none rounded-2xl shadow-xl">
+                        <div className="absolute right-0 bottom-full mb-2 hidden group-hover/tooltip:block w-72 bg-background-surface border border-border-subtle p-4 z-50 text-xs font-sans text-left normal-case tracking-normal rounded-xl shadow-xl">
                           <h5 className="font-semibold text-text-title mb-2 uppercase tracking-wider text-[10px]">Ranking Details</h5>
                           <div className="space-y-1.5 font-mono text-[11px]">
                             <div className="flex justify-between">
@@ -546,11 +546,11 @@ export function SearchApp() {
                               <span className="text-text-subtle">Phrase Boost:</span>
                               <span className="text-text-title">{result.ranking_details.phrase_boost.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between border-t border-border-subtle/10 pt-1 mt-1 font-bold">
+                            <div className="flex justify-between border-t border-border-subtle pt-1 mt-1 font-bold">
                               <span className="text-text-subtle">Final Score:</span>
                               <span className="text-text-title">{result.ranking_details.final_score.toFixed(2)}</span>
                             </div>
-                            <div className="mt-2 text-[10px] text-text-subtle font-sans leading-normal border-t border-border-subtle/10 pt-1.5">
+                            <div className="mt-2 text-[10px] text-text-subtle font-sans leading-normal border-t border-border-subtle pt-1.5">
                               <span className="font-semibold uppercase tracking-wider text-[9px] block mb-0.5">Formula</span>
                               {result.ranking_details.formula}
                             </div>
@@ -565,8 +565,8 @@ export function SearchApp() {
           </div>
 
           {/* Analysis Sidebar Panel */}
-          <div className="hidden lg:block w-80 shrink-0 bg-bg-deep neu-outset p-6 overflow-y-auto pb-8 rounded-2xl border-none">
-            <h3 className="font-bold text-[10px] mb-6 border-b border-border-subtle/10 pb-3 uppercase tracking-wider text-text-subtle">Entity Extraction</h3>
+          <div className="hidden lg:block w-80 shrink-0 bg-background-surface border border-border-subtle p-6 overflow-y-auto pb-8 rounded-2xl shadow-card">
+            <h3 className="font-bold text-[10px] mb-6 border-b border-border-subtle pb-3 uppercase tracking-wider text-text-subtle">Entity Extraction</h3>
             <div className="space-y-8">
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-text-title mb-3 font-semibold">Extracted Entities</div>

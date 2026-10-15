@@ -18,6 +18,7 @@ import { MonitorsService } from "./services/monitors.js";
 import { CollectionsService } from "./services/collections.js";
 import { GoalsService } from "./services/goals.js";
 import { BillingService } from "./services/billing.js";
+import { ResearchRunsService } from "./services/research_runs.js";
 import {
   validateApiKey,
   normalizeBaseUrl,
@@ -45,6 +46,7 @@ export class CredenceAIClient {
   readonly collections: CollectionsService;
   readonly goals: GoalsService;
   readonly billing: BillingService;
+  readonly researchRuns: ResearchRunsService;
 
   constructor(config: CredenceAIConfig) {
     validateApiKey(config.apiKey);
@@ -78,6 +80,7 @@ export class CredenceAIClient {
     this.collections = new CollectionsService(this.http);
     this.goals = new GoalsService(this.http);
     this.billing = new BillingService(this.http);
+    this.researchRuns = new ResearchRunsService(this.http);
   }
 
   static fromEnv(

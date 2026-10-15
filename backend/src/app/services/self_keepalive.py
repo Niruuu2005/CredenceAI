@@ -39,7 +39,9 @@ async def self_keepalive_loop(stop: asyncio.Event) -> None:
         return
 
     interval = settings.SELF_KEEPALIVE_INTERVAL_SEC
-    logger.info("SELF KEEPALIVE >> started url=%s interval=%ds", url, interval)
+    logger.info("SELF KEEPALIVE >> started url=%s target_interval=%ds", url, interval)
+
+    import random
 
     while not stop.is_set():
         try:
@@ -56,8 +58,10 @@ async def self_keepalive_loop(stop: asyncio.Event) -> None:
         except Exception as exc:
             logger.warning("SELF KEEPALIVE >> ping failed: %s", exc)
 
+        # 40-45 seconds of inactivity interval
+        sleep_sec = random.randint(40, 45) if (35 <= interval <= 50) else interval
         try:
-            await asyncio.wait_for(stop.wait(), timeout=interval)
+            await asyncio.wait_for(stop.wait(), timeout=sleep_sec)
             break
         except asyncio.TimeoutError:
             continue

@@ -2,7 +2,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-2xl neu-outset text-card-foreground border-none transition-all duration-300", className)} {...props} />
+  <div ref={ref} className={cn("rounded-2xl bg-card text-card-foreground border border-border-subtle shadow-card transition-all duration-200 hover:shadow-soft", className)} {...props} />
 ))
 Card.displayName = "Card"
 
@@ -12,12 +12,12 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 CardHeader.displayName = "CardHeader"
 
 const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(({ className, ...props }, ref) => (
-  <h3 ref={ref} className={cn("font-serif text-2xl italic text-text-title", className)} {...props} />
+  <h3 ref={ref} className={cn("font-sans font-bold text-xl tracking-tight text-text-title", className)} {...props} />
 ))
 CardTitle.displayName = "CardTitle"
 
 const CardDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({ className, ...props }, ref) => (
-  <p ref={ref} className={cn("text-xs text-text-subtle uppercase tracking-wider font-semibold", className)} {...props} />
+  <p ref={ref} className={cn("text-xs text-text-subtle font-normal mt-1 leading-relaxed", className)} {...props} />
 ))
 CardDescription.displayName = "CardDescription"
 

@@ -138,6 +138,23 @@ def sync_monitors():
         db.close()
 
 
+@celery_app.task(name="app.worker.execute_research_run_task")
+def execute_research_run_task(run_id: str):
+    """Execute durable CredenceAI 2.0 research run pipeline via Celery worker."""
+    import asyncio
+    from app.research.pipeline import execute_research_run
+
+    db = get_db_session()
+    try:
+        logger.info(f"CELERY_WORKER  START_RUN  run_id={run_id}")
+        asyncio.run(execute_research_run(run_id=run_id, db=db))
+        logger.info(f"CELERY_WORKER  FINISH_RUN  run_id={run_id}")
+    except Exception as exc:
+        logger.exception(f"CELERY_WORKER  RUN_FAILED  run_id={run_id}  error={exc}")
+    finally:
+        db.close()
+
+
 celery_app.conf.beat_schedule = {
     "sync-monitors-daily": {
         "task": "app.worker.sync_monitors",

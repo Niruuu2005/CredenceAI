@@ -15,20 +15,23 @@ export function AuthLayout() {
           <Outlet />
         </div>
       </div>
-      <div className="hidden lg:block relative w-0 flex-1 bg-bg-surface text-text-body">
+      <div className="hidden lg:block relative w-0 flex-1 bg-background-surface text-text-body">
         <div className="absolute inset-0 flex flex-col justify-center p-24">
            <div className="max-w-xl">
-             <h2 className="text-5xl font-serif italic mb-8 leading-tight text-text-title">Intelligence is opaque. <br/><span className="text-text-subtle">Trust requires proof.</span></h2>
-             <p className="text-sm tracking-wide text-text-body mb-12 font-sans border-l border-border-subtle pl-6 leading-relaxed">
+             <h2 className="text-4xl lg:text-5xl font-bold tracking-tight mb-8 leading-tight text-text-title">
+               Intelligence is opaque. <br/>
+               <span className="gradient-text-emerald">Trust requires proof.</span>
+             </h2>
+             <p className="text-sm tracking-wide text-text-subtle mb-12 font-sans border-l-2 border-primary/40 pl-6 leading-relaxed">
                Join thousands of analysts and researchers who rely on CredenceAI to search, score, and verify information across billions of unstructured sources.
              </p>
-             <div className="flex gap-6 items-center mt-12 p-8 border border-border-subtle bg-bg-deep">
-                <div className="h-14 w-14 border border-border-subtle flex items-center justify-center shrink-0 bg-bg-surface">
+             <div className="flex gap-6 items-center mt-12 p-8 border border-border-subtle bg-background-deep rounded-2xl shadow-card">
+                <div className="h-14 w-14 border border-border-subtle rounded-xl flex items-center justify-center shrink-0 bg-background-surface text-primary">
                   <Activity className="h-6 w-6 text-highlight-color" />
                 </div>
                 <div>
-                   <div className="font-serif italic text-2xl text-text-title mb-2">Enterprise Verified</div>
-                   <div className="text-text-subtle text-[10px] uppercase tracking-widest font-sans">SOC2 Type II Compliant &bull; E2E Encryption</div>
+                   <div className="font-bold tracking-tight text-xl text-text-title mb-1">Enterprise Verified</div>
+                   <div className="text-text-subtle text-xs font-medium">SOC2 Type II Compliant &bull; E2E Encryption</div>
                 </div>
              </div>
            </div>

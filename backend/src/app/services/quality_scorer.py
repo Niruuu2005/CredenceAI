@@ -99,27 +99,28 @@ class QualityScorer:
         authority = self.calculate_authority_score(url)
         freshness = self.calculate_freshness_score(published_at)
 
-        # Weighted calculation
+        # Weighted calculation for candidate retrieval prioritization
         # relevance (35%), reliability (30%), authority (20%), freshness (15%)
-        final_score = (
+        # NOTE (ADR-004 / EVD-13): This is an operational retrieval priority heuristic,
+        # NEVER a calibrated probability of real-world factual truth.
+        retrieval_priority = (
             0.35 * relevance +
             0.30 * reliability +
             0.20 * authority +
             0.15 * freshness
         )
-        final_score = round(final_score, 2)
+        retrieval_priority = round(retrieval_priority, 2)
 
-        # Trust Gating Decisions
-        # Accept >= 0.70, Review 0.40 - 0.69, Reject < 0.40
-        if final_score >= 0.70:
+        # Retrieval Filtering Decisions (Accept >= 0.70, Review 0.40 - 0.69, Reject < 0.40)
+        if retrieval_priority >= 0.70:
             decision = "accept"
-            reason = "High composite trust score."
-        elif final_score >= 0.40:
+            reason = "High retrieval relevance and source indicator."
+        elif retrieval_priority >= 0.40:
             decision = "review"
-            reason = "Medium composite trust score. Requires validation."
+            reason = "Medium retrieval priority. Requires evidence inspection."
         else:
             decision = "reject"
-            reason = "Low composite trust score. Potential noise/spam."
+            reason = "Low retrieval priority. Filtered for noise reduction."
 
         scores = {
             "relevance_score": relevance,
@@ -130,7 +131,11 @@ class QualityScorer:
             "dedup_confidence": 0.0,
             "extraction_likelihood_score": 0.70 if decision == "accept" else 0.40,
             "risk_score": round(1.0 - reliability, 2),
-            "final_trust_score": final_score,
+            "retrieval_priority_score": retrieval_priority,
+            # Backward-compatibility alias for v1 consumers:
+            "final_trust_score": retrieval_priority,
+            "is_calibrated_truth_probability": False,
+            "disclaimer": "Retrieval heuristic only; does not represent probability of factual truth.",
             "decision": decision,
             "reason": reason
         }
@@ -139,7 +144,7 @@ class QualityScorer:
             f"QUALITY_SCORER  url='{url[:60]}'  "
             f"relevance={relevance:.2f}  "
             f"reliability={reliability:.2f}  "
-            f"trust={final_score:.2f}  "
+            f"retrieval_priority={retrieval_priority:.2f}  "
             f"decision={decision}"
         )
 

@@ -34,8 +34,8 @@ export function Docs() {
   return (
     <div className="bg-bg-deep pb-32 min-h-screen text-text-body">
       <div className="pt-32 pb-24 text-center px-12 max-w-3xl mx-auto">
-        <h1 className="text-5xl md:text-6xl font-serif italic mb-8 text-text-title tracking-tight">Documentation</h1>
-        <p className="text-sm tracking-wide text-text-body font-sans border-l border-border-subtle pl-6 leading-relaxed text-left">
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-text-title">Documentation</h1>
+        <p className="text-sm tracking-wide text-text-body font-sans border-l-2 border-primary/40 pl-6 leading-relaxed text-left">
           Integration guides, API reference, and deployment docs for CredenceAI search intelligence.
         </p>
       </div>
@@ -44,13 +44,13 @@ export function Docs() {
         <div className="md:col-span-4 space-y-8 border-r border-border-subtle pr-8">
           {sections.map((sec, i) => (
             <div key={i} className="space-y-4">
-              <h4 className="text-[10px] uppercase tracking-[0.2em] font-medium text-text-title">{sec.title}</h4>
+              <h4 className="text-xs uppercase tracking-wider font-semibold text-text-title">{sec.title}</h4>
               <ul className="space-y-3 text-xs">
                 {sec.items.map((item, j) => (
                   <li key={j}>
-                    <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-text-subtle hover:text-text-title transition-colors flex items-center group">
+                    <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-text-subtle hover:text-text-title transition-colors flex items-center group font-medium">
                       {item.name}
-                      <ArrowUpRight className="h-3 w-3 ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-text-title" />
+                      <ArrowUpRight className="h-3 w-3 ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
                     </a>
                   </li>
                 ))}
@@ -59,18 +59,18 @@ export function Docs() {
           ))}
         </div>
 
-        <div className="md:col-span-8 space-y-12">
-          <div className="p-8 border border-border-subtle bg-bg-surface space-y-6">
+        <div className="md:col-span-8 space-y-8">
+          <div className="p-8 border border-border-subtle bg-background-surface rounded-2xl shadow-card space-y-6">
             <div className="flex gap-4 items-center">
-              <div className="h-10 w-10 border border-border-subtle flex items-center justify-center bg-bg-deep">
-                <Terminal className="h-4 w-4 text-text-title" />
+              <div className="h-10 w-10 border border-border-subtle rounded-xl flex items-center justify-center bg-background-deep text-primary">
+                <Terminal className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-lg font-serif italic text-text-title">API Example: Submit Search Job</h3>
-                <p className="text-[10px] text-text-subtle uppercase tracking-widest mt-1">Curl Request Sample</p>
+                <h3 className="text-lg font-bold tracking-tight text-text-title">API Example: Submit Search Job</h3>
+                <p className="text-xs text-text-subtle font-medium mt-0.5">Curl Request Sample</p>
               </div>
             </div>
-            <pre className="p-4 bg-bg-deep border border-border-subtle text-text-body font-mono text-[11px] overflow-x-auto leading-relaxed">
+            <pre className="p-4 bg-background-deep rounded-xl border border-border-subtle text-text-body font-mono text-xs overflow-x-auto leading-relaxed">
 {`curl -X POST "https://credenceai-api.onrender.com/api/jobs" \\
   -H "Authorization: Bearer $CRED_TOKEN" \\
   -H "Content-Type: application/json" \\
@@ -82,22 +82,22 @@ export function Docs() {
             </pre>
           </div>
 
-          <div className="p-8 border border-border-subtle bg-bg-surface space-y-6">
+          <div className="p-8 border border-border-subtle bg-background-surface rounded-2xl shadow-card space-y-6">
             <div className="flex gap-4 items-center">
-              <div className="h-10 w-10 border border-border-subtle flex items-center justify-center bg-bg-deep">
-                <Code className="h-4 w-4 text-text-title" />
+              <div className="h-10 w-10 border border-border-subtle rounded-xl flex items-center justify-center bg-background-deep text-primary">
+                <Code className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-lg font-serif italic text-text-title font-semibold">AI Goal Research</h3>
-                <p className="text-[10px] text-text-subtle uppercase tracking-widest mt-1">Multi-agent decomposition</p>
+                <h3 className="text-lg font-bold tracking-tight text-text-title font-semibold">AI Goal Research</h3>
+                <p className="text-xs text-text-subtle font-medium mt-0.5">Multi-agent decomposition</p>
               </div>
             </div>
-            <p className="text-xs text-text-body leading-relaxed">
-              Use <code className="font-mono bg-bg-panel border border-border-subtle px-1 text-text-title">POST /api/goals</code> to
+            <p className="text-xs text-text-body leading-relaxed font-medium">
+              Use <code className="font-mono bg-background-deep border border-border-subtle px-1.5 py-0.5 rounded text-primary">POST /api/goals</code> to
               decompose complex research questions into parallel jobs. Agent decisions are logged at{" "}
-              <code className="font-mono bg-bg-panel border border-border-subtle px-1 text-text-title">GET /api/agent/decisions</code>.
+              <code className="font-mono bg-background-deep border border-border-subtle px-1.5 py-0.5 rounded text-primary">GET /api/agent/decisions</code>.
             </p>
-            <Link to="/app/search" className="text-xs text-primary hover:underline">Open Search App →</Link>
+            <Link to="/app/search" className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1">Open Search App →</Link>
           </div>
         </div>
       </div>

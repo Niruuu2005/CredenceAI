@@ -13,7 +13,8 @@ def create_job(
     priority: str = "normal",
     routing_mode: str = "free_first",
     execution_mode: str = "standard",
-    user_id: Optional[str] = None
+    user_id: Optional[str] = None,
+    workspace_id: Optional[str] = None,
 ) -> Job:
     job = Job(
         id=job_id,
@@ -25,6 +26,7 @@ def create_job(
         routing_mode=routing_mode,
         execution_mode=execution_mode,
         user_id=user_id,
+        workspace_id=workspace_id,
         status="queued",
         created_at=datetime.datetime.now(datetime.UTC),
         updated_at=datetime.datetime.now(datetime.UTC)

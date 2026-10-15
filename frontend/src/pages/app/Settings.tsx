@@ -109,19 +109,19 @@ export function Settings() {
   return (
     <div className="max-w-4xl space-y-10 pb-12 bg-bg-deep text-text-body select-none">
       <div>
-        <h2 className="text-3xl font-serif italic text-text-title mb-2">Workspace Settings</h2>
-        <p className="text-[10px] uppercase tracking-widest font-bold text-text-subtle">Configure parameters, access credentials, and security defaults.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-text-title mb-2">Workspace Settings</h2>
+        <p className="text-xs text-text-subtle font-medium">Configure parameters, access credentials, and security defaults.</p>
       </div>
 
       <div className="space-y-8">
         {/* Intelligence Preferences */}
         <Card>
           <CardHeader className="border-b border-border-subtle/10 pb-6 mb-6">
-            <CardTitle className="text-xl font-serif italic text-text-title flex items-center gap-2">
+            <CardTitle className="text-lg font-bold tracking-tight text-text-title flex items-center gap-2">
               <Sliders className="h-5 w-5 text-primary" />
               Intelligence Preferences
             </CardTitle>
-            <CardDescription className="text-[10px] text-text-subtle tracking-wider">Adjust intelligence criteria and source constraints.</CardDescription>
+            <CardDescription className="text-xs text-text-subtle">Adjust intelligence criteria and source constraints.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -132,7 +132,7 @@ export function Settings() {
               <select 
                 value={String(minCitations)}
                 onChange={(e) => handleMinCitationsChange(e.target.value)}
-                className="bg-bg-deep text-text-body px-4 py-2.5 text-xs rounded-xl neu-inset-sm focus:outline-none focus:ring-2 focus:ring-primary/40 uppercase tracking-wider font-semibold min-w-[170px] border-none"
+                className="bg-background-surface border border-border-subtle text-text-body px-4 py-2 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-border-accent font-medium min-w-[170px] shadow-xs"
               >
                 <option value="2">2 Sources</option>
                 <option value="3">3 Sources</option>
@@ -150,7 +150,7 @@ export function Settings() {
               <select 
                 value={scholarlyFocus}
                 onChange={(e) => handleScholarlyFocusChange(e.target.value)}
-                className="bg-bg-deep text-text-body px-4 py-2.5 text-xs rounded-xl neu-inset-sm focus:outline-none focus:ring-2 focus:ring-primary/40 uppercase tracking-wider font-semibold min-w-[170px] border-none"
+                className="bg-background-surface border border-border-subtle text-text-body px-4 py-2 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-border-accent font-medium min-w-[170px] shadow-xs"
               >
                 <option value="balanced">None (Balanced)</option>
                 <option value="academic">Academic High</option>
@@ -163,11 +163,11 @@ export function Settings() {
         {/* API Credentials */}
         <Card>
           <CardHeader className="border-b border-border-subtle/10 pb-6 mb-6">
-            <CardTitle className="text-xl font-serif italic text-text-title flex items-center gap-2">
+            <CardTitle className="text-lg font-bold tracking-tight text-text-title flex items-center gap-2">
               <Key className="h-5 w-5 text-primary" />
               API Credentials
             </CardTitle>
-            <CardDescription className="text-[10px] text-text-subtle tracking-wider">Access the raw Credence intelligence graph programmatically.</CardDescription>
+            <CardDescription className="text-xs text-text-subtle">Access the raw Credence intelligence graph programmatically.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             
@@ -191,7 +191,7 @@ export function Settings() {
 
             {/* Display newly created key */}
             {newKey && (
-              <div className="p-4 rounded-2xl bg-bg-panel/20 neu-inset-sm space-y-3">
+              <div className="p-4 rounded-xl bg-background-deep border border-border-subtle space-y-3">
                 <h6 className="text-xs font-semibold text-amber-500 uppercase tracking-wider">Save Your Key</h6>
                 <p className="text-xs text-text-subtle leading-normal">
                   Make sure to copy your API key now. You won't be able to see it again!
@@ -226,17 +226,17 @@ export function Settings() {
                   <span>Loading workspace keys...</span>
                 </div>
               ) : keys.length === 0 ? (
-                <div className="text-center py-6 border border-dashed border-border-subtle/20 rounded-2xl text-xs text-text-subtle bg-bg-deep/40">
+                <div className="text-center py-6 border border-dashed border-border-subtle rounded-2xl text-xs text-text-subtle bg-background-deep/40">
                   No active keys found. Generate a key above to get started.
                 </div>
               ) : (
-                <div className="rounded-2xl overflow-hidden bg-bg-panel/20 neu-inset-sm divide-y divide-border-subtle/10">
+                <div className="rounded-xl overflow-hidden bg-background-deep border border-border-subtle divide-y divide-border-subtle">
                   {keys.map((k) => (
                     <div key={k.id} className="flex items-center justify-between p-4 text-xs gap-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-text-title">{k.label || "No Label"}</span>
-                          <span className="text-[10px] text-text-subtle border border-border-subtle/20 rounded-lg px-2 py-0.5 bg-bg-deep font-mono">
+                          <span className="text-[10px] text-text-subtle border border-border-subtle rounded-lg px-2 py-0.5 bg-background-surface font-mono">
                             ID: {k.id}
                           </span>
                         </div>
@@ -249,7 +249,7 @@ export function Settings() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleRevokeKey(k.id)}
-                          className="h-8 w-8 rounded-xl flex items-center justify-center border-none text-text-subtle hover:text-red-500 bg-bg-deep hover:bg-bg-panel cursor-pointer active:scale-95 transition-all neu-outset-sm"
+                          className="h-8 w-8 rounded-lg flex items-center justify-center border border-border-subtle text-text-subtle hover:text-red-500 bg-background-surface hover:bg-red-500/10 hover:border-red-500/30 cursor-pointer active:scale-95 transition-all"
                           title="Revoke Key"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -273,7 +273,7 @@ export function Settings() {
                 onClick={toggleApiLogging}
                 className={cn(
                   "w-12 h-6 rounded-full relative transition-all duration-300 p-0.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40",
-                  apiLogging ? "bg-primary neu-inset-sm" : "bg-bg-panel/40 neu-inset-sm"
+                  apiLogging ? "bg-primary" : "bg-background-panel border border-border-subtle"
                 )}
                 role="switch"
                 aria-checked={apiLogging}

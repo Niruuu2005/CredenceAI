@@ -444,6 +444,129 @@ export const api = {
     return res.json() as Promise<{ id: string; message: string }>;
   },
 
+  // ==========================================
+  // CredenceAI 2.0 Research APIs (v2)
+  // ==========================================
+
+  async createResearchRun(question: string, mode: string = 'investigate', idempotencyKey?: string) {
+    const token = getStoredToken();
+    const res = await fetch(`${getApiBaseUrl()}/api/v2/research-runs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        question,
+        mode,
+        idempotency_key: idempotencyKey || `run_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      }),
+    });
+    if (!res.ok) throw new Error('Failed to create research run');
+    return res.json();
+  },
+
+  async listResearchRuns() {
+    const token = getStoredToken();
+    const res = await fetch(`${getApiBaseUrl()}/api/v2/research-runs`, {
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    if (!res.ok) return [];
+    return res.json();
+  },
+
+  async getResearchRun(runId: string) {
+    const token = getStoredToken();
+    const res = await fetch(`${getApiBaseUrl()}/api/v2/research-runs/${encodeURIComponent(runId)}`, {
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    if (!res.ok) throw new Error(`Failed to load research run ${runId}`);
+    return res.json();
+  },
+
+  async executeResearchRun(runId: string) {
+    const token = getStoredToken();
+    const res = await fetch(`${getApiBaseUrl()}/api/v2/research-runs/${encodeURIComponent(runId)}/execute`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    if (!res.ok) throw new Error(`Failed to execute research run ${runId}`);
+    return res.json();
+  },
+
+  async cancelResearchRun(runId: string) {
+    const token = getStoredToken();
+    const res = await fetch(`${getApiBaseUrl()}/api/v2/research-runs/${encodeURIComponent(runId)}/cancel`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    if (!res.ok) throw new Error(`Failed to cancel research run ${runId}`);
+    return res.json();
+  },
+
+  async getRunClaims(runId: string) {
+    const token = getStoredToken();
+    const res = await fetch(`${getApiBaseUrl()}/api/v2/research-runs/${encodeURIComponent(runId)}/claims`, {
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    if (!res.ok) return [];
+    return res.json();
+  },
+
+  async getClaimEvidence(runId: string, claimId: string) {
+    const token = getStoredToken();
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/v2/research-runs/${encodeURIComponent(runId)}/claims/${encodeURIComponent(claimId)}/evidence`,
+      { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } }
+    );
+    if (!res.ok) return [];
+    return res.json();
+  },
+
+  async getRunReport(runId: string, version: number = 1) {
+    const token = getStoredToken();
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/v2/research-runs/${encodeURIComponent(runId)}/reports/${version}`,
+      { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } }
+    );
+    if (!res.ok) return null;
+    return res.json();
+  },
+
+  async reviewClaimEvidence(runId: string, claimId: string, evidenceId: string, newRelation?: string, notes?: string) {
+    const token = getStoredToken();
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/v2/research-runs/${encodeURIComponent(runId)}/claims/${encodeURIComponent(claimId)}/evidence/${encodeURIComponent(evidenceId)}/review`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ new_relation: newRelation, reviewer_notes: notes }),
+      }
+    );
+    if (!res.ok) throw new Error('Failed to review evidence');
+    return res.json();
+  },
+
+  async approveReport(runId: string, reportId: string, notes?: string) {
+    const token = getStoredToken();
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/v2/research-runs/${encodeURIComponent(runId)}/reports/${encodeURIComponent(reportId)}/approve`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ reviewer_notes: notes }),
+      }
+    );
+    if (!res.ok) throw new Error('Failed to approve report');
+    return res.json();
+  },
+
   logout() {
     localStorage.removeItem(TOKEN_KEY);
   },

@@ -23,10 +23,12 @@ class Citation(BaseModel):
 
 
 class SynthesisOutput(BaseModel):
-    """Structured synthesis output with inline citations."""
+    """Structured synthesis output with inline citations and run-scoped evidence verdict."""
     summary: str
     citations: Dict[int, Citation] = Field(default_factory=dict)
-    confidence_score: float = 0.5
+    confidence_score: float = 0.5  # Deprecated backward-compatible alias
+    verdict: str = "supported"  # supported, disputed, insufficient_evidence, not_assessed
+    disclaimer: str = "Findings reflect evidence examined; does not assert universal factual certainty."
 
 
 class SynthesisService:
@@ -57,7 +59,8 @@ class SynthesisService:
             return SynthesisOutput(
                 summary="No relevant documents found to synthesize findings.",
                 citations={},
-                confidence_score=0.0
+                confidence_score=0.0,
+                verdict="insufficient_evidence",
             )
 
         # Build citations registry
@@ -74,19 +77,20 @@ class SynthesisService:
             )
 
         if self.mock_mode:
-            # Generate a mock response
+            # Generate an evidence-calibrated response
             summary_parts = [
-                f"Based on the analysis for '{query}', we found several key points."
+                f"Based on the analysis of examined sources for '{query}', key findings indicate:"
             ]
             for idx, citation in citations.items():
                 summary_parts.append(
-                    f"According to {citation.title}, this is a confirmed fact regarding the topic [{idx}]."
+                    f"According to {citation.title}, evidence supports observations on this topic [{idx}]."
                 )
             summary = " ".join(summary_parts)
             return SynthesisOutput(
                 summary=summary,
                 citations=citations,
-                confidence_score=0.85
+                confidence_score=0.85,
+                verdict="supported",
             )
 
         # Build prompt for LLM
@@ -96,9 +100,10 @@ class SynthesisService:
             context_str += f"[{idx}] Source: {doc.get('title')}\nURL: {doc.get('url')}\nContent: {text[:500]}\n\n"
 
         system_prompt = (
-            "You are an expert synthesizer. Synthesize the provided context into a concise, factual summary "
-            "answering the user query. You MUST cite your sources using bracketed numbers like [1], [2] corresponding "
-            "to the sources provided in the context."
+            "You are an evidence intelligence synthesizer. Synthesize the provided context into an objective, "
+            "factual summary answering the query. You MUST cite your sources using bracketed numbers like [1], [2] "
+            "corresponding to the sources in the context. Frame findings as 'supported by the evidence examined', "
+            "and explicitly note any conflicts, gaps, or uncertainties rather than asserting universal truth."
         )
 
         prompt = (
@@ -112,7 +117,8 @@ class SynthesisService:
             return SynthesisOutput(
                 summary=llm_response.content,
                 citations=citations,
-                confidence_score=0.90
+                confidence_score=0.90,
+                verdict="supported",
             )
         except Exception as e:
             logger.error(f"Synthesis failed: {e}. Falling back to mock summary.")

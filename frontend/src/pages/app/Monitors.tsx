@@ -75,15 +75,15 @@ export function Monitors() {
   };
 
   return (
-    <div className="space-y-8 bg-bg-deep text-text-body select-none">
+    <div className="space-y-8 text-text-body select-none">
       {/* Create Modal Overlay */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-bg-deep rounded-2xl p-6 w-full max-w-md neu-outset space-y-6 border-none">
-            <h3 className="text-xl font-serif italic text-text-title font-medium">Create New Monitor</h3>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background-surface rounded-2xl p-6 w-full max-w-md border border-border-subtle shadow-2xl space-y-6">
+            <h3 className="text-xl font-bold tracking-tight text-text-title">Create New Monitor</h3>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-extrabold text-text-subtle ml-1">Search Topic to Monitor</label>
+                <label className="text-xs font-semibold text-text-subtle ml-1">Search Topic to Monitor</label>
                 <Input 
                   value={createTopic} 
                   onChange={(e) => setCreateTopic(e.target.value)} 
@@ -102,9 +102,9 @@ export function Monitors() {
 
       {/* Delete Modal Overlay */}
       {isDeleteOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-bg-deep rounded-2xl p-6 w-full max-w-sm neu-outset space-y-6 text-center border-none">
-            <h3 className="text-xl font-serif italic text-text-title font-medium">Delete Monitor</h3>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-background-surface rounded-2xl p-6 w-full max-w-sm border border-border-subtle shadow-2xl space-y-6 text-center">
+            <h3 className="text-xl font-bold tracking-tight text-text-title">Delete Monitor</h3>
             <p className="text-xs text-text-subtle leading-relaxed">
               Are you sure you want to delete this monitor? This action is permanent and cannot be undone.
             </p>
@@ -118,8 +118,8 @@ export function Monitors() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-serif italic text-text-title">Monitors</h2>
-          <p className="text-text-subtle mt-2 text-xs uppercase tracking-wider font-bold">Manual topic checks — Scheduled updates require a Pro or Enterprise plan.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-text-title">Monitors</h2>
+          <p className="text-text-subtle mt-1 text-xs font-medium">Manual topic checks — Scheduled updates require a Pro or Enterprise plan.</p>
         </div>
         <Button className="shrink-0" onClick={() => setIsCreateOpen(true)}>
           <PlusCircle className="h-4 w-4 mr-2" /> Create Monitor
@@ -128,30 +128,30 @@ export function Monitors() {
 
       <div className="grid gap-6">
         {loading ? (
-          <div className="text-center py-12 p-6 rounded-2xl bg-bg-panel/20 neu-inset-sm flex flex-col items-center gap-3">
+          <div className="text-center py-12 p-6 rounded-2xl bg-background-surface border border-dashed border-border-subtle flex flex-col items-center gap-3">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <p className="text-xs text-text-subtle uppercase tracking-widest font-bold">Loading search monitors...</p>
+            <p className="text-xs text-text-subtle font-medium">Loading search monitors...</p>
           </div>
         ) : monitors.length === 0 ? (
-          <div className="text-center py-12 p-6 rounded-2xl bg-bg-panel/20 neu-inset-sm">
-            <p className="text-xs text-text-subtle uppercase tracking-widest font-bold">No active monitors. Click "Create Monitor" to add one.</p>
+          <div className="text-center py-12 p-6 rounded-2xl bg-background-surface border border-dashed border-border-subtle">
+            <p className="text-xs text-text-subtle font-medium">No active monitors. Click "Create Monitor" to add one.</p>
           </div>
         ) : (
           monitors.map((mon) => (
-            <div key={mon.id} className="p-6 rounded-2xl bg-bg-deep neu-outset border-none flex flex-col md:flex-row md:items-center md:justify-between gap-6 transition-all duration-300">
+            <div key={mon.id} className="p-6 rounded-2xl bg-background-surface border border-border-subtle hover:border-border-accent/40 shadow-card hover:shadow-soft flex flex-col md:flex-row md:items-center md:justify-between gap-6 transition-all duration-200">
               <div className="space-y-3 flex-1">
                 <div className="flex items-center gap-3">
                   <span className={`w-2 h-2 rounded-full ${mon.status === 'Active' ? 'bg-highlight-color animate-[pulse_2s_infinite]' : 'bg-text-subtle'}`}></span>
-                  <h4 className="text-lg font-serif italic text-text-title">{mon.topic}</h4>
+                  <h4 className="text-lg font-semibold tracking-tight text-text-title">{mon.topic}</h4>
                 </div>
-                <div className="flex flex-wrap items-center gap-6 text-[10px] uppercase tracking-wider font-bold text-text-subtle">
-                  <span className="border border-border-subtle/20 bg-bg-panel/40 px-2 py-0.5 text-text-body font-sans rounded-md">{mon.scope}</span>
+                <div className="flex flex-wrap items-center gap-6 text-xs text-text-subtle font-medium">
+                  <span className="border border-border-subtle bg-background-deep px-2 py-0.5 text-text-body font-sans rounded-md">{mon.scope}</span>
                   <span>Interval: {mon.topic.length > 30 ? "4 Hours" : mon.interval}</span>
                   <span>Last checked: {mon.lastCheck}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-8 justify-between md:justify-end border-t border-border-subtle/10 md:border-0 pt-4 md:pt-0">
+              <div className="flex items-center gap-8 justify-between md:justify-end border-t border-border-subtle md:border-0 pt-4 md:pt-0">
                 <div className="flex flex-col items-start md:items-end">
                   <span className="text-[9px] uppercase tracking-widest text-text-subtle font-extrabold mb-1.5 font-sans">Health State</span>
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1.5 flex items-center gap-1.5 border rounded-xl ${
@@ -176,7 +176,7 @@ export function Monitors() {
                   </Button>
                   <button 
                     onClick={() => openDeleteConfirm(mon.id)}
-                    className="h-10 w-10 rounded-xl flex items-center justify-center border-none text-text-subtle hover:text-red-500 bg-bg-deep hover:bg-bg-panel cursor-pointer active:scale-95 transition-all neu-outset-sm"
+                    className="h-10 w-10 rounded-xl flex items-center justify-center border border-border-subtle text-text-subtle hover:text-red-500 bg-background-surface hover:bg-red-500/10 hover:border-red-500/30 cursor-pointer active:scale-95 transition-all"
                     title="Delete Monitor"
                   >
                     <Trash2 className="h-4 w-4" />

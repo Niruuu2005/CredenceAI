@@ -117,7 +117,7 @@ class Settings(BaseSettings):
 
     # Render free-tier: ping own public /api/health to prevent spin-down
     SELF_KEEPALIVE_ENABLED: bool = Field(default=False)
-    SELF_KEEPALIVE_INTERVAL_SEC: int = Field(default=30)
+    SELF_KEEPALIVE_INTERVAL_SEC: int = Field(default=42)
     API_PUBLIC_URL: str | None = Field(default=None)
 
     # SDK Metadata

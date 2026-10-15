@@ -47,21 +47,21 @@ export function GoogleCallback() {
 
   return (
     <div className="min-h-screen bg-bg-deep text-text-body flex items-center justify-center p-6 text-center animate-fade-in">
-      <div className="p-8 border border-border-subtle bg-bg-surface max-w-sm w-full space-y-6">
+      <div className="p-8 border border-border-subtle bg-background-surface rounded-2xl max-w-sm w-full space-y-6 shadow-2xl">
         {error ? (
           <div className="space-y-4">
             <div className="flex items-center justify-center">
               <AlertCircle className="h-10 w-10 text-red-500" />
             </div>
             <div>
-              <h3 className="font-serif italic text-2xl text-text-title mb-2">Authentication Error</h3>
-              <p className="text-xs text-text-subtle uppercase tracking-widest leading-relaxed">
+              <h3 className="text-xl font-bold tracking-tight text-text-title mb-2">Authentication Error</h3>
+              <p className="text-xs text-text-subtle leading-relaxed font-medium">
                 {error}
               </p>
             </div>
             <button
               onClick={() => navigate("/auth/sign-in")}
-              className="w-full bg-bg-deep border border-border-subtle text-text-body px-4 py-2 text-xs uppercase tracking-widest hover:border-border-accent transition-colors"
+              className="w-full bg-background-deep border border-border-subtle text-text-body px-4 py-2.5 text-xs font-semibold rounded-xl hover:border-border-accent transition-colors"
             >
               Back to Sign In
             </button>
@@ -69,15 +69,15 @@ export function GoogleCallback() {
         ) : (
           <div className="space-y-6">
             <div className="flex items-center justify-center">
-              <Loader2 className="h-8 w-8 text-text-title animate-spin" />
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
             </div>
             <div>
-              <h3 className="font-serif italic text-2xl text-text-title mb-2">Signing In</h3>
-              <p className="text-xs text-text-subtle uppercase tracking-widest leading-relaxed">
+              <h3 className="text-xl font-bold tracking-tight text-text-title mb-2">Signing In</h3>
+              <p className="text-xs text-text-subtle leading-relaxed font-medium">
                 {status}
               </p>
             </div>
-            <div className="text-[10px] uppercase tracking-widest font-mono text-text-subtle border border-border-subtle py-2">
+            <div className="text-[10px] uppercase tracking-wider font-mono text-text-subtle border border-border-subtle py-2 rounded-xl">
               TLS 1.3 • AES-256 ENCRYPTED
             </div>
           </div>

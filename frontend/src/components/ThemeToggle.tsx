@@ -1,29 +1,69 @@
 import { useEffect, useState, useRef } from "react";
-import { Palette, Check, Sun, Moon } from "lucide-react";
+import { Check, Sun, Moon, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export type ThemeId = "dark" | "light" | "beige";
+
 type ThemeOption = {
-  id: string;
+  id: ThemeId;
   name: string;
+  subtitle: string;
   className: string;
   isDark: boolean;
+  accentColor: string;
+  swatchBg: string;
+  icon: typeof Moon;
 };
 
 const THEMES: ThemeOption[] = [
-  { id: "classic-light", name: "Classic Light", className: "", isDark: false },
-  { id: "classic-dark", name: "Classic Dark", className: "dark", isDark: true },
-  { id: "forest-light", name: "Forest Light", className: "theme-forest-light", isDark: false },
-  { id: "forest-dark", name: "Forest Dark", className: "theme-forest-dark dark", isDark: true },
-  { id: "clay-light", name: "Clay Light", className: "theme-clay-light", isDark: false },
-  { id: "clay-dark", name: "Clay Dark", className: "theme-clay-dark dark", isDark: true },
-  { id: "slate-light", name: "Slate Light", className: "theme-slate-light", isDark: false },
-  { id: "slate-dark", name: "Slate Dark", className: "theme-slate-dark dark", isDark: true },
+  {
+    id: "dark",
+    name: "Dark",
+    subtitle: "Obsidian & Emerald",
+    className: "dark",
+    isDark: true,
+    accentColor: "#10b981",
+    swatchBg: "#080b11",
+    icon: Moon,
+  },
+  {
+    id: "light",
+    name: "Light",
+    subtitle: "Pristine Zinc & White",
+    className: "light",
+    isDark: false,
+    accentColor: "#059669",
+    swatchBg: "#f8fafc",
+    icon: Sun,
+  },
+  {
+    id: "beige",
+    name: "Beige",
+    subtitle: "Light Sand & Warm Brown",
+    className: "beige",
+    isDark: false,
+    accentColor: "#8b5a2b",
+    swatchBg: "#faf6ed",
+    icon: Sparkles,
+  },
 ];
 
+function resolveInitialTheme(): ThemeId {
+  const saved = localStorage.getItem("workspace_theme");
+  if (saved === "light" || saved === "pristine-light" || saved === "nordic-light") {
+    return "light";
+  }
+  if (saved === "beige" || saved === "editorial-paper") {
+    return "beige";
+  }
+  if (saved === "dark" || saved === "perplexity-dark" || saved === "linear-indigo" || saved === "cyber-cyan" || saved === "monochrome-dark") {
+    return "dark";
+  }
+  return "dark";
+}
+
 export function ThemeToggle() {
-  const [activeThemeId, setActiveThemeId] = useState(() => {
-    return localStorage.getItem("workspace_theme") || "classic-light";
-  });
+  const [activeThemeId, setActiveThemeId] = useState<ThemeId>(resolveInitialTheme);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,75 +73,150 @@ export function ThemeToggle() {
         setIsOpen(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
     document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
-    
-    // Remove all possible theme classes
-    root.classList.remove("dark");
-    THEMES.forEach((t) => {
-      if (t.className) {
-        t.className.split(" ").forEach((c) => root.classList.remove(c));
-      }
-    });
 
-    // Add current theme class(es)
-    const activeTheme = THEMES.find((t) => t.id === activeThemeId) || THEMES[0];
-    if (activeTheme.className) {
-      activeTheme.className.split(" ").forEach((c) => root.classList.add(c));
-    }
-    
+    // Remove old theme classes
+    root.classList.remove(
+      "dark",
+      "light",
+      "beige",
+      "theme-linear-indigo",
+      "theme-cyber-cyan",
+      "theme-monochrome-dark",
+      "theme-pristine-light",
+      "theme-nordic-light"
+    );
+
+    // Add current theme class and data-theme
+    root.classList.add(activeThemeId);
+    root.setAttribute("data-theme", activeThemeId);
+
     localStorage.setItem("workspace_theme", activeThemeId);
   }, [activeThemeId]);
 
   const activeTheme = THEMES.find((t) => t.id === activeThemeId) || THEMES[0];
+  const ActiveIcon = activeTheme.icon;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-50" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="h-10 px-3.5 rounded-xl bg-bg-deep border-none text-text-body flex items-center justify-center gap-2.5 cursor-pointer neu-outset-sm active:scale-95 transition-all select-none focus:outline-none"
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen((prev) => !prev);
+        }}
+        className="h-9 px-3.5 rounded-xl border text-text-body flex items-center justify-center gap-2 cursor-pointer hover:border-border-accent/40 shadow-xs active:scale-95 transition-all select-none focus:outline-none"
+        style={{
+          backgroundColor: "var(--background-surface)",
+          borderColor: "var(--border-subtle)",
+        }}
         aria-label="Select Theme"
         id="theme-select-btn"
       >
-        <Palette className="h-4 w-4 text-primary" />
-        <span className="text-[10px] uppercase tracking-wider font-extrabold hidden sm:inline">
+        <span
+          className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
+          style={{ backgroundColor: activeTheme.accentColor }}
+        />
+        <span className="text-xs font-semibold text-text-title hidden sm:inline">
           {activeTheme.name}
         </span>
-        {activeTheme.isDark ? <Moon className="h-3.5 w-3.5 text-primary" /> : <Sun className="h-3.5 w-3.5 text-amber-500" />}
+        <ActiveIcon
+          className={cn(
+            "h-3.5 w-3.5 shrink-0",
+            activeThemeId === "dark" && "text-emerald-400",
+            activeThemeId === "light" && "text-amber-500",
+            activeThemeId === "beige" && "text-[#8b5a2b]"
+          )}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-56 bg-bg-deep rounded-2xl p-2.5 neu-outset border-none z-50 animate-fade-in space-y-1">
-          <div className="text-[9px] uppercase tracking-widest font-extrabold text-text-subtle px-2.5 py-2 border-b border-border-subtle/10 mb-1.5 select-none">
-            Select Color Palette
+        <div
+          className="absolute right-0 mt-2 w-64 rounded-2xl p-2 border shadow-2xl z-[100] animate-fade-in space-y-1"
+          style={{
+            backgroundColor: "var(--background-surface)",
+            borderColor: "var(--border-subtle)",
+            boxShadow: "0 14px 35px -5px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--border-subtle)",
+          }}
+        >
+          <div className="text-[10px] uppercase tracking-wider font-bold text-text-subtle px-3 py-1.5 border-b border-border-subtle/50 mb-1 select-none flex items-center justify-between">
+            <span>Workspace Theme</span>
+            <span className="text-[9px] font-mono font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10">
+              3 THEMES
+            </span>
           </div>
-          <div className="max-h-64 overflow-y-auto pr-1 space-y-1">
-            {THEMES.map((themeOption) => (
-              <button
-                key={themeOption.id}
-                onClick={() => {
-                  setActiveThemeId(themeOption.id);
-                  setIsOpen(false);
-                }}
-                className={cn(
-                  "w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs font-semibold transition-all hover:bg-bg-panel/40 cursor-pointer border-none",
-                  activeThemeId === themeOption.id ? "text-primary bg-bg-panel font-bold neu-inset-sm" : "text-text-body"
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <span className={cn(
-                    "w-2.5 h-2.5 rounded-full border border-border-subtle/10",
-                    themeOption.isDark ? "bg-stone-700" : "bg-orange-100"
-                  )} />
-                  <span>{themeOption.name}</span>
-                </div>
-                {activeThemeId === themeOption.id && <Check className="h-3.5 w-3.5 text-primary" />}
-              </button>
-            ))}
+
+          <div className="space-y-1">
+            {THEMES.map((themeOption) => {
+              const Icon = themeOption.icon;
+              const isSelected = activeThemeId === themeOption.id;
+
+              return (
+                <button
+                  key={themeOption.id}
+                  id={`theme-option-${themeOption.id}`}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveThemeId(themeOption.id);
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-xs transition-all cursor-pointer border",
+                    isSelected
+                      ? "text-text-title border-border-accent/40 shadow-xs font-semibold"
+                      : "text-text-body hover:bg-background-panel border-transparent"
+                  )}
+                  style={{
+                    backgroundColor: isSelected ? "var(--background-panel)" : "transparent",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-7 h-7 rounded-lg border border-border-subtle flex items-center justify-center shrink-0 shadow-xs"
+                      style={{
+                        backgroundColor: themeOption.swatchBg,
+                        borderColor: isSelected ? themeOption.accentColor : "var(--border-subtle)",
+                      }}
+                    >
+                      <Icon
+                        className="h-3.5 w-3.5"
+                        style={{ color: themeOption.accentColor }}
+                      />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-text-title leading-tight">
+                        {themeOption.name}
+                      </div>
+                      <div className="text-[11px] text-text-subtle mt-0.5 font-normal">
+                        {themeOption.subtitle}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <Check
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: themeOption.accentColor }}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

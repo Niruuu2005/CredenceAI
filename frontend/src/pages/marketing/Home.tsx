@@ -9,22 +9,23 @@ export function Home() {
       <section className="relative overflow-hidden pt-24 pb-32 lg:pt-36 bg-bg-deep">
         <div className="absolute inset-0 bg-[url('https://transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none mix-blend-multiply"></div>
         <div className="container mx-auto px-12 relative z-10 text-center">
-          <div className="inline-flex items-center border border-border-subtle bg-bg-panel px-3 py-1 text-[10px] uppercase tracking-widest font-medium text-text-body mb-8">
-            <span className="flex h-2 w-2 bg-text-subtle mr-2 animate-pulse"></span>
+          <div className="inline-flex items-center border border-border-subtle bg-bg-panel px-3 py-1 text-xs font-semibold text-text-body mb-8 rounded-full">
+            <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
             CredenceAI Enterprise 2.0 is now available
             <ChevronRight className="h-4 w-4 ml-1 inline text-text-subtle/60" />
           </div>
-          <h1 className="text-6xl md:text-[84px] font-serif italic text-text-title max-w-4xl mx-auto mb-8 leading-[0.9]">
-            Research intelligence <br className="hidden md:block"/><span className="text-text-subtle">you can verify.</span>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-text-title max-w-4xl mx-auto mb-8 leading-[1.05]">
+            Research intelligence <br className="hidden md:block"/>
+            <span className="gradient-text-emerald">you can verify.</span>
           </h1>
-          <p className="text-sm tracking-wide text-text-body max-w-2xl mx-auto mb-10 font-sans border-l border-border-subtle pl-6 leading-relaxed text-left">
+          <p className="text-base text-text-subtle max-w-2xl mx-auto mb-10 font-sans border-l-2 border-primary/40 pl-6 leading-relaxed text-left">
             Search, score, and operationalize information across web, news, and scholarly sources. Designed for analysts who demand complete provenance.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <Button size="lg" asChild>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button size="lg" asChild className="bg-primary text-primary-foreground font-semibold shadow-[0_0_20px_rgba(16,185,129,0.3)]">
               <Link to="/auth/sign-up">Start Free</Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-border-subtle bg-btn-outline-bg hover:bg-bg-panel hover:text-text-title">
+            <Button size="lg" variant="outline" className="border-border-subtle hover:bg-background-surface hover:text-text-title">
               <Link to="/enterprise">Book Demo</Link>
             </Button>
           </div>
@@ -32,56 +33,56 @@ export function Home() {
 
         {/* Product Preview Mockup */}
         <div className="container mx-auto mt-24 px-12 max-w-6xl relative z-20">
-           <div className="border border-border-subtle bg-bg-surface shadow-2xl overflow-hidden">
-              <div className="h-12 border-b border-border-subtle flex items-center px-6 gap-2 bg-bg-deep">
+           <div className="border border-border-subtle bg-background-surface rounded-2xl shadow-2xl overflow-hidden">
+              <div className="h-12 border-b border-border-subtle flex items-center px-6 gap-2 bg-background-deep">
                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 bg-text-subtle/30"></div>
-                    <div className="h-3 w-3 bg-text-subtle/30"></div>
-                    <div className="h-3 w-3 bg-text-subtle/30"></div>
+                    <div className="h-3 w-3 rounded-full bg-red-500/40"></div>
+                    <div className="h-3 w-3 rounded-full bg-amber-500/40"></div>
+                    <div className="h-3 w-3 rounded-full bg-emerald-500/40"></div>
                  </div>
-                 <div className="mx-auto w-1/2 max-w-md h-7 border border-border-subtle bg-bg-surface flex items-center px-3 text-[10px] text-text-subtle font-mono tracking-widest uppercase">
-                    <Search className="h-3 w-3 mr-2" />
+                 <div className="mx-auto w-1/2 max-w-md h-7 border border-border-subtle bg-background-surface rounded-lg flex items-center px-3 text-xs text-text-subtle font-mono">
+                    <Search className="h-3 w-3 mr-2 text-primary" />
                     Query: "Quantum computing material synthesis timelines"
                  </div>
               </div>
               <div className="flex grid-cols-12 h-[32rem]">
-                 <div className="hidden md:block w-64 border-r border-border-subtle bg-bg-deep p-6 shrink-0">
-                    <div className="h-4 w-24 bg-border-subtle mb-6"></div>
+                 <div className="hidden md:block w-64 border-r border-border-subtle bg-background-deep p-6 shrink-0">
+                    <div className="h-4 w-24 bg-border-subtle/50 rounded mb-6"></div>
                     <div className="space-y-4">
-                       <div className="h-8 bg-border-subtle/50"></div>
-                       <div className="h-8 bg-bg-panel"></div>
-                       <div className="h-8 bg-bg-panel"></div>
+                       <div className="h-8 rounded-lg bg-primary/10 border border-primary/20"></div>
+                       <div className="h-8 rounded-lg bg-background-surface border border-border-subtle"></div>
+                       <div className="h-8 rounded-lg bg-background-surface border border-border-subtle"></div>
                     </div>
                  </div>
-                 <div className="flex-1 p-10 bg-bg-surface overflow-hidden relative">
+                 <div className="flex-1 p-10 bg-background-surface overflow-hidden relative">
                     <div className="flex items-center justify-between mb-8">
                        <div>
-                          <h3 className="text-3xl font-serif italic text-text-title mb-3">Entity Report: Quantum Silicon Corp.</h3>
+                          <h3 className="text-2xl font-bold tracking-tight text-text-title mb-2">Entity Report: Quantum Silicon Corp.</h3>
                           <div className="flex gap-2">
-                             <span className="px-2 py-0.5 bg-bg-panel text-text-body text-[10px] uppercase font-bold tracking-widest border border-border-subtle">Organization</span>
-                             <span className="px-2 py-0.5 bg-bg-deep text-text-subtle text-[10px] uppercase font-bold tracking-widest border border-border-subtle">Material Science</span>
+                             <span className="px-2.5 py-0.5 bg-background-deep text-text-body text-xs font-semibold rounded-md border border-border-subtle">Organization</span>
+                             <span className="px-2.5 py-0.5 bg-background-deep text-text-subtle text-xs font-semibold rounded-md border border-border-subtle">Material Science</span>
                           </div>
                        </div>
                        <div className="text-right">
-                          <div className="text-[10px] text-text-subtle mb-2 uppercase tracking-[0.2em] font-medium">Trust Score</div>
-                          <div className="text-4xl font-serif italic text-highlight-color font-bold">94/100</div>
+                          <div className="text-xs text-text-subtle mb-1 font-semibold">Trust Score</div>
+                          <div className="text-3xl font-bold text-highlight-color font-mono">94/100</div>
                        </div>
                     </div>
 
                     <div className="space-y-4">
                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="p-6 border border-border-subtle bg-bg-surface hover:border-border-accent transition-colors">
-                             <div className="flex items-start justify-between mb-4">
-                                <div className="text-sm font-medium text-text-body pr-4 leading-relaxed">Breakthrough reported in silicon spin qubit fidelity at 99.9%</div>
-                                <div className="shrink-0 flex items-center text-[10px] uppercase tracking-widest font-semibold text-highlight-color bg-highlight-color/10 border border-highlight-color/20 px-2 py-1">
+                          <div key={i} className="p-5 rounded-xl border border-border-subtle bg-background-deep/50 hover:border-border-accent transition-colors">
+                             <div className="flex items-start justify-between mb-3">
+                                <div className="text-sm font-semibold text-text-body pr-4 leading-relaxed">Breakthrough reported in silicon spin qubit fidelity at 99.9%</div>
+                                <div className="shrink-0 flex items-center text-xs font-semibold text-highlight-color bg-highlight-color/10 border border-highlight-color/20 px-2.5 py-1 rounded-full">
                                    <ShieldCheck className="h-3 w-3 mr-1" /> High Confidence
                                 </div>
                              </div>
                              <div className="flex items-center justify-between text-xs text-text-subtle">
-                                <div className="flex items-center gap-2 uppercase tracking-wider text-[10px]">
-                                   <span className="w-1.5 h-1.5 bg-text-subtle/55"></span> Nature Physics Journal &bull; Oct 2024
+                                <div className="flex items-center gap-2 font-medium">
+                                   <span className="w-1.5 h-1.5 rounded-full bg-primary"></span> Nature Physics Journal &bull; Oct 2024
                                 </div>
-                                <a href="#" className="hover:text-text-title flex items-center uppercase tracking-widest text-[10px] font-semibold">View Evidence <ArrowRight className="h-3 w-3 ml-1" /></a>
+                                <a href="#" className="hover:text-text-title flex items-center font-semibold text-primary">View Evidence <ArrowRight className="h-3 w-3 ml-1" /></a>
                              </div>
                           </div>
                        ))}
@@ -93,33 +94,33 @@ export function Home() {
       </section>
 
       {/* Value Props */}
-      <section className="py-32 bg-bg-surface border-t border-border-subtle">
+      <section className="py-32 bg-background-surface border-t border-border-subtle">
          <div className="container mx-auto px-12 max-w-7xl">
             <div className="text-center mb-24 max-w-3xl mx-auto">
-               <h2 className="text-4xl md:text-5xl font-serif italic text-text-title mb-6">Intelligence built for high-stakes environments.</h2>
+               <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-text-title mb-6">Intelligence built for high-stakes environments.</h2>
                <p className="text-sm tracking-wide text-text-subtle leading-relaxed">Generic AI hallucinates. CredenceAI maps the provenance graph of every assertion back to verifiable sources.</p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-12">
-               <div className="p-8 border border-border-subtle bg-bg-deep">
-                  <div className="h-12 w-12 border border-border-subtle bg-bg-surface flex items-center justify-center mb-8">
-                     <Search className="h-5 w-5 text-text-title" />
+            <div className="grid md:grid-cols-3 gap-8">
+               <div className="p-8 rounded-2xl border border-border-subtle bg-background-deep shadow-xs">
+                  <div className="h-12 w-12 rounded-xl border border-border-subtle bg-background-surface flex items-center justify-center mb-6 text-primary">
+                     <Search className="h-5 w-5" />
                   </div>
-                  <h3 className="text-lg font-serif italic text-text-title mb-4">Deep Source Search</h3>
+                  <h3 className="text-xl font-bold tracking-tight text-text-title mb-3">Deep Source Search</h3>
                   <p className="text-text-body text-sm leading-relaxed">Query across academic journals, regulatory filings, dark web archives, and global news instantly.</p>
                </div>
-               <div className="p-8 border border-border-subtle bg-bg-deep">
-                  <div className="h-12 w-12 border border-border-subtle bg-bg-surface flex items-center justify-center mb-8">
-                     <ShieldCheck className="h-5 w-5 text-text-title" />
+               <div className="p-8 rounded-2xl border border-border-subtle bg-background-deep shadow-xs">
+                  <div className="h-12 w-12 rounded-xl border border-border-subtle bg-background-surface flex items-center justify-center mb-6 text-primary">
+                     <ShieldCheck className="h-5 w-5" />
                   </div>
-                  <h3 className="text-lg font-serif italic text-text-title mb-4">Verifiable Scoring</h3>
+                  <h3 className="text-xl font-bold tracking-tight text-text-title mb-3">Verifiable Scoring</h3>
                   <p className="text-text-body text-sm leading-relaxed">Every claim includes a dynamic trust score generated by checking cross-source corroboration and author history.</p>
                </div>
-               <div className="p-8 border border-border-subtle bg-bg-deep">
-                  <div className="h-12 w-12 border border-border-subtle bg-bg-surface flex items-center justify-center mb-8">
-                     <Database className="h-5 w-5 text-text-title" />
+               <div className="p-8 rounded-2xl border border-border-subtle bg-background-deep shadow-xs">
+                  <div className="h-12 w-12 rounded-xl border border-border-subtle bg-background-surface flex items-center justify-center mb-6 text-primary">
+                     <Database className="h-5 w-5" />
                   </div>
-                  <h3 className="text-lg font-serif italic text-text-title mb-4">API & Integration</h3>
+                  <h3 className="text-xl font-bold tracking-tight text-text-title mb-3">API & Integration</h3>
                   <p className="text-text-body text-sm leading-relaxed">Export findings instantly to JSON/CSV or pipe real-time intelligence directly into your existing dashboard.</p>
                </div>
             </div>
@@ -127,9 +128,9 @@ export function Home() {
             {/* CredenceAI vs Traditional Solutions Section (from PDF PAGE 1) */}
             <div className="mt-32 pt-20 border-t border-border-subtle/60">
                <div className="text-center mb-16 max-w-2xl mx-auto">
-                  <span className="text-[10px] uppercase tracking-widest text-[#10b981] font-bold bg-[#10b981]/10 border border-[#10b981]/20 px-3 py-1 inline-block mb-3">Architectural Comparison</span>
-                  <h2 className="text-3xl md:text-4xl font-serif italic text-text-title">What separates CredenceAI from legacy tools?</h2>
-                  <p className="text-xs text-text-subtle uppercase tracking-widest font-mono mt-2">A direct analysis of structural limits vs. the CredenceAI solution framework</p>
+                  <span className="text-xs uppercase tracking-wider text-primary font-bold bg-primary/10 border border-primary/20 px-3 py-1 rounded-full inline-block mb-3">Architectural Comparison</span>
+                  <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-text-title">What separates CredenceAI from legacy tools?</h2>
+                  <p className="text-xs text-text-subtle mt-2 font-medium">A direct analysis of structural limits vs. the CredenceAI solution framework</p>
                </div>
 
                <div className="border border-border-subtle overflow-x-auto bg-bg-deep">

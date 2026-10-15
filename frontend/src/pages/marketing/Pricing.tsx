@@ -59,8 +59,8 @@ export function Pricing() {
     <div className="bg-bg-deep pb-32 min-h-screen text-text-body">
       {/* Header */}
       <div className="pt-32 pb-24 text-center px-12 max-w-3xl mx-auto">
-         <h1 className="text-5xl md:text-6xl font-serif italic mb-8 text-text-title tracking-tight">Simple, transparent pricing</h1>
-         <p className="text-sm tracking-wide text-text-subtle font-sans border-l border-border-subtle pl-6 leading-relaxed max-w-xl mx-auto text-left">
+         <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-text-title">Simple, transparent pricing</h1>
+         <p className="text-base text-text-subtle font-sans border-l-2 border-primary/40 pl-6 leading-relaxed max-w-xl mx-auto text-left">
            Whether you're an independent investigator or a global intelligence team, we have a plan designed to scale with your research needs.
          </p>
       </div>
@@ -72,22 +72,22 @@ export function Pricing() {
                <div 
                  key={tier.name}
                  className={cn(
-                   "border flex flex-col bg-bg-surface p-10 transition-colors duration-300",
-                   tier.highlight ? "border-border-accent relative" : "border-border-subtle"
+                   "border flex flex-col bg-background-surface rounded-2xl p-8 transition-colors duration-300 shadow-card",
+                   tier.highlight ? "border-primary shadow-[0_0_20px_rgba(16,185,129,0.15)] relative" : "border-border-subtle"
                  )}
                >
                   {tier.highlight && (
-                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-accent text-accent-foreground border border-border-accent text-[10px] font-bold px-4 py-2 uppercase tracking-[0.2em]">
+                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
                         Most Popular
                      </div>
                   )}
                   <div className="mb-8">
-                     <h3 className="font-serif italic text-2xl text-text-title mb-4">{tier.name}</h3>
-                     <p className="text-xs text-text-subtle tracking-wide h-10">{tier.description}</p>
+                     <h3 className="font-bold tracking-tight text-2xl text-text-title mb-2">{tier.name}</h3>
+                     <p className="text-xs text-text-subtle tracking-normal h-10 font-medium leading-relaxed">{tier.description}</p>
                   </div>
-                  <div className="mb-8 flex items-baseline text-5xl font-serif text-text-title">
+                  <div className="mb-8 flex items-baseline text-4xl font-bold text-text-title font-sans">
                      {tier.price}
-                     <span className="text-[10px] uppercase tracking-widest text-text-subtle ml-2">{tier.period}</span>
+                     <span className="text-xs font-semibold text-text-subtle ml-2">{tier.period}</span>
                   </div>
                   <Button 
                     asChild 

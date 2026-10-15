@@ -235,6 +235,13 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(preferences.router, prefix="/api")
 app.include_router(enterprise.router, prefix="/api")
 
+# CredenceAI 2.0 API surface (v2)
+from app.api.v2 import research_runs as research_runs_v2
+from app.api.v2 import monitors as monitors_v2
+
+app.include_router(research_runs_v2.router, prefix="/api/v2")
+app.include_router(monitors_v2.router, prefix="/api/v2")
+
 
 @app.get("/")
 def read_root():

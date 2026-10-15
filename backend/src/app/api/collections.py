@@ -81,6 +81,15 @@ def create_collection(
     return db_collection
 
 
+@router.get("/{collection_id}", response_model=CollectionResponse)
+def get_collection(
+    collection_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return _get_user_collection(db, collection_id, current_user.id)
+
+
 @router.delete("/{collection_id}")
 def delete_collection(
     collection_id: str,

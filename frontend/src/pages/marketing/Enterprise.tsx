@@ -29,7 +29,7 @@ export function Enterprise() {
   return (
     <div className="bg-bg-deep pb-32 min-h-screen text-text-body font-sans select-none">
       <div className="pt-32 pb-24 text-center px-12 max-w-3xl mx-auto">
-        <h1 className="text-5xl md:text-6xl font-serif italic mb-8 text-text-title tracking-tight">Enterprise compliance</h1>
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-text-title">Enterprise compliance</h1>
         <p className="text-sm tracking-wide text-text-body font-sans border-l-2 border-primary pl-6 leading-relaxed text-left">
           Deploy CredenceAI in regulated financial, defense, or scientific research groups with absolute assurance, on-premise, or private VPCs.
         </p>
@@ -38,29 +38,29 @@ export function Enterprise() {
       <div className="container mx-auto px-12 max-w-6xl space-y-16">
         {/* Features list */}
         <div className="grid md:grid-cols-3 gap-8">
-          <div className="p-8 rounded-2xl bg-bg-deep neu-outset border-none">
+          <div className="p-8 rounded-2xl bg-background-surface border border-border-subtle shadow-card hover:shadow-soft transition-all">
             <Server className="h-6 w-6 text-primary mb-6" />
-            <h3 className="text-lg font-serif italic text-text-title mb-3">Air-Gapped Deployment</h3>
-            <p className="text-xs text-text-subtle leading-relaxed">Run the entire ingestion and model loop on private machines with complete local databases and zero egress.</p>
+            <h3 className="text-lg font-bold tracking-tight text-text-title mb-2">Air-Gapped Deployment</h3>
+            <p className="text-xs text-text-subtle leading-relaxed font-medium">Run the entire ingestion and model loop on private machines with complete local databases and zero egress.</p>
           </div>
-          <div className="p-8 rounded-2xl bg-bg-deep neu-outset border-none">
+          <div className="p-8 rounded-2xl bg-background-surface border border-border-subtle shadow-card hover:shadow-soft transition-all">
             <Eye className="h-6 w-6 text-primary mb-6" />
-            <h3 className="text-lg font-serif italic text-text-title mb-3">Audit Trails</h3>
-            <p className="text-xs text-text-subtle leading-relaxed">Cryptographically log and track every query, analyst review, and evidence export to comply with regulatory standards.</p>
+            <h3 className="text-lg font-bold tracking-tight text-text-title mb-2">Audit Trails</h3>
+            <p className="text-xs text-text-subtle leading-relaxed font-medium">Cryptographically log and track every query, analyst review, and evidence export to comply with regulatory standards.</p>
           </div>
-          <div className="p-8 rounded-2xl bg-bg-deep neu-outset border-none">
+          <div className="p-8 rounded-2xl bg-background-surface border border-border-subtle shadow-card hover:shadow-soft transition-all">
             <FileSpreadsheet className="h-6 w-6 text-primary mb-6" />
-            <h3 className="text-lg font-serif italic text-text-title mb-3">Custom Indexes</h3>
-            <p className="text-xs text-text-subtle leading-relaxed">Upload internal intelligence documents, emails, and sensitive research files to integrate them into your search graphs securely.</p>
+            <h3 className="text-lg font-bold tracking-tight text-text-title mb-2">Custom Indexes</h3>
+            <p className="text-xs text-text-subtle leading-relaxed font-medium">Upload internal intelligence documents, emails, and sensitive research files to integrate them into your search graphs securely.</p>
           </div>
         </div>
 
         {/* Contact panel */}
-        <div className="rounded-2xl overflow-hidden bg-bg-deep neu-outset border-none">
+        <div className="rounded-2xl overflow-hidden bg-background-surface border border-border-subtle shadow-card">
           <div className="p-8 md:p-10 border-b border-border-subtle/10 bg-bg-panel/40 flex items-center justify-between">
             <div>
-              <h3 className="text-2xl font-serif italic text-text-title">Inquire regarding custom pilots</h3>
-              <p className="text-xs text-text-subtle tracking-wider uppercase mt-1">Talk to our security representatives.</p>
+              <h3 className="text-2xl font-bold tracking-tight text-text-title">Inquire regarding custom pilots</h3>
+              <p className="text-xs text-text-subtle mt-1 font-medium">Talk to our security representatives.</p>
             </div>
             <Mail className="h-6 w-6 text-primary hidden md:block" />
           </div>
@@ -94,7 +94,7 @@ export function Enterprise() {
                   value={requirements}
                   onChange={(e) => setRequirements(e.target.value)}
                   required
-                  className="w-full rounded-xl border-none bg-bg-deep neu-inset px-4 py-3 text-sm text-text-body placeholder:text-text-subtle/50 h-28 focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                  className="w-full rounded-xl border border-border-subtle bg-background-panel px-4 py-3 text-sm text-text-body placeholder:text-text-subtle/50 h-28 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-border-accent resize-none shadow-xs"
                 />
                 <Button type="submit" className="w-full">Initialize Briefing</Button>
               </div>

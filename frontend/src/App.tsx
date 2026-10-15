@@ -25,6 +25,7 @@ import { Billing } from "./pages/app/Billing";
 import { Collections } from "./pages/app/Collections";
 import { Monitors } from "./pages/app/Monitors";
 import { Settings } from "./pages/app/Settings";
+import { ResearchWorkspace } from "./pages/app/ResearchWorkspace";
 import { ApiKeepAlive } from "./components/ApiKeepAlive";
 
 export default function App() {
@@ -56,7 +57,8 @@ export default function App() {
         {/* App Routes */}
         <Route path="/app" element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route index element={<Navigate to="research" replace />} />
+            <Route path="research" element={<ResearchWorkspace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="search" element={<SearchApp />} />
             <Route path="collections" element={<Collections />} />
