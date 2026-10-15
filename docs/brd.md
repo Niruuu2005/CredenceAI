@@ -21,6 +21,17 @@ CredenceAI 2.0 is a proposed evolution of an open-source research platform. It h
 
 Business opportunity: provide a free-first, self-hostable workflow converting retrieved sources into inspectable evidence and reproducible research outcomes.
 
+# 2.1 Unique Selling Proposition (USP) & Competitive Positioning
+
+CredenceAI occupies a distinct tier between raw web search engines, conversational generative AI chat, and proprietary research tools:
+
+| Platform Class | Representative Tools | Primary Limitation | CredenceAI Differentiation |
+|---|---|---|---|
+| **Raw Search Engines** | Google, Bing, DuckDuckGo | Returns millions of unranked URLs without synthesizing factual validity; ads/SEO manipulation. | Converts multi-source hits into atomic propositions with passage-level evidence relations. |
+| **Conversational Generative AI** | Perplexity AI, ChatGPT Search | Generates fluent text with plausible links; frequently hallucinate citations or conflate repetition with truth. | **Eliminates probability theater:** 100% frozen citations, cryptographic hashes, typed relations (`supports`/`refutes`). |
+| **Academic Literature Search** | Consensus, Semantic Scholar | Restricted purely to scientific papers; lacks web, civic data, news wire, or corporate filing integration. | Cross-domain integration (Wikidata, Wikipedia, Crossref, OpenAlex, Common Crawl, GDELT, regulatory filings). |
+| **Proprietary Risk Intelligence** | Bloomberg, LexisNexis, Factiva | Prohibitively expensive ($20k+/yr); closed black-box models inaccessible to community fact-checkers. | Free-first, 100% open-source, modular monolith deployable on standard free-tier cloud stacks. |
+
 # 3. Objectives and expected value
 
 | ID    | Business objective                                       | Success indication                                                        |
@@ -31,18 +42,32 @@ Business opportunity: provide a free-first, self-hostable workflow converting re
 | BO-04 | Make small-team adoption practical                       | Pilot completion and repeat use among student/community teams             |
 | BO-05 | Control trust, legal and operational risks               | Tenant isolation, permitted retention, bounded run costs                  |
 
-# 4. Stakeholders and target users
+# 4. Stakeholders, Personas & Public Impact Use Cases
 
-| Stakeholder                    | Primary need                                                     |
-|--------------------------------|------------------------------------------------------------------|
-| Student researchers            | Cited brief, papers, limitations and reproducible investigations |
-| Campus/community fact-checkers | Claim-to-passage support, contradictions and review              |
-| Small newsrooms                | Source dates, lineage and conflict mapping                       |
-| NGO research teams             | Shareable policy investigations and monitoring                   |
-| Developers/analysts            | Typed API/SDK and evidence export                                |
-| Workspace administrators       | Membership, permissions, budgets and retention controls          |
+## 4.1 Stakeholder Personas
 
-Initial launch focus: student/campus and community fact-checking groups. Enterprise intelligence and general-purpose autonomous chat are not initial target segments.
+| Stakeholder | Primary Need | Real-World Value |
+|---|---|---|
+| **Student Researchers** | Cited brief, papers, limitations and reproducible investigations | Eliminates citation fabrication in academic projects |
+| **Campus & Community Fact-Checkers** | Claim-to-passage support, contradiction mapping, and reviewer audit | Streamlines verification of local news & social media rumors |
+| **Small Newsrooms & Independent Journalists** | Source dates, wire lineage, and syndication detection | Distinguishes original reporting from syndicated wire copy |
+| **Public Policy NGOs & Civic Watchdogs** | Shareable policy investigations and continuous monitoring | Tracks legislative statements and budget allocations over time |
+| **Developers & Risk Analysts** | Typed API/SDK and structured evidence export | Integrates verified grounding into internal decision pipelines |
+| **Workspace Administrators** | Multi-tenant membership, quotas, and retention policies | Enforces strict data isolation and budget governance |
+
+## 4.2 Rural and Urban Public Impact Domains
+
+1. **Rural Agriculture & Food Security:**
+   - *Subsidy & Yield Claims:* Audit claims regarding drought-resistant seeds, localized rainfall statistics, and government fertilizer subsidy allocations.
+   - *Price Gouging & Market Rumors:* Verify regional commodity prices against mandi/wholesale market registries to protect smallholder farmers from predatory middlemen.
+2. **Rural & Community Healthcare:**
+   - *Public Health Rumors:* Rapidly audit viral health rumors (e.g., unauthorized remedies, contaminated water sources) against peer-reviewed WHO and PubMed literature.
+   - *Clinic Funding Verification:* Cross-reference stated government health center allocations with physical procurement and public expenditure records.
+3. **Urban Civic Governance & Municipal Transparency:**
+   - *Infrastructure Appropriations:* Audit municipal statements on road construction, flood defense projects, and public transit funding against published audit reports.
+   - *Zoning & Land Use Disputes:* Verify industrial permit claims against regional environmental regulatory registries.
+4. **Corporate Integrity & Environmental Accountability:**
+   - *Greenwashing Audits:* Contrast corporate ESG disclosures (e.g., "carbon-neutral operations by 2024") with independent satellite telemetry, emissions data, and SEC filings.
 
 # 5. Business scope
 
@@ -102,6 +127,21 @@ A campus research team submits a scoped public-policy claim, chooses Investigate
 | Business economics          | Measure cost per completed run, adapter availability and source coverage             |
 
 Targets above are proposed acceptance thresholds from the project definition, not measured outcomes.
+
+# 8.1 Commercial Sustainability & Subscription Model
+
+CredenceAI follows a sustainable open-core model designed to ensure indefinite free access for student researchers and community newsrooms while monetizing high-volume organizational workflows:
+
+| Tier | Target Persona | Monthly Price | Quotas & Capabilities |
+|---|---|---|---|
+| **Community Free** | Student researchers, independent fact-checkers, civic watchdogs | **$0 / mo** | 50 research queries/day, 5 active monitors, 10 collections, standard public adapters, community Discord support. |
+| **Research Pro** | Professional journalists, boutique investigative firms | **$29 / mo** | 500 research queries/day, unlimited monitors, automated scheduled runs, PDF/JSON export, priority worker dispatch. |
+| **Institutional / NGO** | University labs, large newsrooms, international NGOs | **Custom / Annual** | Dedicated tenant isolation, custom source adapter integrations, SLA guarantees, on-premises / VPC deployment. |
+
+**Stripe Billing Integration:**
+- Production subscriptions are managed via Stripe Checkout and Customer Portal (`/api/billing/*`).
+- Idempotent webhook handling synchronizes user subscription state, tier upgrades, and grace periods.
+- Free-tier accounts do not require credit card entry.
 
 # 9. Dependencies, assumptions and constraints
 

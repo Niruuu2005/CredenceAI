@@ -501,9 +501,183 @@ The project definition does not finalize the following; resolve through implemen
 
 ---
 
+## 19. Monorepo repository layout & directory map
+
+CredenceAI is structured as an integrated monorepo ensuring tight contracts between backend services, the frontend application, and client SDKs:
+
+```text
+CredenceAI/
+├── backend/                  # FastAPI service & Celery worker
+│   ├── Dockerfile            # Container definition (production Render image)
+│   ├── alembic.ini           # Migration configuration
+│   ├── migrations/versions/  # Forward/idempotent schema migrations
+│   ├── src/app/
+│   │   ├── main.py           # Application entrypoint & lifespan
+│   │   ├── config.py         # Pydantic Settings
+│   │   ├── models.py         # SQLAlchemy ORM schemas
+│   │   ├── api/v2/           # Epistemic research run routes
+│   │   ├── identity/         # Multi-tenant AuthContext & guest access
+│   │   ├── services/         # Evidence engine, keepalive, crawler, synthesis
+│   │   └── worker.py         # Celery task definitions
+│   └── tests/                # Unit, property, and integration test suite
+├── frontend/                 # React 19 + Vite + Tailwind SPA
+│   ├── vercel.json           # Vercel deployment & /api rewrite rules
+│   ├── src/
+│   │   ├── pages/app/        # ResearchWorkspace, SearchApp, Dashboard, Monitors
+│   │   ├── lib/              # api.ts, researchFallback.ts (zero-downtime engine)
+│   │   ├── components/       # ThemeToggle (Dark, Light, Beige), ApiKeepAlive
+│   │   └── index.css         # 3-Palette design tokens & brutalist typography
+├── sdk/                      # Open-source TypeScript SDK (@credenceai/sdk)
+│   ├── src/                  # CredenceAIClient, blocking run(), types
+│   └── tsup.config.ts        # ESM + CJS bundle output
+├── scripts/                  # Operations & automation
+│   ├── dev.ps1               # Local development launcher
+│   ├── prod-check.ps1        # Pre-flight production validation
+│   ├── keepalive_ping.py     # Standalone 40-45s keep-alive runner
+│   └── verify-deployment.ps1 # Cloud smoke test script
+├── docs/                     # Canonical documentation suite
+│   ├── CredenceAI 2.0.md     # Main Project Master Guide
+│   ├── brd.md                # Business Requirements Document
+│   ├── srs.md                # Software Requirements Specification
+│   ├── architecture.md       # Technical Architecture & Operations (this document)
+│   └── checklist.md          # 100% Completion & Release Acceptance Checklist
+├── render.yaml               # Render Infrastructure Blueprint
+└── README.md                 # Public project overview & quickstart
+```
+
+---
+
+## 20. Environment variable reference & configuration catalog
+
+| Variable | Type | Default | Mode | Purpose |
+|---|---|---|---|---|
+| `APP_ENV` | `string` | `local` | All | Application environment: `local`, `development`, `production`. |
+| `DATABASE_URL` | `string` | `sqlite:///./credenceai.db` | All | SQLAlchemy connection string (Neon Postgres in production). |
+| `REDIS_URL` | `string` | `redis://localhost:6379/0` | All | Celery message broker & cache (`rediss://` on Upstash). |
+| `REDIS_SSL_CERT_REQS` | `string` | `CERT_REQUIRED` | Prod | Upstash Redis SSL parameter. |
+| `JWT_SECRET` | `string` | — | Prod | Secret key (min 16 chars) for signing session tokens. |
+| `CORS_ALLOWED_ORIGINS` | `json` | `["http://localhost:3000"]` | All | Allowed frontend origins for cross-origin API calls. |
+| `CELERY_ALWAYS_EAGER` | `boolean` | `true` | Dev/Free | Run Celery tasks synchronously inline in API process. |
+| `MOCK_SERVICES` | `boolean` | `true` (dev) | All | Fallback mocks for external APIs (`false` in production). |
+| `ENABLE_API_KEY_AUTH` | `boolean` | `true` | Prod | Require `X-API-Key` or Bearer JWT on protected endpoints. |
+| `SELF_KEEPALIVE_ENABLED` | `boolean` | `true` | Prod | Enable automated background keep-alive ping loop. |
+| `SELF_KEEPALIVE_INTERVAL_SEC` | `int` | `42` | Prod | Randomized 40–45s interval between keep-alive pings. |
+| `API_PUBLIC_URL` | `string` | `https://credenceai-api.onrender.com` | Prod | Public backend URL for self-ping keep-alive. |
+| `GOOGLE_CLIENT_ID` | `string` | — | Prod | Google Cloud OAuth 2.0 Client ID. |
+| `GOOGLE_CLIENT_SECRET` | `string` | — | Prod | Google Cloud OAuth 2.0 Client Secret. |
+| `GOOGLE_REDIRECT_URI` | `string` | — | Prod | `https://<frontend>/auth/google/callback`. |
+| `GITHUB_CLIENT_ID` | `string` | — | Prod | GitHub OAuth Application Client ID. |
+| `GITHUB_CLIENT_SECRET` | `string` | — | Prod | GitHub OAuth Application Client Secret. |
+| `GITHUB_REDIRECT_URI` | `string` | — | Prod | `https://<frontend>/auth/github/callback`. |
+
+---
+
+## 21. Production split deployment runbook (Vercel + Render + Neon + Upstash)
+
+### 21.1 Free-Tier Cloud Architecture
+- **Frontend:** Hosted on Vercel Edge Network (`https://credence-ai-gamma.vercel.app`).
+  - `vercel.json` proxies `/api/:path*` to `https://credenceai-api.onrender.com/api/:path*`.
+  - Zero CORS overhead and zero exposed Render URLs to end-user browsers.
+- **Backend:** Hosted on Render Free Web Service (`credenceai-api`).
+  - Containerized FastAPI service defined in `backend/Dockerfile`.
+  - Free plan uses `CELERY_ALWAYS_EAGER=true` with FastAPI background tasks.
+- **Database:** Serverless PostgreSQL on Neon (`DATABASE_URL=postgresql://...`).
+- **Cache / Broker:** Upstash Serverless Redis (`REDIS_URL=rediss://...` with `ssl_cert_reqs=CERT_REQUIRED`).
+
+### 21.2 Deployment Verification Script
+Execute from PowerShell to smoke-test live cloud infrastructure:
+```powershell
+.\scripts\verify-deployment.ps1 -ApiUrl "https://credenceai-api.onrender.com" -ApiKey "cred_sk_YOUR_KEY"
+```
+
+---
+
+## 22. OAuth setup & callback configuration
+
+1. **Google Cloud Console:**
+   - Authorized Javascript Origins: `https://credence-ai-gamma.vercel.app`.
+   - Authorized Redirect URI: `https://credence-ai-gamma.vercel.app/auth/google/callback`.
+2. **GitHub Developer Settings:**
+   - Homepage URL: `https://credence-ai-gamma.vercel.app`.
+   - Authorization Callback URL: `https://credence-ai-gamma.vercel.app/auth/github/callback`.
+3. **Troubleshooting:**
+   - `503 OAuth not configured`: Set `GOOGLE_*` or `GITHUB_*` env vars on Render dashboard and redeploy.
+   - `redirect_uri_mismatch`: Ensure redirect URI matches exactly, including trailing slashes and HTTPS.
+
+---
+
+## 23. Automated 40–45s inactivity keep-alive engine
+
+To overcome free-tier cloud platform idling (where containers spin down after 15 minutes of inactivity), CredenceAI implements a multi-layered keep-alive architecture:
+
+1. **Backend Self-Keepalive Service (`self_keepalive.py`):**
+   - Asynchronous daemon task initialized in `main.py` lifespan.
+   - Sleeps for a randomized duration between **40 and 45 seconds** (`SELF_KEEPALIVE_INTERVAL_SEC: 42`).
+   - Issues non-blocking HTTP GET requests to `${API_PUBLIC_URL}/api/health`.
+2. **Frontend Inactivity Heartbeat (`ApiKeepAlive.tsx`):**
+   - React component mounted at root of the web application.
+   - Dispatches a lightweight ping to `/api/health` every 40,000–45,000 ms during active browser sessions.
+3. **Standalone External Ping Script (`scripts/keepalive_ping.py`):**
+   - Zero-dependency Python script designed for local CLI or cron execution.
+   - Runs continuous randomized 40–45s ping loops with retry backoff and status logging:
+     ```bash
+     python scripts/keepalive_ping.py --url https://credenceai-api.onrender.com/api/health --interval 42
+     ```
+4. **Resilient In-Browser Fallback Engine (`researchFallback.ts`):**
+   - If the backend is cold-starting or unreachable, the frontend seamlessly executes factual audits locally, ensuring zero-downtime exploration.
+
+---
+
+## 24. TypeScript SDK architecture (@credenceai/sdk)
+
+The open-source `@credenceai/sdk` package provides clean TypeScript bindings:
+
+```ts
+import { CredenceAIClient } from "@credenceai/sdk";
+
+const client = new CredenceAIClient({
+  apiKey: process.env.CREDENCEAI_API_KEY!,
+  baseUrl: "https://credence-ai-gamma.vercel.app",
+});
+
+// High-level blocking execution
+const result = await client.run("Did clean energy investments surpass fossil fuels in 2024?");
+console.log(result.status, result.data);
+```
+
+- **Authentication:** `X-API-Key: cred_sk_...` or Bearer JWT token.
+- **Client Features:** Built-in exponential backoff retry, trace-ID preservation, client-side input validation, ESM/CJS dual-build outputs via `tsup`.
+
+---
+
+## 25. Day-2 operations, backups, and health monitoring
+
+- **Health Endpoints:**
+  - `GET /api/health`: Service liveness, version, and dependency check.
+  - `GET /api/health/ready`: Kubernetes / Render readiness probe.
+- **Postgres Backups:** Automated weekly `pg_dump` via GitHub Actions (`.github/workflows/backup.yml`). Manual backup:
+  ```bash
+  pg_dump "$DATABASE_URL" > backup_$(date +%Y%m%d).sql
+  psql "$DATABASE_URL" < backup.sql
+  ```
+- **Rate Limiting:** Sliding-window rate limiter per IP / API key (default: 60 req/min for free users, 300 req/min for authenticated keys).
+
+---
+
+## 26. Testing strategy & benchmark validation
+
+- **Unit & Property Tests:**
+  - `pytest` test suite with `hypothesis` property-based testing in `backend/tests/`.
+  - SQLite in-memory test runner: `DATABASE_URL=sqlite:///:memory: APP_ENV=local pytest -q`.
+- **Frontend & SDK Verification:**
+  - `npm run lint` (`tsc --noEmit`) and `vitest` for SDK contracts.
+  - Playwright E2E browser test automation verifying end-to-end user workflows.
+
+---
+
 ### References
 
-- CredenceAI, *Project definition, product requirements, and architecture specification*, version 2.0, 14 October 2026 (user-provided project definition).
+- CredenceAI, *Project definition, product requirements, and architecture specification*, version 2.0, 14 October 2026.
 - Existing repository: <https://github.com/Niruuu2005/CredenceAI>
 - W3C PROV-O: <https://www.w3.org/TR/prov-o/>
 - OWASP Top 10 for LLM Applications: <https://owasp.org/www-project-top-10-for-large-language-model-applications/>

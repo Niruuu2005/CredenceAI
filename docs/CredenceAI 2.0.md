@@ -47,6 +47,19 @@ This creates four practical problems:
 
 **Opportunity:** provide a transparent, affordable process that converts retrieved material into *inspectable evidence*, not merely fluent answers.
 
+### 2.1 How CredenceAI works in simple words
+
+CredenceAI is a **high-trust evidence intelligence engine** that doesn't just search the web, but also verifies the information it finds to make sure it is accurate, safe, and organized:
+
+1. **Submit an inquiry:** You ask a question (e.g., *"Did clean energy investments surpass fossil fuels globally in 2024?"*) via the Research Studio or API.
+2. **Intent classification:** The engine determines what research domain you are exploring (empirical facts, breaking news, scholarly literature, or corporate filings).
+3. **Multi-facet planning:** The AI Planner breaks your inquiry into verifiable atomic propositions and determines optimal knowledge sources (Wikidata, Wikipedia, Crossref, OpenAlex, news syndication).
+4. **Governed acquisition:** Crawlers check robots.txt, enforce strict SSRF protections against internal IPs, and respect rate limits.
+5. **Raw snapshot preservation:** Content is archived in immutable storage with cryptographic SHA-256 hashes so findings remain permanently auditable.
+6. **Normalization & quality scoring:** Boilerplate, ads, and navigation clutter are stripped away. Source reliability, freshness, and substantive content are calibrated.
+7. **Deduplication & entity resolution:** Syndicated AP/Reuters reprints are grouped so duplicate coverage isn't mistaken for independent corroboration. Entities are grounded against Wikidata identifiers.
+8. **Evidence grounding & frozen reporting:** The system links atomic claims to specific text passages via typed relations (`supports`, `refutes`, `contradicts`, `insufficient_evidence`) and compiles an immutable brief with frozen citations.
+
 ## 3. Users and use cases
 
 | User | Main task | Valuable output |
@@ -148,6 +161,27 @@ Preserve legacy API mode values where needed; introduce clear v2 product semanti
 - **Report workspace:** citations, version information, export, share controls, and approval.
 - **Monitors & collections:** saved evidence, scheduled investigations, and change history.
 - **Settings:** workspace membership, API keys, quotas, retention, provider configuration.
+
+### 6.4 UI/UX architecture & 3-palette theme system
+
+The CredenceAI user interface balances an authoritative editorial aesthetic with modern, accessible interaction design:
+
+- **Curated 3-Theme System:**
+  1. **Dark Theme:** Rich ink-black/charcoal canvas (`#0a0a0a`), stone-gray panels (`#121212`), high-contrast text (`#e5e5e5`), and emerald trust accents (`#10b981`).
+  2. **Light Theme:** Alabaster warm-white paper canvas (`#fbfbf9`), crisp card panels (`#ffffff`), deep charcoal typography (`#1c1c1a`), and deep teal brand accents (`#0f766e`).
+  3. **Beige Theme (Light Sand & Warm Brown):** Soft light beige canvas (`#faf6ed`), normal beige panels (`#f3ebd9`), rich warm brown borders (`rgba(139, 90, 43, 0.22)`), deep espresso typography (`#26180d` / `#4d3725`), and warm brown accents (`#8b5a2b`).
+- **Editorial Brutalist Typography:**
+  - *Headings:* `Instrument Serif` (italicized) for archival, literary gravitas.
+  - *Metadata & Stats:* `JetBrains Mono` for confidence ratings, hashes, timestamps, and citation IDs.
+  - *Body Text:* `General Sans` (neo-grotesque) for high-legibility report reading.
+- **Responsive Navigation:**
+  - Full desktop sidebar with usage gauges and account status.
+  - Automatic sliding drawer layout for viewports `< 1024px` with a 44px touch-target mobile hamburger header.
+  - Zero unhandled modal interrupts; styled Radix dialogs replace browser `window.confirm` and `window.prompt`.
+- **Accessibility (WCAG AA):**
+  - High-contrast card text across all light/dark/beige modes.
+  - Visible keyboard focus rings (`focus-visible:ring-2`).
+  - Screen-reader accessible attributes (`aria-hidden` on Lucide icons, descriptive form labels).
 
 ## 7. System architecture
 
@@ -661,11 +695,67 @@ This is a **refactoring target**, not the repository's existing directory struct
 ## 23. External references and related project documents
 
 - Original project repository: https://github.com/Niruuu2005/CredenceAI
-- Project documentation in repository: `README.md`, `docs/architecture.md`, `docs/api.md`, `docs/database.md`, `docs/deployment.md`, `IMPROVEMENTS.md`
-- W3C provenance vocabulary (PROV-O): https://www.w3.org/TR/prov-o/
-- OWASP Top 10 for LLM Applications: https://owasp.org/www-project-top-10-for-large-language-model-applications/
-- NIST AI Risk Management Framework / Generative AI Profile: https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence
-- OpenTelemetry documentation: https://opentelemetry.io/docs/
+- Core documentation files in `docs/`:
+  - [`srs.md`](srs.md): Software Requirements Specification (functional, technical, and data design)
+  - [`brd.md`](brd.md): Business Requirements Document (value proposition, personas, public impact)
+  - [`architecture.md`](architecture.md): System Architecture, Technical Stack, and Deployment Runbooks
+  - [`checklist.md`](checklist.md): 100% Completion & Release Acceptance Checklist
+- Standards:
+  - W3C Provenance Vocabulary (PROV-O): https://www.w3.org/TR/prov-o/
+  - OWASP Top 10 for LLM Applications: https://owasp.org/www-project-top-10-for-large-language-model-applications/
+  - NIST AI Risk Management Framework: https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence
+  - OpenTelemetry Standards: https://opentelemetry.io/docs/
+
+## 24. Master changelog & platform milestones
+
+### Version 2.0.0 — Epistemic Evidence Intelligence (Current Release)
+- **Research Studio v2:** Dedicated factual inquiry workspace with 5-stage live execution (`planning` → `retrieving` → `extracting` → `verifying` → `reporting`).
+- **Resilient Fallback Engine:** Client-side zero-downtime execution engine (`researchFallback.ts`) ensuring flawless local and offline operation when cloud APIs are sleeping or cold-starting.
+- **3-Palette Theme System:** Dark, Light, and Beige (soft light beige canvas `#faf6ed`, normal beige panels `#f3ebd9`, warm brown borders `rgba(139, 90, 43, 0.22)`, and espresso typography).
+- **Public Guest Access:** Frictionless exploration via `user_public_guest` workspace; no mandatory login wall for public inquiry auditing.
+- **Automated Keep-Alive:** Randomized 40–45s inactivity keep-alive heartbeat loop preventing free-tier cloud sleep.
+
+### Version 0.6.1 — Deployment Hardening & Isolation
+- **Dependency Fix:** Added `email-validator` for enterprise API validation (`EmailStr`).
+- **Idempotent DB Migrations:** Platform completion migrations hardened for zero-downtime recovery on PostgreSQL.
+- **Adversarial Security Tests:** Gated mock auth bypass to `APP_ENV=local` only; multi-tenant workspace isolation verified.
+
+### Version 0.6.0 — Platform Completion & Agent Scaffolding
+- **Agent Orchestrator:** Wired `AgentOrchestrator`, `AgentWorkingMemory`, and specialized agents (`CrawlStrategy`, `Experiment`, `OpsRecovery`).
+- **API Surface:** Added user preferences, collections, monitors, and Stripe billing lifecycle.
+- **Redis SSL Fix:** Resolved Upstash `rediss://` SSL certificate requirements for Celery broker.
+
+---
+
+## 25. Contributing guidelines & engineering hygiene
+
+We welcome contributions from researchers, fact-checkers, and developers.
+
+### Development Workflow
+1. Fork and clone `https://github.com/Niruuu2005/CredenceAI.git`.
+2. Create a feature branch: `git checkout -b feat/your-feature-name`.
+3. Follow environment isolation: Python virtualenv (`.venv`) for backend, Node 20+ for frontend and SDK.
+4. Run code hygiene checks:
+   - Backend: `pytest -q` with `DATABASE_URL=sqlite:///:memory:` and `APP_ENV=local`.
+   - Frontend: `npm run lint` (`tsc --noEmit`) and `npm run build`.
+   - SDK: `npm test` and `npm run build`.
+5. Submit PR with linked evidence, test output, and clear rationale.
+
+### Commit Conventions
+Follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`). Ensure zero credentials, secrets, or internal URLs are committed.
+
+---
+
+## 26. Quickstart & deployment topology matrix
+
+| Setting | Local Developer Mode | Production Cloud Split |
+|---|---|---|
+| **Backend API** | `http://localhost:8000` (FastAPI / Uvicorn) | `https://credenceai-api.onrender.com` (Render Web Service) |
+| **Frontend App** | `http://localhost:3000` (Vite dev server) | `https://credence-ai-gamma.vercel.app` (Vercel Edge Network) |
+| **Database** | SQLite `sqlite:///./credenceai.db` | Neon Serverless PostgreSQL (`postgresql://...`) |
+| **Broker / Cache** | In-memory / Local Redis | Upstash Redis (`rediss://...`) |
+| **Keep-Alive Engine** | Disabled (local dev) | 40–45s inactivity self-ping active |
+| **Quick Command** | `powershell .\scripts\dev.ps1` | `git push origin master` (GitHub Actions CI/CD) |
 
 ---
 

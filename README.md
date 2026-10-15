@@ -5,7 +5,7 @@
 CredenceAI turns natural-language questions into multi-source evidence: it classifies intent, orchestrates retrieval (SearXNG, Wikidata, Wikipedia, GDELT, OpenAlex, Common Crawl), normalizes and scores results, and exposes them through a FastAPI backend, React app, and TypeScript SDK.
 
 [![CI](https://github.com/Niruuu2005/CredenceAI/actions/workflows/ci.yml/badge.svg)](https://github.com/Niruuu2005/CredenceAI/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](backend/requirements.txt)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](sdk/package.json)
 
@@ -50,7 +50,7 @@ npm run dev
 
 Open http://localhost:3000 → sign in → run a search from the app.
 
-**Production mode:** Frontend on Vercel proxies `/api` to Render. See [docs/deployment.md](docs/deployment.md) and run `.\scripts\prod-check.ps1` before deploy.
+**Production mode:** Frontend on Vercel proxies `/api` to Render. See [docs/architecture.md](docs/architecture.md#21-production-deployment-runbook-vercel--render) and run `.\scripts\prod-check.ps1` before deploy.
 
 ### Tests
 
@@ -71,13 +71,12 @@ cd ../frontend && npm run lint && npm run build
 ├── sdk/           @credenceai/sdk TypeScript client
 ├── agentgate/     NANDAHack Phase 2 microservice (separate Render deploy)
 ├── scripts/       dev.ps1, prod-check.ps1, e2e tests
-├── Submission/    Hackathon deliverables
-├── docs/          Architecture, API, deployment (see docs/REPO_LAYOUT.md)
+├── docs/          Consolidated Documentation Suite (SRS, BRD, Architecture, Checklist, Master)
 ├── .github/       CI workflows
 └── render.yaml    CredenceAI API Render blueprint
 ```
 
-Full map: [docs/REPO_LAYOUT.md](docs/REPO_LAYOUT.md)
+Full map: [docs/architecture.md#19-monorepo-structure--component-directory-map](docs/architecture.md#19-monorepo-structure--component-directory-map)
 
 ---
 
@@ -108,19 +107,19 @@ Full map: [docs/REPO_LAYOUT.md](docs/REPO_LAYOUT.md)
 
 ## Environment variables
 
-See [docs/environment.md](docs/environment.md). Copy examples — never commit real secrets:
+See [docs/architecture.md#20-environment-variables-reference-catalog](docs/architecture.md#20-environment-variables-reference-catalog). Copy examples — never commit real secrets:
 
 - `backend/.env.example`
 - `frontend/.env.example`
 - `sdk/.env.example`
 
-Production requires `JWT_SECRET`, at least one OAuth provider (Google and/or GitHub), and Stripe keys for paid plans. See [docs/manual-setup.md](docs/manual-setup.md).
+Production requires `JWT_SECRET`, at least one OAuth provider (Google and/or GitHub), and Stripe keys for paid plans. See [docs/architecture.md#22-oauth-authentication-setup--troubleshooting](docs/architecture.md#22-oauth-authentication-setup--troubleshooting).
 
 ---
 
 ## Deployment
 
-**Production (Vercel + Render):** follow the complete checklist in **[docs/manual-setup.md](docs/manual-setup.md)**.
+**Production (Vercel + Render):** follow the complete guide in **[docs/architecture.md#21-production-deployment-runbook-vercel--render](docs/architecture.md#21-production-deployment-runbook-vercel--render)**.
 
 **Self-hosted (Docker Compose):**
 
@@ -129,31 +128,28 @@ cd backend
 docker compose -f docker-compose.prod.yml up --build
 ```
 
-Overview: [docs/deployment.md](docs/deployment.md)
-
 ---
 
 ## Documentation
 
-| Doc | Description |
-|-----|-------------|
-| [docs/manual-setup.md](docs/manual-setup.md) | **Complete production deploy checklist** |
-| [docs/REPO_LAYOUT.md](docs/REPO_LAYOUT.md) | Monorepo structure and deploy map |
-| [docs/architecture.md](docs/architecture.md) | System design |
-| [docs/api.md](docs/api.md) | REST API reference |
-| [docs/deployment.md](docs/deployment.md) | Deployment architecture and Compose |
-| [docs/oauth-setup.md](docs/oauth-setup.md) | OAuth setup and troubleshooting |
-| [docs/database.md](docs/database.md) | Schema and migrations |
-| [docs/testing.md](docs/testing.md) | Test commands |
+The project documentation is cleanly consolidated into 5 comprehensive documents in the [`docs/`](docs/) directory:
+
+| Document | Description |
+|----------|-------------|
+| **[CredenceAI 2.0 Master Guide](docs/CredenceAI%202.0.md)** | Core vision, 8-step pipeline explanation, UI/UX 3-palette theme system, changelog, and contributing guidelines. |
+| **[System Architecture & Operations](docs/architecture.md)** | End-to-end architecture, repository layout, deployment runbooks (Vercel + Render), OAuth setup, 40–45s keep-alive loop, SDK spec, and day-2 operations. |
+| **[Software Requirements Specification (SRS)](docs/srs.md)** | Formal system requirements, full REST API endpoints and schemas, and 12-table PostgreSQL database schema. |
+| **[Business Requirements Document (BRD)](docs/brd.md)** | Strategic positioning, competitive differentiation matrix, rural and urban public impact domains, and commercial models. |
+| **[100% Release Acceptance Checklist](docs/checklist.md)** | 12 Hard Go/No-Go release gates (G1–G12), production readiness scorecard, and audit verification records. |
 
 ---
 
 ## License
 
-MIT — see [LICENSE.md](LICENSE.md).
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-## Contributing
+## Contributing & Security
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Security policy: [SECURITY.md](SECURITY.md).
+See [Contributing Guidelines](docs/CredenceAI%202.0.md#25-contributing-guidelines) and [Security Policy](docs/architecture.md#16-security-compliance-and-responsible-ai).

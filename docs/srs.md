@@ -142,35 +142,72 @@ Keep v1 endpoints and historical jobs/data operational through additive migratio
 
 Frontend: React + Vite + TypeScript + Tailwind research workspace. Backend: FastAPI + Pydantic REST interface. SDK: typed TypeScript client supporting asynchronous runs, evidence models, reviews and monitor deltas. Initial progress updates may use polling; server-sent events are optional.
 
-| Method | Proposed endpoint                                         | Purpose                        |
-|--------|-----------------------------------------------------------|--------------------------------|
-| POST   | /api/v2/research-runs                                     | Create research run            |
-| GET    | /api/v2/research-runs/{run_id}                            | Run status and stages          |
-| GET    | /api/v2/research-runs/{run_id}/sources                    | Retrieved sources and coverage |
-| GET    | /api/v2/research-runs/{run_id}/claims                     | Scoped claims/verdicts         |
-| GET    | /api/v2/research-runs/{run_id}/claims/{claim_id}/evidence | Passage relations              |
-| GET    | /api/v2/research-runs/{run_id}/reports/{version}          | Frozen report                  |
-| POST   | /api/v2/research-runs/{run_id}/reviews                    | Review annotation              |
-| POST   | /api/v2/research-runs/{run_id}/cancel                     | Cancellation request           |
-| POST   | /api/v2/monitors                                          | Schedule monitor               |
-| GET    | /api/v2/monitors/{monitor_id}/deltas                      | Compare scheduled reruns       |
+### 4.1 Research Studio v2 Endpoints
 
-API rules: distinguish 401 unauthorized, 403 forbidden and 404 not found; enforce pagination and limits; return typed error codes; validate idempotency and access to all resource identifiers.
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v2/research-runs` | JWT / Key / Guest | Create research run (with guest fallback) |
+| GET | `/api/v2/research-runs` | JWT / Key / Guest | List workspace research runs |
+| GET | `/api/v2/research-runs/{run_id}` | JWT / Key / Guest | Run status, stages & step duration |
+| POST | `/api/v2/research-runs/{run_id}/execute` | JWT / Key / Guest | Execute / resume pipeline stages |
+| POST | `/api/v2/research-runs/{run_id}/cancel` | JWT / Key / Guest | Cancel run at next checkpoint |
+| GET | `/api/v2/research-runs/{run_id}/sources` | JWT / Key / Guest | Retrieved sources and coverage |
+| GET | `/api/v2/research-runs/{run_id}/claims` | JWT / Key / Guest | Scoped claims & calibrated verdicts |
+| GET | `/api/v2/research-runs/{run_id}/claims/{claim_id}/evidence` | JWT / Key / Guest | Passage relations & excerpts |
+| POST | `/api/v2/research-runs/{run_id}/claims/{claim_id}/evidence/{evidence_id}/review` | JWT / Key / Guest | Reviewer evidence annotation |
+| GET | `/api/v2/research-runs/{run_id}/reports/{version}` | JWT / Key / Guest | Frozen citation-validated report |
+| POST | `/api/v2/research-runs/{run_id}/reports/{report_id}/approve` | JWT / Key / Guest | Approve report for publication |
+| POST | `/api/v2/monitors` | JWT / Key | Create scheduled monitor |
+| GET | `/api/v2/monitors/{monitor_id}/deltas` | JWT / Key | Compare scheduled reruns |
 
-# 5. Data requirements
+### 4.2 Core Platform & Utility Endpoints
 
-| ID      | Entity                             | Required content                                                  |
-|---------|------------------------------------|-------------------------------------------------------------------|
-| DATA-01 | tenants / workspaces / memberships | Tenant, role membership and access boundaries                     |
-| DATA-02 | research_runs / run_steps          | Query, mode, budget, state, config hash, retries, timestamps      |
-| DATA-03 | source_fetches / sources           | Provider execution, latency, canonical URL, publisher, rights     |
-| DATA-04 | snapshots / passages               | Immutable identity, hash, time, object reference, offsets/anchors |
-| DATA-05 | claims / claim_evidence            | Claim scope, passage relation, rationale and reviewer history     |
-| DATA-06 | claim_verdicts                     | Run ID, claim ID, verdict, evaluation version                     |
-| DATA-07 | reports                            | Frozen version, manifest hash, body, review state                 |
-| DATA-08 | outbox_events / audit_events       | Event dispatch state and minimal actor/resource logs              |
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/health` | None | Service liveness and dependency status |
+| POST | `/api/jobs` | JWT / Key | Submit search or crawler job |
+| GET | `/api/jobs/{id}` | JWT / Key | Job status and result summary |
+| GET | `/api/search` | JWT / Key | Hybrid multi-source search |
+| POST | `/api/goals` | JWT / Key | Decompose goal into execution jobs |
+| GET / POST | `/api/auth/keys` | JWT | List and generate API keys |
+| DELETE | `/api/auth/keys/{id}` | JWT | Revoke an API key |
+| GET | `/api/auth/me` | JWT | User profile, quotas, and tier |
+| POST | `/api/billing/checkout-session` | JWT | Stripe subscription checkout |
+| POST | `/api/billing/webhook` | Stripe Sig | Idempotent billing event handling |
 
-PostgreSQL is canonical; derived full-text/vector indexes and caches must be rebuildable and authorization-scoped. SQLite may support local demos/tests. Preserve existing user, job, normalized-result, quality-score, collection, monitor and API-key data.
+### 4.3 Standard Error Envelope
+
+All API errors return a uniform, machine-readable envelope with correlation tracing:
+
+```json
+{
+  "error": "validation_error",
+  "message": "Human-readable explanation of error condition",
+  "trace_id": "trace_9f83a21b4e01",
+  "details": []
+}
+```
+
+HTTP Status Codes: `200` OK, `201` Created, `202` Accepted, `400` Bad Request, `401` Unauthorized, `403` Forbidden, `404` Not Found, `422` Unprocessable Entity, `429` Rate Limit Exceeded, `500` Internal Server Error, `503` Service Unavailable.
+
+# 5. Data requirements & relational schema
+
+PostgreSQL is canonical system of record; full-text and vector indexes are rebuildable projections.
+
+### 5.1 Relational Schema Architecture
+
+- **`tenants`** (`id` PK VARCHAR(50), `name`, `created_at`): Root isolation boundary.
+- **`workspaces`** (`id` PK VARCHAR(50), `tenant_id` FK, `name`, `created_at`): Scoped collaboration group.
+- **`users`** (`id` PK VARCHAR(50), `email` UNIQUE, `name`, `role`, `account_status`, `plan`): Identity record.
+- **`memberships`** (`id` PK, `user_id` FK, `workspace_id` FK, `role`): RBAC membership (`admin`, `editor`, `member`).
+- **`api_keys`** (`id` PK, `key_hash` VARCHAR(64) UNIQUE, `owner`, `user_id` FK, `workspace_id` FK, `revoked`): Scoped credentials (`cred_sk_...`).
+- **`research_runs`** (`id` PK VARCHAR(50), `workspace_id` FK, `question` TEXT, `mode`, `status`, `config_version`, `created_at`, `completed_at`): Root research lifecycle.
+- **`run_steps`** (`id` PK, `run_id` FK, `step_key`, `state`, `attempt_count`, `duration_ms`, `error_message`, `started_at`, `completed_at`): Granular stage execution.
+- **`claims`** (`id` PK, `run_id` FK, `proposition` TEXT, `temporal_scope`, `units`, `origin_type`, `verdict`, `rationale`): Atomic propositions.
+- **`evidence_edges`** (`id` PK, `claim_id` FK, `passage_id`, `relation`, `rationale`, `passage_text` TEXT, `reviewer_id`, `reviewer_notes`): Grounding connections.
+- **`reports`** (`id` PK, `run_id` FK, `title`, `body_markdown` TEXT, `manifest_hash`, `status`, `reviewed_by`): Cryptographically frozen outputs.
+- **`monitors`** (`id` PK, `workspace_id` FK, `topic`, `scope`, `status`, `interval`, `last_check`, `health`): Scheduled tracking feeds.
+- **`collections`** (`id` PK, `workspace_id` FK, `name`, `description`, `items_count`): Curated research dossiers.
 
 # 6. Processing and reliability requirements
 
