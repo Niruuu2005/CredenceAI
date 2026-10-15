@@ -216,3 +216,43 @@ def require_permission(permission: Permission) -> Callable:
         return auth
 
     return _dependency
+
+
+def get_auth_context_allow_guest(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_security),
+    x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    db: Session = Depends(get_db),
+) -> AuthContext:
+    """
+    Authorization dependency that permits unauthenticated guests to explore research.
+    If valid credentials are provided, authenticates to the user's personal/org workspace.
+    If no credentials are provided, falls back to an isolated guest workspace seamlessly.
+    """
+    try:
+        return get_auth_context(request, credentials, x_workspace_id, x_api_key, db)
+    except HTTPException as e:
+        if e.status_code == status.HTTP_401_UNAUTHORIZED:
+            guest_user = db.query(User).filter(User.id == "user_public_guest").first()
+            if not guest_user:
+                guest_user = User(
+                    id="user_public_guest",
+                    email="guest@credenceai.local",
+                    name="Public Guest Researcher",
+                    role="member",
+                    account_status="active",
+                )
+                db.add(guest_user)
+                db.flush()
+            workspace, membership = get_or_create_default_workspace(db, guest_user)
+            return AuthContext(
+                user_id=guest_user.id,
+                tenant_id=workspace.tenant_id,
+                workspace_id=workspace.id,
+                role=WorkspaceRole.ADMIN,
+                permissions=set(ROLE_PERMISSIONS[WorkspaceRole.ADMIN]),
+                auth_method="guest",
+                api_key_id=None,
+            )
+        raise

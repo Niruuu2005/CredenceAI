@@ -161,3 +161,24 @@ def test_v2_monitors_crud_and_deltas(v2_client):
     delta_data = res_deltas.json()
     assert delta_data["monitor_id"] == mon_id
     assert delta_data["deltas_count"] == 0
+
+
+def test_v2_research_runs_guest_access(v2_client):
+    client, _, _ = v2_client
+    # Unauthenticated guest call (no Authorization header or API key)
+    client.headers.clear()
+
+    res_list = client.get("/api/v2/research-runs")
+    assert res_list.status_code == 200
+    assert isinstance(res_list.json(), list)
+
+    res_create = client.post(
+        "/api/v2/research-runs",
+        json={"question": "What is the capital of France?", "mode": "verify"},
+    )
+    assert res_create.status_code == 201
+    run_data = res_create.json()
+    assert run_data["question"] == "What is the capital of France?"
+    assert run_data["status"] in ("queued", "pending", "completed")
+
+

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.identity.dependencies import get_auth_context
+from app.identity.dependencies import get_auth_context, get_auth_context_allow_guest
 from app.identity.auth_context import AuthContext, Permission
 from app.models import (
     ResearchRun,
@@ -47,7 +47,7 @@ router = APIRouter(prefix="/research-runs", tags=["Research Runs v2"])
 def create_run(
     req: ResearchRunCreateRequest,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_allow_guest),
 ):
     """
     Initiate a new research run within the caller's authorized workspace.
@@ -74,7 +74,7 @@ def list_runs(
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_allow_guest),
 ):
     """List runs strictly scoped to the active workspace."""
     return list_workspace_runs(db=db, auth=auth, limit=limit, offset=offset)
@@ -84,7 +84,7 @@ def list_runs(
 def get_run(
     run_id: str,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_allow_guest),
 ):
     """Retrieve run status, stage step progress, and timings."""
     run = get_research_run(db=db, auth=auth, run_id=run_id)
@@ -97,7 +97,7 @@ def get_run(
 async def execute_run_now(
     run_id: str,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_allow_guest),
 ):
     """Directly trigger pipeline execution for a pending run."""
     run = get_research_run(db=db, auth=auth, run_id=run_id)
@@ -112,7 +112,7 @@ async def execute_run_now(
 def cancel_run(
     run_id: str,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_allow_guest),
 ):
     """Cancel an ongoing research run at the next checkpoint."""
     if not auth.has_permission(Permission.CANCEL_RESEARCH):
@@ -128,7 +128,7 @@ def cancel_run(
 def get_run_sources(
     run_id: str,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_allow_guest),
 ):
     """List sources acquired during this research run."""
     run = get_research_run(db=db, auth=auth, run_id=run_id)
@@ -144,7 +144,7 @@ def get_run_sources(
 def get_run_claims(
     run_id: str,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_allow_guest),
 ):
     """List atomic propositions evaluated for this run along with calibrated verdicts."""
     run = get_research_run(db=db, auth=auth, run_id=run_id)
@@ -182,7 +182,7 @@ def get_claim_evidence(
     run_id: str,
     claim_id: str,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_allow_guest),
 ):
     """Retrieve grounded evidence edges and passages for a specific claim."""
     run = get_research_run(db=db, auth=auth, run_id=run_id)
@@ -216,7 +216,7 @@ def get_run_report(
     run_id: str,
     version: int,
     db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_auth_context),
+    auth: AuthContext = Depends(get_auth_context_allow_guest),
 ):
     """Retrieve a citation-frozen reproducible research brief."""
     run = get_research_run(db=db, auth=auth, run_id=run_id)

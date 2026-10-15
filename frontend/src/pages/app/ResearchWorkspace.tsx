@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   Sparkles,
@@ -105,6 +105,7 @@ export function ResearchWorkspace() {
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState<ResearchMode>("investigate");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [runs, setRuns] = useState<ResearchRun[]>([]);
   const [activeRun, setActiveRun] = useState<ResearchRun | null>(null);
   const [claims, setClaims] = useState<Claim[]>([]);
@@ -168,6 +169,7 @@ export function ResearchWorkspace() {
   const executeInquiry = async (queryText: string, selectedMode: ResearchMode = mode) => {
     if (!queryText.trim()) return;
     setIsLoading(true);
+    setErrorMsg(null);
     try {
       const newRun = await api.createResearchRun(queryText, selectedMode);
       setRuns((prev) => [newRun, ...prev]);
@@ -179,6 +181,11 @@ export function ResearchWorkspace() {
       setQuestion("");
     } catch (err) {
       console.error("Failed to execute research run:", err);
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : "Unable to complete audit. If this persists, please ensure the backend service is reachable."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -288,6 +295,22 @@ export function ResearchWorkspace() {
               Every inquiry is decomposed into verifiable atomic propositions, cross-referenced against authoritative literature, and anchored to immutable citation snapshots.
             </p>
           </div>
+
+          {errorMsg && (
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-between animate-fade-in">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setErrorMsg(null)}
+                className="text-xs font-semibold hover:underline cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleStartRun} className="space-y-4">
             <div className="relative rounded-2xl bg-background-deep/80 border border-border-subtle focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10 transition-all shadow-inner p-2">
